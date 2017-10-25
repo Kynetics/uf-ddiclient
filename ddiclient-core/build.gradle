@@ -1,0 +1,26 @@
+/*
+ * Copyright © 2017 Kynetics LLC
+ *
+ *  All rights reserved. This program and the accompanying materials
+ *  are made available under the terms of the Eclipse Public License v1.0
+ *  which accompanies this distribution, and is available at
+ *  http://www.eclipse.org/legal/epl-v10.html
+ *
+ */
+
+group 'com.kynetics.updatefactory'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+apply plugin: 'maven'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile project(":ddiclient-api")
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
