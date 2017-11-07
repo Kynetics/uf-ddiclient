@@ -74,7 +74,7 @@ public class  UFService {
         private String tenant;
         private String controllerId;
         private State initialState = new State.WaitingState(0, null);
-        private long retryDelayOnCommunicationError;
+        private long retryDelayOnCommunicationError = 30_000;
 
         public Builder withUrl(String url) {
             this.url = url;
@@ -112,13 +112,32 @@ public class  UFService {
         }
 
         public UFService build() {
-            Objects.requireNonNull(url);
-            Objects.requireNonNull(username);
-            Objects.requireNonNull(password);
-            Objects.requireNonNull(initialState);
-            Objects.requireNonNull(controllerId);
-            Objects.requireNonNull(tenant);
+            validate(url, "url");
+            validate(username, "username");
+            validate(password, "password");
+            validate(initialState, "initialState");
+            validate(controllerId, "controllerId");
+            validate(tenant, "tenant");
+            validate(retryDelayOnCommunicationError, "retryDelayOnCommunicationError");
             return new UFService(url, username, password, tenant, controllerId, initialState, retryDelayOnCommunicationError);
+        }
+
+        private static void validate(String item, String itemName){
+            if(item == null || item.isEmpty()){
+                throw new IllegalStateException(String.format("%s could not be null or empty", itemName));
+            }
+        }
+
+        private static void validate(Object item, String itemName){
+            if(item == null){
+                throw new IllegalStateException(String.format("%s could not be null", itemName));
+            }
+        }
+
+        private static void validate(long item, String itemName){
+            if(item < 1_000){
+                throw new IllegalStateException(String.format("%s must be bigger than 999", itemName));
+            }
         }
     }
 
