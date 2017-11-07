@@ -8,7 +8,7 @@
  *
  */
 
-package com.kynetics.updatefactory.update;
+package com.kynetics.updatefactory.core;
 
 import com.google.gson.Gson;
 import com.kynetics.updatefactory.ddiclient.api.ClientBuilder;

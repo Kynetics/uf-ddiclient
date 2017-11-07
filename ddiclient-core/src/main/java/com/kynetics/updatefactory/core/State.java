@@ -8,20 +8,19 @@
  *
  */
 
-package com.kynetics.updatefactory.update;
+package com.kynetics.updatefactory.core;
 
 import com.kynetics.updatefactory.ddiclient.api.model.response.DdiArtifact;
 import com.kynetics.updatefactory.ddiclient.api.model.response.DdiChunk;
 import com.kynetics.updatefactory.ddiclient.api.model.response.ResourceSupport;
-import com.kynetics.updatefactory.ddiclient.api.model.response.ResourceSupport.LinkEntry.LinkInfo;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.kynetics.updatefactory.ddiclient.api.model.response.DdiDeployment.HandlingType.FORCED;
-import static com.kynetics.updatefactory.update.State.StateName.*;
-import static com.kynetics.updatefactory.update.Event.*;
+import static com.kynetics.updatefactory.core.State.StateName.*;
+import static com.kynetics.updatefactory.core.Event.*;
 
 /**
  * @author Daniele Sergio
