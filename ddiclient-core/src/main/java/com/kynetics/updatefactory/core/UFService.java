@@ -11,6 +11,7 @@
 package com.kynetics.updatefactory.core;
 
 import com.google.gson.Gson;
+import com.kynetics.updatefactory.core.formatter.CurrentTimeFormatter;
 import com.kynetics.updatefactory.ddiclient.api.ClientBuilder;
 import com.kynetics.updatefactory.ddiclient.api.DdiCallback;
 import com.kynetics.updatefactory.ddiclient.api.api.DdiRestApi;
@@ -247,9 +248,10 @@ public class  UFService {
                 execute(controllerBaseCall, new PollingCallback(), forceDelay > 0 ? forceDelay : ((State.WaitingState)currentState).getSleepTime());
                 break;
             case CONFIG_DATA:
+                final CurrentTimeFormatter currentTimeFormatter = new CurrentTimeFormatter();
                 final DdiConfigData configData = new DdiConfigData(
                         null,
-                        getCurrentTimeString(),
+                        currentTimeFormatter.formatCurrentTime(),
                         new DdiStatus(
                                 DdiStatus.ExecutionStatus.CLOSED,
                                 new DdiResult(
@@ -355,19 +357,10 @@ public class  UFService {
         DdiActionFeedback build(){
             final DdiResult result = new DdiResult(finalResult, progress);
             final DdiStatus status = new DdiStatus(executionStatus, result, details);
-            return new DdiActionFeedback(id, getCurrentTimeString(),status);
+            final CurrentTimeFormatter currentTimeFormatter = new CurrentTimeFormatter();
+            return new DdiActionFeedback(id, currentTimeFormatter.formatCurrentTime(),status);
         }
 
-    }
-
-    //todo refactor -> custom obj
-    private static String getCurrentTimeString(){
-        TimeZone timeZone = TimeZone.getTimeZone("UTC");
-        Calendar calendar = Calendar.getInstance(timeZone);
-        calendar.setTime(new Date());
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd'T'HHmmss");
-        simpleDateFormat.setTimeZone(timeZone);
-        return simpleDateFormat.format(calendar.getTime());
     }
 
     private class LogCallBack<T> extends DdiCallback<T>{
