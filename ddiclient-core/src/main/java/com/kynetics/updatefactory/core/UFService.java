@@ -39,6 +39,10 @@ import static com.kynetics.updatefactory.ddiclient.api.model.request.DdiStatus.E
  */
 public class  UFService {
 
+    interface TargetData {
+        Map<String, String> get();
+    }
+
     public static class SharedEvent {
         private final Event event;
         private final State newState;
@@ -73,6 +77,7 @@ public class  UFService {
         private String password;
         private String tenant;
         private String controllerId;
+        private TargetData targetData;
         private State initialState = new State.WaitingState(0, null);
         private long retryDelayOnCommunicationError = 30_000;
 
@@ -111,6 +116,10 @@ public class  UFService {
             return this;
         }
 
+        public Builder withTargetData(TargetData targetData){
+            this.targetData = targetData;
+            return this;
+        }
         public UFService build() {
             validate(url, "url");
             validate(username, "username");
@@ -118,8 +127,9 @@ public class  UFService {
             validate(initialState, "initialState");
             validate(controllerId, "controllerId");
             validate(tenant, "tenant");
+            validate(targetData, "targetData");
             validate(retryDelayOnCommunicationError, "retryDelayOnCommunicationError");
-            return new UFService(url, username, password, tenant, controllerId, initialState, retryDelayOnCommunicationError);
+            return new UFService(url, username, password, tenant, controllerId, initialState, targetData, retryDelayOnCommunicationError);
         }
 
         private static void validate(String item, String itemName){
@@ -147,6 +157,7 @@ public class  UFService {
                       String tenant,
                       String controllerId,
                       State initialState,
+                      TargetData targetData,
                       long retryDelayOnCommunicationError){
         currentObservableState = new ObservableState(initialState);
         client = new ClientBuilder()
@@ -157,6 +168,7 @@ public class  UFService {
         this.retryDelayOnCommunicationError = retryDelayOnCommunicationError;
         this.tenant = tenant;
         this.controllerId = controllerId;
+        this.targetData = targetData;
     }
 
     public void start(){
@@ -235,7 +247,16 @@ public class  UFService {
                 execute(controllerBaseCall, new PollingCallback(), forceDelay > 0 ? forceDelay : ((State.WaitingState)currentState).getSleepTime());
                 break;
             case CONFIG_DATA:
-                final DdiConfigData configData = getFakeConfigData();
+                final DdiConfigData configData = new DdiConfigData(
+                        null,
+                        getCurrentTimeString(),
+                        new DdiStatus(
+                                DdiStatus.ExecutionStatus.CLOSED,
+                                new DdiResult(
+                                        DdiResult.FinalResult.SUCESS,
+                                        null),
+                                new ArrayList<>()),
+                        targetData.get());
                 final Call call =  client.putConfigData(configData,tenant, controllerId);
                 execute(call, new DefaultDdiCallback(), forceDelay);
                 break;
@@ -337,23 +358,6 @@ public class  UFService {
             return new DdiActionFeedback(id, getCurrentTimeString(),status);
         }
 
-    }
-
-    private static DdiConfigData getFakeConfigData(){
-        Map<String,String> data = new HashMap<>(2);
-        data.put("VIN", UUID.randomUUID().toString().replaceAll("-", ""));
-        data.put("hwRevision", "2");
-        return new DdiConfigData(
-                null,
-                getCurrentTimeString(),
-                new DdiStatus(
-                        DdiStatus.ExecutionStatus.CLOSED,
-                        new DdiResult(
-                                DdiResult.FinalResult.SUCESS,
-                                null),
-                        new ArrayList<>()),
-                data
-        );
     }
 
     //todo refactor -> custom obj
@@ -463,7 +467,6 @@ public class  UFService {
                 e.printStackTrace();
             }
             onEvent(new Event.SleepEvent(sleepTime));
-
         }
     }
 
@@ -521,6 +524,7 @@ public class  UFService {
     }
 
     private ObservableState currentObservableState;
+    private TargetData targetData;
     private String controllerId;
     private String tenant;
     private Timer timer;
