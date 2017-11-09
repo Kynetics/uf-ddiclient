@@ -11,9 +11,12 @@
 package com.kynetics.updatefactory.ddiclient.api;
 
 import com.kynetics.updatefactory.ddiclient.api.api.DdiRestApi;
+import com.kynetics.updatefactory.ddiclient.api.security.AuthenticationRequestInterceptor;
+import com.kynetics.updatefactory.ddiclient.api.security.Authentication;
 import okhttp3.OkHttpClient;
 import retrofit2.converter.gson.GsonConverterFactory;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static retrofit2.Retrofit.Builder;
@@ -24,8 +27,7 @@ import static retrofit2.Retrofit.Builder;
 public class ClientBuilder {
 
     private String baseUrl;
-    private String username;
-    private String password;
+    private List<Authentication> authentications;
     private long connectionTimeout = 10;
     private final Builder builder;
 
@@ -38,13 +40,8 @@ public class ClientBuilder {
         return this;
     }
 
-    public ClientBuilder withUsername(String username) {
-        this.username = username;
-        return this;
-    }
-
-    public ClientBuilder withPassword(String password) {
-        this.password = password;
+    public ClientBuilder withAutheintications(List<Authentication> authentications) {
+        this.authentications = authentications;
         return this;
     }
 
@@ -64,7 +61,7 @@ public class ClientBuilder {
 
     private OkHttpClient buildOkHttpClient(){
         return new OkHttpClient.Builder()
-//                .addInterceptor(new BasicAuthenticationRequestInterceptor(username,password))
+                .addInterceptor(new AuthenticationRequestInterceptor(authentications))
                 .connectTimeout(connectionTimeout, TimeUnit.SECONDS)
                 .build();
     }

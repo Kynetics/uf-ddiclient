@@ -11,21 +11,30 @@
 package com.kynetics.updatefactory.core;
 
 import com.kynetics.updatefactory.core.model.State;
+import com.kynetics.updatefactory.ddiclient.api.ClientBuilder;
+import com.kynetics.updatefactory.ddiclient.api.security.Authentication;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.AuthenticationType.ANONYMOUS_AUTHENTICATION;
+import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.AuthenticationType.GATEWAY_TOKEN_AUTHENTICATION;
+import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.AuthenticationType.TARGET_TOKEN_AUTHENTICATION;
 
 /**
  * @author Daniele Sergio
  */
 public class UFServiceBuilder {
     private String url;
-    private String username;
-    private String password;
     private String tenant;
     private String controllerId;
     private UFService.TargetData targetData;
     private State initialState = new State.WaitingState(0, null);
     private long retryDelayOnCommunicationError = 30_000;
+    private List<Authentication> authentications = new ArrayList<>();
 
     UFServiceBuilder() {
+        authentications.add(new Authentication(ANONYMOUS_AUTHENTICATION, ""));
     }
 
     public UFServiceBuilder withUrl(String url) {
@@ -33,13 +42,13 @@ public class UFServiceBuilder {
         return this;
     }
 
-    public UFServiceBuilder withUsername(String username) {
-        this.username = username;
+    public UFServiceBuilder withGatewayToken(String token) {
+        authentications.add(new Authentication(GATEWAY_TOKEN_AUTHENTICATION, token));
         return this;
     }
 
-    public UFServiceBuilder withPassword(String password) {
-        this.password = password;
+    public UFServiceBuilder withTargetToken(String token) {
+        authentications.add(new Authentication(TARGET_TOKEN_AUTHENTICATION, token));
         return this;
     }
 
@@ -70,14 +79,15 @@ public class UFServiceBuilder {
 
     public UFService build() {
         validate(url, "url");
-        validate(username, "username");
-        validate(password, "password");
         validate(initialState, "initialState");
         validate(controllerId, "controllerId");
         validate(tenant, "tenant");
         validate(targetData, "targetData");
         validate(retryDelayOnCommunicationError, "retryDelayOnCommunicationError");
-        return new UFService(url, username, password, tenant, controllerId, initialState, targetData, retryDelayOnCommunicationError);
+        final ClientBuilder clientBuilder = new ClientBuilder()
+                .withBaseUrl(url)
+                .withAutheintications(authentications);
+        return new UFService(clientBuilder.build(), tenant, controllerId, initialState, targetData, retryDelayOnCommunicationError);
     }
 
     private static void validate(String item, String itemName) {

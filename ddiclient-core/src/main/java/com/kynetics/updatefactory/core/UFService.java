@@ -17,7 +17,6 @@ import com.kynetics.updatefactory.core.formatter.CurrentTimeFormatter;
 import com.kynetics.updatefactory.core.model.Event;
 import com.kynetics.updatefactory.core.model.FileInfo;
 import com.kynetics.updatefactory.core.model.State;
-import com.kynetics.updatefactory.ddiclient.api.ClientBuilder;
 import com.kynetics.updatefactory.ddiclient.api.DdiCallback;
 import com.kynetics.updatefactory.ddiclient.api.api.DdiRestApi;
 import com.kynetics.updatefactory.ddiclient.api.api.DdiRestConstants;
@@ -77,20 +76,14 @@ public class  UFService {
         return new UFServiceBuilder();
     }
 
-    UFService(String url,
-                      String username,
-                      String password,
-                      String tenant,
-                      String controllerId,
-                      State initialState,
-                      TargetData targetData,
-                      long retryDelayOnCommunicationError){
+    UFService(DdiRestApi client,
+              String tenant,
+              String controllerId,
+              State initialState,
+              TargetData targetData,
+              long retryDelayOnCommunicationError){
         currentObservableState = new ObservableState(initialState);
-        client = new ClientBuilder()
-                .withBaseUrl(url)
-                .withPassword(password)
-                .withUsername(username)
-                .build();
+        this.client = client;
         this.retryDelayOnCommunicationError = retryDelayOnCommunicationError;
         this.tenant = tenant;
         this.controllerId = controllerId;
@@ -138,11 +131,11 @@ public class  UFService {
     }
 
     public void restartSuspendState(){
-       if(!currentObservableState.get().getStateName().equals(State.StateName.WAITING)){
-           throw new IllegalStateException("current state must be WAITING to call this method");
-       }
-       restart();
-       onEvent(new Event.ResumeEvent());
+        if(!currentObservableState.get().getStateName().equals(State.StateName.WAITING)){
+            throw new IllegalStateException("current state must be WAITING to call this method");
+        }
+        restart();
+        onEvent(new Event.ResumeEvent());
     }
 
     private void execute(Call call, Callback callback, long delay){
@@ -248,7 +241,7 @@ public class  UFService {
                 final State.ServerFileCorruptedState serverFileCorruptedState = (State.ServerFileCorruptedState)currentState;
 
                 final DdiActionFeedback serverErrorFeedback = new FeedbackBuilder(serverFileCorruptedState.getActionId(),CLOSED,
-                         FAILURE)
+                        FAILURE)
                         .withDetails(Arrays.asList("SERVER FILE CORRUPTED"))
                         .build();
 
