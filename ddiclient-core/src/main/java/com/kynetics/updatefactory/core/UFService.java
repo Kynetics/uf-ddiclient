@@ -73,91 +73,11 @@ public class  UFService {
         }
     }
 
-    public static Builder builder(){
-        return new Builder();
+    public static UFServiceBuilder builder(){
+        return new UFServiceBuilder();
     }
 
-    public static class Builder {
-        private String url;
-        private String username;
-        private String password;
-        private String tenant;
-        private String controllerId;
-        private TargetData targetData;
-        private State initialState = new State.WaitingState(0, null);
-        private long retryDelayOnCommunicationError = 30_000;
-
-        public Builder withUrl(String url) {
-            this.url = url;
-            return this;
-        }
-
-        public Builder withUsername(String username) {
-            this.username = username;
-            return this;
-        }
-
-        public Builder withPassword(String password) {
-            this.password = password;
-            return this;
-        }
-
-        public Builder withInitialState(State initialState){
-            this.initialState = initialState;
-            return this;
-        }
-
-        public Builder withControllerId(String controllerId){
-            this.controllerId = controllerId;
-            return this;
-        }
-
-        public Builder withTenant(String tenant){
-            this.tenant = tenant;
-            return this;
-        }
-
-        public Builder withRetryDelayOnCommunicationError(long retryDelayOnCommunicationError) {
-            this.retryDelayOnCommunicationError = retryDelayOnCommunicationError;
-            return this;
-        }
-
-        public Builder withTargetData(TargetData targetData){
-            this.targetData = targetData;
-            return this;
-        }
-        public UFService build() {
-            validate(url, "url");
-            validate(username, "username");
-            validate(password, "password");
-            validate(initialState, "initialState");
-            validate(controllerId, "controllerId");
-            validate(tenant, "tenant");
-            validate(targetData, "targetData");
-            validate(retryDelayOnCommunicationError, "retryDelayOnCommunicationError");
-            return new UFService(url, username, password, tenant, controllerId, initialState, targetData, retryDelayOnCommunicationError);
-        }
-
-        private static void validate(String item, String itemName){
-            if(item == null || item.isEmpty()){
-                throw new IllegalStateException(String.format("%s could not be null or empty", itemName));
-            }
-        }
-
-        private static void validate(Object item, String itemName){
-            if(item == null){
-                throw new IllegalStateException(String.format("%s could not be null", itemName));
-            }
-        }
-
-        private static void validate(long item, String itemName){
-            if(item < 1_000){
-                throw new IllegalStateException(String.format("%s must be bigger than 999", itemName));
-            }
-        }
-    }
-
-    private UFService(String url,
+    UFService(String url,
                       String username,
                       String password,
                       String tenant,
