@@ -8,7 +8,7 @@
  *
  */
 
-package com.kynetics.updatefactory.core;
+package com.kynetics.updatefactory.core.model;
 
 import com.kynetics.updatefactory.ddiclient.api.model.response.DdiArtifact;
 import com.kynetics.updatefactory.ddiclient.api.model.response.DdiChunk;
@@ -20,8 +20,8 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.kynetics.updatefactory.ddiclient.api.model.response.DdiDeployment.HandlingType.FORCED;
-import static com.kynetics.updatefactory.core.State.StateName.*;
-import static com.kynetics.updatefactory.core.Event.*;
+import static com.kynetics.updatefactory.core.model.State.StateName.*;
+import static com.kynetics.updatefactory.core.model.Event.*;
 
 /**
  * @author Daniele Sergio

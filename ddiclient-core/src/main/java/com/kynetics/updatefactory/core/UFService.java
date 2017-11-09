@@ -14,6 +14,8 @@ import com.google.gson.Gson;
 import com.kynetics.updatefactory.core.FilterInputStream.CheckFilterInputStream;
 import com.kynetics.updatefactory.core.FilterInputStream.CheckFilterInputStream.FileCheckListener;
 import com.kynetics.updatefactory.core.formatter.CurrentTimeFormatter;
+import com.kynetics.updatefactory.core.model.Event;
+import com.kynetics.updatefactory.core.model.State;
 import com.kynetics.updatefactory.ddiclient.api.ClientBuilder;
 import com.kynetics.updatefactory.ddiclient.api.DdiCallback;
 import com.kynetics.updatefactory.ddiclient.api.api.DdiRestApi;

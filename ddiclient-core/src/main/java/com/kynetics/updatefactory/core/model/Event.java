@@ -8,14 +8,14 @@
  *
  */
 
-package com.kynetics.updatefactory.core;
+package com.kynetics.updatefactory.core.model;
 
 import com.kynetics.updatefactory.ddiclient.api.model.response.DdiDeploymentBase;
 
 import java.io.InputStream;
 import java.io.Serializable;
 
-import static com.kynetics.updatefactory.core.Event.EventName.*;
+import static com.kynetics.updatefactory.core.model.Event.EventName.*;
 
 /**
  * @author Daniele Sergio
