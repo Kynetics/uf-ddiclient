@@ -10,14 +10,11 @@
 
 package com.kynetics.updatefactory.ddiclient.api.security;
 
-import com.kynetics.updatefactory.ddiclient.api.security.Authentication;
-import okhttp3.Credentials;
 import okhttp3.Interceptor;
 import okhttp3.Request;
 import okhttp3.Response;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 

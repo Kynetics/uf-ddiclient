@@ -80,58 +80,6 @@ public interface DdiRestApi {
                                         @Path("softwareModuleId") final Long softwareModuleId,
                                         @Path("fileName") final String fileName);
 
-    //    /**
-//     * Handles GET {@link DdiArtifact} download request. This could be full or
-//     * partial (as specified by RFC7233 (Range Requests)) download request.
-//     *
-//     * @param tenant
-//     *            of the request
-//     * @param controllerId
-//     *            of the target
-//     * @param softwareModuleId
-//     *            of the parent software module
-//     * @param fileName
-//     *            of the related local artifact
-//     * @param response
-//     *            of the servlet
-//     * @param request
-//     *            from the client
-//     *
-//     * @return response of the servlet which in case of success is status code
-//     *         {@link HttpStatus#OK} or in case of partial download
-//     *         {@link HttpStatus#PARTIAL_CONTENT}.
-//     */
-//    @RequestMapping(method = RequestMethod.GET, value = "/{controllerId}/softwaremodules/{softwareModuleId}/artifacts/{fileName}")
-//    ResponseEntity<InputStream> downloadArtifact(@PathVariable("tenant") final String tenant,
-//                                                 @PathVariable("controllerId") final String controllerId,
-//                                                 @PathVariable("softwareModuleId") final Long softwareModuleId,
-//                                                 @PathVariable("fileName") final String fileName);
-
-//    /**
-//     * Handles GET {@link DdiArtifact} MD5 checksum file download request.
-//     *
-//     * @param tenant
-//     *            of the request
-//     * @param controllerId
-//     *            of the target
-//     * @param softwareModuleId
-//     *            of the parent software module
-//     * @param fileName
-//     *            of the related local artifact
-//     * @param response
-//     *            of the servlet
-//     * @param request
-//     *            the HTTP request injected by spring
-//     *
-//     * @return {@link ResponseEntity} with status {@link HttpStatus#OK} if
-//     *         successful
-//     */
-//    @RequestMapping(method = RequestMethod.GET, value = "/{controllerId}/softwaremodules/{softwareModuleId}/artifacts/{fileName}"
-//            + DdiRestConstants.ARTIFACT_MD5_DWNL_SUFFIX, produces = MediaType.TEXT_PLAIN_VALUE)
-//    ResponseEntity<Void> downloadArtifactMd5(@PathVariable("tenant") final String tenant,
-//                                             @PathVariable("controllerId") final String controllerId,
-//                                             @PathVariable("softwareModuleId") final Long softwareModuleId,
-//                                             @PathVariable("fileName") final String fileName);
 
     /**
      * Resource for software module.
