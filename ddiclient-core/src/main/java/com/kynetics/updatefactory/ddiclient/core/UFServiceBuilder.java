@@ -8,9 +8,9 @@
  *
  */
 
-package com.kynetics.updatefactory.core;
+package com.kynetics.updatefactory.ddiclient.core;
 
-import com.kynetics.updatefactory.core.model.State;
+import com.kynetics.updatefactory.ddiclient.core.model.State;
 import com.kynetics.updatefactory.ddiclient.api.ClientBuilder;
 import com.kynetics.updatefactory.ddiclient.api.security.Authentication;
 import okhttp3.OkHttpClient;

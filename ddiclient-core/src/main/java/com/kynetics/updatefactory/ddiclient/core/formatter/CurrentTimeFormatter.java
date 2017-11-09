@@ -8,7 +8,7 @@
  *
  */
 
-package com.kynetics.updatefactory.core.formatter;
+package com.kynetics.updatefactory.ddiclient.core.formatter;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;

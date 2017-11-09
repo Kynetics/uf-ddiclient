@@ -8,7 +8,7 @@
  *
  */
 
-package com.kynetics.updatefactory.core.model;
+package com.kynetics.updatefactory.ddiclient.core.model;
 
 import com.kynetics.updatefactory.ddiclient.api.model.response.DdiArtifact;
 import com.kynetics.updatefactory.ddiclient.api.model.response.DdiChunk;
@@ -19,8 +19,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.kynetics.updatefactory.ddiclient.api.model.response.DdiDeployment.HandlingType.FORCED;
-import static com.kynetics.updatefactory.core.model.State.StateName.*;
-import static com.kynetics.updatefactory.core.model.Event.*;
+import static com.kynetics.updatefactory.ddiclient.core.model.State.StateName.*;
 
 /**
  * @author Daniele Sergio
@@ -80,7 +79,7 @@ public abstract class State implements Serializable{
                 case UPDATE_CONFIG_REQUEST:
                     return new ConfigDataState();
                 case UPDATE_FOUND:
-                    final UpdateFoundEvent updateFoundEvent = (UpdateFoundEvent) event;
+                    final Event.UpdateFoundEvent updateFoundEvent = (Event.UpdateFoundEvent) event;
                     return suspendState != null && updateFoundEvent.getActionId() == suspendState.getActionId() ?
                             this :
                             new UpdateInitialization(((Event.UpdateFoundEvent)event).getActionId());
@@ -163,7 +162,7 @@ public abstract class State implements Serializable{
         public State onEvent(Event event) {
             switch (event.getEventName()) {
                 case DOWNLOAD_REQUEST:
-                    final DownloadRequestEvent downloadRequestEvent = ((Event.DownloadRequestEvent)event);
+                    final Event.DownloadRequestEvent downloadRequestEvent = ((Event.DownloadRequestEvent)event);
                     final List<FileInfo> fileInfoList = new ArrayList<>();
                     for(DdiChunk chunk: downloadRequestEvent.getDdiDeploymentBase().getDeployment().getChunks()){
                         for(DdiArtifact artifact : chunk.getArtifacts()){
@@ -261,7 +260,7 @@ public abstract class State implements Serializable{
                             new UpdateReadyState(getActionId(), isForced()) :
                             new UpdateDownloadState(getActionId(), isForced(), getFileInfoList(), getNextFileToDownload() +1);
                 case FILE_CORRUPTED:
-                    final FileCorruptedEvent corruptedEvent = (FileCorruptedEvent) event;
+                    final Event.FileCorruptedEvent corruptedEvent = (Event.FileCorruptedEvent) event;
                     final Hash currentHash = corruptedEvent.getDownloadedFileHash();
                     return  currentHash == null || getLastHash() == null || !currentHash.equals(getLastHash()) ?
                             new UpdateDownloadState(getActionId(),

@@ -8,9 +8,9 @@
  *
  */
 
-package com.kynetics.updatefactory.core.FilterInputStream;
+package com.kynetics.updatefactory.ddiclient.core.FilterInputStream;
 
-import com.kynetics.updatefactory.core.model.Hash;
+import com.kynetics.updatefactory.ddiclient.core.model.Hash;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.FilterInputStream;

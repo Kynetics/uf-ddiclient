@@ -8,15 +8,14 @@
  *
  */
 
-package com.kynetics.updatefactory.core;
+package com.kynetics.updatefactory.ddiclient.core;
 
 import com.google.gson.Gson;
-import com.kynetics.updatefactory.core.FilterInputStream.CheckFilterInputStream;
-import com.kynetics.updatefactory.core.FilterInputStream.CheckFilterInputStream.FileCheckListener;
-import com.kynetics.updatefactory.core.formatter.CurrentTimeFormatter;
-import com.kynetics.updatefactory.core.model.Event;
-import com.kynetics.updatefactory.core.model.FileInfo;
-import com.kynetics.updatefactory.core.model.State;
+import com.kynetics.updatefactory.ddiclient.core.FilterInputStream.CheckFilterInputStream;
+import com.kynetics.updatefactory.ddiclient.core.formatter.CurrentTimeFormatter;
+import com.kynetics.updatefactory.ddiclient.core.model.Event;
+import com.kynetics.updatefactory.ddiclient.core.model.FileInfo;
+import com.kynetics.updatefactory.ddiclient.core.model.State;
 import com.kynetics.updatefactory.ddiclient.api.DdiCallback;
 import com.kynetics.updatefactory.ddiclient.api.api.DdiRestApi;
 import com.kynetics.updatefactory.ddiclient.api.api.DdiRestConstants;
@@ -458,7 +457,7 @@ public class  UFService {
     }
 
 
-    private final FileCheckListener fileCheckListener = (isValid, hash) -> {
+    private final CheckFilterInputStream.FileCheckListener fileCheckListener = (isValid, hash) -> {
         if(isValid){
             onEvent(new Event.SuccessEvent());
         } else {

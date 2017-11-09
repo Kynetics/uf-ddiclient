@@ -8,7 +8,7 @@
  *
  */
 
-package com.kynetics.updatefactory.core.model;
+package com.kynetics.updatefactory.ddiclient.core.model;
 
 /**
  * @author Daniele Sergio

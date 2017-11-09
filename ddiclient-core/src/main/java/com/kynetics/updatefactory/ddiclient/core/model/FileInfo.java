@@ -8,7 +8,7 @@
  *
  */
 
-package com.kynetics.updatefactory.core.model;
+package com.kynetics.updatefactory.ddiclient.core.model;
 
 import com.kynetics.updatefactory.ddiclient.api.model.response.ResourceSupport;
 import com.kynetics.updatefactory.ddiclient.api.model.response.ResourceSupport.LinkEntry.LinkInfo;

@@ -8,10 +8,9 @@
  *
  */
 
-package com.kynetics.updatefactory.core.FilterInputStream;
+package com.kynetics.updatefactory.ddiclient.core.FilterInputStream;
 
 
-import com.kynetics.updatefactory.core.FilterInputStream.CheckFilterInputStream.FileCheckListener;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -34,14 +33,14 @@ public class CheckFilterInputStreamTest {
     private static final String MD5_STRING_1 = "f0fafb6e9be4b9c8c2fddd1babe6bf41";
     private static final String SHA1_STRING_1 = "d21b71393aa79dcb7d2569116c03f7ab31ac4487";
 
-    private FileCheckListener listener;
+    private CheckFilterInputStream.FileCheckListener listener;
 
     private byte[] buffer;
 
     @BeforeMethod
     public void setup(){
         buffer = new byte[STRING_1_BYTE_SIZE];
-        listener = mock(FileCheckListener.class);
+        listener = mock(CheckFilterInputStream.FileCheckListener.class);
     }
 
     @Test
