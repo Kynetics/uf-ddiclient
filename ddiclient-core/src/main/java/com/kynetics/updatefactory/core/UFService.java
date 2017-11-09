@@ -11,6 +11,8 @@
 package com.kynetics.updatefactory.core;
 
 import com.google.gson.Gson;
+import com.kynetics.updatefactory.core.FilterInputStream.CheckFilterInputStream;
+import com.kynetics.updatefactory.core.FilterInputStream.CheckFilterInputStream.FileCheckListener;
 import com.kynetics.updatefactory.core.formatter.CurrentTimeFormatter;
 import com.kynetics.updatefactory.ddiclient.api.ClientBuilder;
 import com.kynetics.updatefactory.ddiclient.api.DdiCallback;
@@ -509,12 +511,27 @@ public class  UFService {
                     state.getActionId())
                     .enqueue(new LogCallBack<>());
             final State.UpdateDownloadState.FileInfo fileInfo = state.getFileInfo();
-            onEvent(new Event.FileDownloadedEvent(response.byteStream(),
-                    fileInfo.getLinkInfo().getFileName(),
-                    fileInfo.getShae1(),
-                    fileInfo.getMd5()));
+
+            final CheckFilterInputStream stream = CheckFilterInputStream.builder()
+                    .withStream(response.byteStream())
+                    .withMd5Value(fileInfo.getMd5())
+                    .withSha1Value(fileInfo.getShae1())
+                    .withListener(fileCheckListener)
+                    .build();
+
+            onEvent(new Event.FileDownloadedEvent(stream,
+                    fileInfo.getLinkInfo().getFileName()));
         }
     }
+
+
+    private FileCheckListener fileCheckListener = isValid -> {
+        if(isValid){
+           onEvent(new Event.SuccessEvent());
+        } else {
+            onEvent(new Event.FileCorruptedEvent());
+        }
+    };
 
     private ObservableState currentObservableState;
     private TargetData targetData;

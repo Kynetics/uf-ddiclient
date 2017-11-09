@@ -16,6 +16,7 @@ import com.kynetics.updatefactory.ddiclient.api.model.response.ResourceSupport;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.kynetics.updatefactory.ddiclient.api.model.response.DdiDeployment.HandlingType.FORCED;
@@ -29,7 +30,7 @@ public abstract class State implements Serializable{
     private static final long serialVersionUID = -5320330427452976158L;
 
     public enum StateName{
-        WAITING, CONFIG_DATA, UPDATE_INITIALIZATION, UPDATE_DOWNLOAD, UPDATE_READY, UPDATE_STARTED, CANCELLATION_CHECK,
+        WAITING, CONFIG_DATA, UPDATE_INITIALIZATION, UPDATE_DOWNLOAD, SAVING_FILE, UPDATE_READY, UPDATE_STARTED, CANCELLATION_CHECK,
         CANCELLATION, UPDATE_ENDED, COMMUNICATION_FAILURE, COMMUNICATION_ERROR, AUTHORIZATION_WAITING
     }
 
@@ -185,9 +186,9 @@ public abstract class State implements Serializable{
         }
     }
 
-    public static class UpdateDownloadState extends AbstractUpdateState{
+    public static class AbstractStateWithFile extends AbstractUpdateState{
 
-        private static final long serialVersionUID = 5541313056639788020L;
+        private static final long serialVersionUID = -2699290571171611636L;
 
         public static class FileInfo implements Serializable{
 
@@ -218,22 +219,10 @@ public abstract class State implements Serializable{
         private final List<FileInfo> fileInfoList;
         private final int nextFileToDownload;
 
-        public UpdateDownloadState(Long actionId, boolean isForced, List<FileInfo> fileInfoList, int nextFileToDownload) {
-            super(UPDATE_DOWNLOAD, actionId,isForced);
+        public AbstractStateWithFile(StateName stateName, Long actionId, boolean isForced, List<FileInfo> fileInfoList, int nextFileToDownload) {
+            super(stateName, actionId,isForced);
             this.fileInfoList = fileInfoList;
             this.nextFileToDownload = nextFileToDownload;
-        }
-
-        @Override
-        public State onEvent(Event event) {
-            switch (event.getEventName()){
-                case FILE_DOWNLOADED:
-                    return fileInfoList.size() - 1 == nextFileToDownload ?
-                            new UpdateReadyState(getActionId(), isForced()) :
-                            new UpdateDownloadState(getActionId(), isForced(), fileInfoList, nextFileToDownload +1);
-                default:
-                    return super.onEvent(event);
-            }
         }
 
         public FileInfo getFileInfo() {
@@ -246,6 +235,50 @@ public abstract class State implements Serializable{
 
         public int getNextFileToDownload(){
             return nextFileToDownload;
+        }
+
+        public List<FileInfo> getFileInfoList() {
+            return Collections.unmodifiableList(fileInfoList);
+        }
+    }
+
+    public static class UpdateDownloadState extends AbstractStateWithFile{
+        private static final long serialVersionUID = 8118466462503137691L;
+
+        public UpdateDownloadState(Long actionId, boolean isForced, List<FileInfo> fileInfoList, int nextFileToDownload) {
+            super(UPDATE_DOWNLOAD, actionId,isForced, fileInfoList, nextFileToDownload);
+        }
+
+        @Override
+        public State onEvent(Event event) {
+            switch (event.getEventName()){
+                case FILE_DOWNLOADED:
+                    return new SavingFileState(getActionId(),isForced(),getFileInfoList(),getNextFileToDownload());
+                default:
+                    return super.onEvent(event);
+            }
+        }
+    }
+
+    public static class SavingFileState extends AbstractStateWithFile{
+        private static final long serialVersionUID = -5509341524286505284L;
+
+        public SavingFileState(Long actionId, boolean isForced, List<FileInfo> fileInfoList, int nextFileToDownload) {
+            super(SAVING_FILE, actionId,isForced, fileInfoList, nextFileToDownload);
+        }
+
+        @Override
+        public State onEvent(Event event) {
+            switch (event.getEventName()){
+                case SUCCESS:
+                    return getSize() - 1 == getNextFileToDownload() ?
+                            new UpdateReadyState(getActionId(), isForced()) :
+                            new UpdateDownloadState(getActionId(), isForced(), getFileInfoList(), getNextFileToDownload() +1);
+                case FILE_CORRUPTED:
+                    return new UpdateDownloadState(getActionId(), isForced(), getFileInfoList(), getNextFileToDownload());
+                default:
+                    return super.onEvent(event);
+            }
         }
     }
 

@@ -26,7 +26,7 @@ public class Event implements Serializable{
 
     public enum EventName{
         SLEEP_REQUEST,  UPDATE_CONFIG_REQUEST, SUCCESS, FAILURE, ERROR, UPDATE_FOUND, DOWNLOAD_REQUEST, FILE_DOWNLOADED,
-        CANCEL, UPDATE_ERROR, AUTHORIZATION_GRANTED, AUTHORIZATION_DENIED, RESUME
+        FILE_CORRUPTED, CANCEL, UPDATE_ERROR, AUTHORIZATION_GRANTED, AUTHORIZATION_DENIED, RESUME
     }
 
     private final EventName eventName;
@@ -145,21 +145,15 @@ public class Event implements Serializable{
 
     public static class FileDownloadedEvent extends Event{
 
-        private static final long serialVersionUID = 482227239739618846L;
+        private static final long serialVersionUID = -3646135518921050701L;
         private final InputStream inputStream;
         private final String fileName;
-        private final String shae1;
-        private final String md5;
 
         public FileDownloadedEvent(InputStream inputStream,
-                                   String fileName,
-                                   String shae1,
-                                   String md5) {
+                                   String fileName) {
             super(FILE_DOWNLOADED);
             this.inputStream = inputStream;
             this.fileName = fileName;
-            this.md5 = md5;
-            this.shae1 = shae1;
         }
 
         public InputStream getInputStream() {
@@ -169,15 +163,17 @@ public class Event implements Serializable{
         public String getFileName() {
             return fileName;
         }
+    }
 
-        public String getShae1() {
-            return shae1;
-        }
+    public static class FileCorruptedEvent extends Event{
 
-        public String getMd5() {
-            return md5;
+        private static final long serialVersionUID = 6548425599257970148L;
+
+        public FileCorruptedEvent() {
+            super(FILE_CORRUPTED);
         }
     }
+
     public static class ErrorEvent extends Event{
 
         private static final long serialVersionUID = 8090013159293139724L;
