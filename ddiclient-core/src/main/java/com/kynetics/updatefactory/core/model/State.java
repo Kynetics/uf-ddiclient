@@ -12,7 +12,6 @@ package com.kynetics.updatefactory.core.model;
 
 import com.kynetics.updatefactory.ddiclient.api.model.response.DdiArtifact;
 import com.kynetics.updatefactory.ddiclient.api.model.response.DdiChunk;
-import com.kynetics.updatefactory.ddiclient.api.model.response.ResourceSupport;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -165,12 +164,12 @@ public abstract class State implements Serializable{
             switch (event.getEventName()) {
                 case DOWNLOAD_REQUEST:
                     final DownloadRequestEvent downloadRequestEvent = ((Event.DownloadRequestEvent)event);
-                    final List<UpdateDownloadState.FileInfo> fileInfoList = new ArrayList<>();
+                    final List<FileInfo> fileInfoList = new ArrayList<>();
                     final List<String> md5List = new ArrayList<>();
                     final List<String> shaeList = new ArrayList<>();
                     for(DdiChunk chunk: downloadRequestEvent.getDdiDeploymentBase().getDeployment().getChunks()){
                         for(DdiArtifact artifact : chunk.getArtifacts()){
-                            fileInfoList.add(new UpdateDownloadState.FileInfo(
+                            fileInfoList.add(new FileInfo(
                                     artifact.getLink("download-http").parseLink2(),
                                     artifact.getHashes().getMd5(),
                                     artifact.getHashes().getSha1()));
@@ -189,32 +188,6 @@ public abstract class State implements Serializable{
     public static class AbstractStateWithFile extends AbstractUpdateState{
 
         private static final long serialVersionUID = -2699290571171611636L;
-
-        public static class FileInfo implements Serializable{
-
-            private static final long serialVersionUID = 1191642138337839065L;
-            private final ResourceSupport.LinkEntry.LinkInfo linkInfo;
-            private final String shae1;
-            private final String md5;
-
-            public FileInfo(ResourceSupport.LinkEntry.LinkInfo linkInfo, String shae1, String md5) {
-                this.linkInfo = linkInfo;
-                this.shae1 = shae1;
-                this.md5 = md5;
-            }
-
-            public ResourceSupport.LinkEntry.LinkInfo getLinkInfo() {
-                return linkInfo;
-            }
-
-            public String getShae1() {
-                return shae1;
-            }
-
-            public String getMd5() {
-                return md5;
-            }
-        }
 
         private final List<FileInfo> fileInfoList;
         private final int nextFileToDownload;

@@ -15,6 +15,7 @@ import com.kynetics.updatefactory.core.FilterInputStream.CheckFilterInputStream;
 import com.kynetics.updatefactory.core.FilterInputStream.CheckFilterInputStream.FileCheckListener;
 import com.kynetics.updatefactory.core.formatter.CurrentTimeFormatter;
 import com.kynetics.updatefactory.core.model.Event;
+import com.kynetics.updatefactory.core.model.FileInfo;
 import com.kynetics.updatefactory.core.model.State;
 import com.kynetics.updatefactory.ddiclient.api.ClientBuilder;
 import com.kynetics.updatefactory.ddiclient.api.DdiCallback;
@@ -512,7 +513,7 @@ public class  UFService {
                     controllerId,
                     state.getActionId())
                     .enqueue(new LogCallBack<>());
-            final State.UpdateDownloadState.FileInfo fileInfo = state.getFileInfo();
+            final FileInfo fileInfo = state.getFileInfo();
 
             final CheckFilterInputStream stream = CheckFilterInputStream.builder()
                     .withStream(response.byteStream())
