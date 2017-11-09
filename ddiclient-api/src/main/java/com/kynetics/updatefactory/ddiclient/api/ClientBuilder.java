@@ -11,13 +11,13 @@
 package com.kynetics.updatefactory.ddiclient.api;
 
 import com.kynetics.updatefactory.ddiclient.api.api.DdiRestApi;
-import com.kynetics.updatefactory.ddiclient.api.security.AuthenticationRequestInterceptor;
 import com.kynetics.updatefactory.ddiclient.api.security.Authentication;
+import com.kynetics.updatefactory.ddiclient.api.security.AuthenticationRequestInterceptor;
+import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import static retrofit2.Retrofit.Builder;
 
@@ -28,8 +28,8 @@ public class ClientBuilder {
 
     private String baseUrl;
     private List<Authentication> authentications;
-    private long connectionTimeout = 10;
     private final Builder builder;
+    private OkHttpClient.Builder okHttpBuilder;
 
     public ClientBuilder() {
         this.builder = new Builder();
@@ -45,24 +45,20 @@ public class ClientBuilder {
         return this;
     }
 
-    public ClientBuilder withConnectionTimeout(long second){
-        connectionTimeout = second;
+    public ClientBuilder withHttpBuilder(OkHttpClient.Builder okHttpBuilder){
+        this.okHttpBuilder = okHttpBuilder;
         return this;
     }
 
     public DdiRestApi build(){
+        final Interceptor interceptor = new AuthenticationRequestInterceptor(authentications);
+        okHttpBuilder.interceptors().add(0, interceptor);
         return builder
                 .baseUrl(baseUrl)
                 .addConverterFactory(GsonConverterFactory.create())
-                .client(buildOkHttpClient())
+                .client(okHttpBuilder.build())
                 .build()
                 .create(DdiRestApi.class);
     }
 
-    private OkHttpClient buildOkHttpClient(){
-        return new OkHttpClient.Builder()
-                .addInterceptor(new AuthenticationRequestInterceptor(authentications))
-                .connectTimeout(connectionTimeout, TimeUnit.SECONDS)
-                .build();
-    }
 }

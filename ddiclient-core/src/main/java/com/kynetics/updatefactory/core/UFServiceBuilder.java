@@ -13,13 +13,12 @@ package com.kynetics.updatefactory.core;
 import com.kynetics.updatefactory.core.model.State;
 import com.kynetics.updatefactory.ddiclient.api.ClientBuilder;
 import com.kynetics.updatefactory.ddiclient.api.security.Authentication;
+import okhttp3.OkHttpClient;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.AuthenticationType.ANONYMOUS_AUTHENTICATION;
-import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.AuthenticationType.GATEWAY_TOKEN_AUTHENTICATION;
-import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.AuthenticationType.TARGET_TOKEN_AUTHENTICATION;
+import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.AuthenticationType.*;
 
 /**
  * @author Daniele Sergio
@@ -31,6 +30,7 @@ public class UFServiceBuilder {
     private UFService.TargetData targetData;
     private State initialState = new State.WaitingState(0, null);
     private long retryDelayOnCommunicationError = 30_000;
+    private OkHttpClient.Builder okHttpClientBuilder;
     private List<Authentication> authentications = new ArrayList<>();
 
     UFServiceBuilder() {
@@ -77,14 +77,20 @@ public class UFServiceBuilder {
         return this;
     }
 
+    public UFServiceBuilder withOkHttClientBuilder(OkHttpClient.Builder okHttpClientBuilder) {
+        this.okHttpClientBuilder = okHttpClientBuilder;
+        return this;
+    }
+
     public UFService build() {
-        validate(url, "url");
         validate(initialState, "initialState");
         validate(controllerId, "controllerId");
+        validate(okHttpClientBuilder, "okHttpClientBuilder");
         validate(tenant, "tenant");
         validate(targetData, "targetData");
         validate(retryDelayOnCommunicationError, "retryDelayOnCommunicationError");
         final ClientBuilder clientBuilder = new ClientBuilder()
+                .withHttpBuilder(okHttpClientBuilder)
                 .withBaseUrl(url)
                 .withAutheintications(authentications);
         return new UFService(clientBuilder.build(), tenant, controllerId, initialState, targetData, retryDelayOnCommunicationError);
@@ -99,12 +105,6 @@ public class UFServiceBuilder {
     private static void validate(Object item, String itemName) {
         if (item == null) {
             throw new IllegalStateException(String.format("%s could not be null", itemName));
-        }
-    }
-
-    private static void validate(long item, String itemName) {
-        if (item < 1_000) {
-            throw new IllegalStateException(String.format("%s must be bigger than 999", itemName));
         }
     }
 }
