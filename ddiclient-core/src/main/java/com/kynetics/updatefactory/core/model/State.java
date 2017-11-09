@@ -165,14 +165,12 @@ public abstract class State implements Serializable{
                 case DOWNLOAD_REQUEST:
                     final DownloadRequestEvent downloadRequestEvent = ((Event.DownloadRequestEvent)event);
                     final List<FileInfo> fileInfoList = new ArrayList<>();
-                    final List<String> md5List = new ArrayList<>();
-                    final List<String> shaeList = new ArrayList<>();
                     for(DdiChunk chunk: downloadRequestEvent.getDdiDeploymentBase().getDeployment().getChunks()){
                         for(DdiArtifact artifact : chunk.getArtifacts()){
                             fileInfoList.add(new FileInfo(
                                     artifact.getLink("download-http").parseLink2(),
-                                    artifact.getHashes().getMd5(),
-                                    artifact.getHashes().getSha1()));
+                                    new Hash(artifact.getHashes().getMd5(),
+                                            artifact.getHashes().getSha1())));
                         }
                     }
                     final boolean isForced = downloadRequestEvent.getDdiDeploymentBase().getDeployment().getDownload() == FORCED;

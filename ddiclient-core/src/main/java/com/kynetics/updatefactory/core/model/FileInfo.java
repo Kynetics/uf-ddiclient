@@ -11,6 +11,7 @@
 package com.kynetics.updatefactory.core.model;
 
 import com.kynetics.updatefactory.ddiclient.api.model.response.ResourceSupport;
+import com.kynetics.updatefactory.ddiclient.api.model.response.ResourceSupport.LinkEntry.LinkInfo;
 
 import java.io.Serializable;
 
@@ -21,24 +22,18 @@ public class FileInfo implements Serializable {
 
     private static final long serialVersionUID = 1191642138337839065L;
     private final ResourceSupport.LinkEntry.LinkInfo linkInfo;
-    private final String shae1;
-    private final String md5;
+    private Hash hash;
 
-    public FileInfo(ResourceSupport.LinkEntry.LinkInfo linkInfo, String shae1, String md5) {
+    public FileInfo(LinkInfo linkInfo, Hash hash) {
         this.linkInfo = linkInfo;
-        this.shae1 = shae1;
-        this.md5 = md5;
+        this.hash = hash;
     }
 
     public ResourceSupport.LinkEntry.LinkInfo getLinkInfo() {
         return linkInfo;
     }
 
-    public String getShae1() {
-        return shae1;
-    }
-
-    public String getMd5() {
-        return md5;
+    public Hash getHash() {
+        return hash;
     }
 }
