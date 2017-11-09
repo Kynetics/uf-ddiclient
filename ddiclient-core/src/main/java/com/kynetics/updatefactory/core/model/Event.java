@@ -167,10 +167,17 @@ public class Event implements Serializable{
 
     public static class FileCorruptedEvent extends Event{
 
-        private static final long serialVersionUID = 6548425599257970148L;
+        private static final long serialVersionUID = 1845836489153063809L;
 
-        public FileCorruptedEvent() {
+        private final Hash downloadedFileHash;
+
+        public FileCorruptedEvent(Hash downloadedFileHash) {
             super(FILE_CORRUPTED);
+            this.downloadedFileHash = downloadedFileHash;
+        }
+
+        public Hash getDownloadedFileHash() {
+            return downloadedFileHash;
         }
     }
 

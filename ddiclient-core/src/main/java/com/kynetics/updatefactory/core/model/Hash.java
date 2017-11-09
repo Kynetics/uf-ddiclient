@@ -30,4 +30,22 @@ public class Hash {
     public String getSha1() {
         return sha1;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Hash hash = (Hash) o;
+
+        if (md5 != null ? !md5.equals(hash.md5) : hash.md5 != null) return false;
+        return sha1 != null ? sha1.equals(hash.sha1) : hash.sha1 == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = md5 != null ? md5.hashCode() : 0;
+        result = 31 * result + (sha1 != null ? sha1.hashCode() : 0);
+        return result;
+    }
 }

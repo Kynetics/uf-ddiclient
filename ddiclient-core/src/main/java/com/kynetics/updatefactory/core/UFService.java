@@ -324,6 +324,23 @@ public class  UFService {
                 );
                 execute(lastFeedbackCall,new DefaultDdiCallback(), forceDelay);
                 break;
+            case SERVER_FILE_CORRUPTED:
+                final State.ServerFileCorruptedState serverFileCorruptedState = (State.ServerFileCorruptedState)currentState;
+
+                final DdiActionFeedback serverErrorFeedback = new FeedbackBuilder(serverFileCorruptedState.getActionId(),CLOSED,
+                         FAILURE)
+                        .withDetails(Arrays.asList("SERVER FILE CORRUPTED"))
+                        .build();
+
+                final Call serverErrorFeedbackCall = client.postBasedeploymentActionFeedback(
+                        serverErrorFeedback,
+                        tenant,
+                        controllerId,
+                        serverFileCorruptedState.getActionId()
+                );
+
+                execute(serverErrorFeedbackCall,new DefaultDdiCallback(), forceDelay);
+                break;
             case COMMUNICATION_ERROR:
             case COMMUNICATION_FAILURE:
                 handlerState(((State.AbstractStateWithInnerState)currentState).getState(), retryDelayOnCommunicationError);
@@ -517,8 +534,8 @@ public class  UFService {
 
             final CheckFilterInputStream stream = CheckFilterInputStream.builder()
                     .withStream(response.byteStream())
-                    .withMd5Value(fileInfo.getMd5())
-                    .withSha1Value(fileInfo.getShae1())
+                    .withMd5Value(fileInfo.getHash().getMd5())
+                    .withSha1Value(fileInfo.getHash().getSha1())
                     .withListener(fileCheckListener)
                     .build();
 
@@ -528,11 +545,11 @@ public class  UFService {
     }
 
 
-    private FileCheckListener fileCheckListener = isValid -> {
+    private final FileCheckListener fileCheckListener = (isValid, hash) -> {
         if(isValid){
-           onEvent(new Event.SuccessEvent());
+            onEvent(new Event.SuccessEvent());
         } else {
-            onEvent(new Event.FileCorruptedEvent());
+            onEvent(new Event.FileCorruptedEvent(hash));
         }
     };
 

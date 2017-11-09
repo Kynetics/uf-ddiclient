@@ -28,7 +28,7 @@ public class CheckFilterInputStream extends FilterInputStream {
 
     @FunctionalInterface
     public interface FileCheckListener {
-        void onValidationResult(boolean isValid);
+        void onValidationResult(boolean isValid, Hash hash);
     }
 
     public static class Builder{
@@ -109,11 +109,11 @@ public class CheckFilterInputStream extends FilterInputStream {
         try {
             final int count = this.in.read();
             if (count == -1) {
-                listener.onValidationResult(check(hash.getSha1(), sha1Digest) && check(hash.getMd5(), md5Digest));
+                invokeListener();
             }
             return count;
         }catch (IOException e){
-            listener.onValidationResult(false);
+            listener.onValidationResult(false, null);
             throw e;
         }
     }
@@ -123,22 +123,40 @@ public class CheckFilterInputStream extends FilterInputStream {
         try {
             final int count = this.in.read(var1, var2, var3);
             if (count == -1) {
-                listener.onValidationResult(check(hash.getSha1(), sha1Digest) && check(hash.getMd5(), md5Digest));
+                invokeListener();
             }
             return count;
         }catch (IOException e){
-            listener.onValidationResult(false);
+            listener.onValidationResult(false, null);
             throw e;
         }
     }
 
-    private boolean check(String valueToCheck, DigestInputStream digest){
-        if( valueToCheck == null || valueToCheck.isEmpty() || digest == null){
+    private void invokeListener() {
+        final Hash currentHash = buildHash();
+        listener.onValidationResult(check(hash.getSha1(), currentHash.getSha1()) && check(hash.getMd5(), currentHash.getMd5()),
+                currentHash);
+    }
+
+    private Hash buildHash(){
+        String md5 = null;
+        String sha1 = null;
+        if(md5Digest != null){
+            md5  = DatatypeConverter.printHexBinary(md5Digest.getMessageDigest().digest());
+        }
+
+        if(sha1Digest != null){
+            sha1  = DatatypeConverter.printHexBinary(sha1Digest.getMessageDigest().digest());
+        }
+        return new Hash(md5, sha1);
+    }
+
+    private boolean check(String correctValue, String valueToCheck){
+        if( correctValue == null || correctValue.isEmpty() || valueToCheck == null){
             return true;
         }
-        final String messageDigest = DatatypeConverter.printHexBinary(digest.getMessageDigest().digest());
 
-        return messageDigest.equalsIgnoreCase(valueToCheck);
+        return valueToCheck.equalsIgnoreCase(correctValue);
     }
 
     private final DigestInputStream md5Digest;

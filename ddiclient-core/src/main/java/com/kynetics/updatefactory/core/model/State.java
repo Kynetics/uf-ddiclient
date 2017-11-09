@@ -30,7 +30,7 @@ public abstract class State implements Serializable{
 
     public enum StateName{
         WAITING, CONFIG_DATA, UPDATE_INITIALIZATION, UPDATE_DOWNLOAD, SAVING_FILE, UPDATE_READY, UPDATE_STARTED, CANCELLATION_CHECK,
-        CANCELLATION, UPDATE_ENDED, COMMUNICATION_FAILURE, COMMUNICATION_ERROR, AUTHORIZATION_WAITING
+        CANCELLATION, UPDATE_ENDED, COMMUNICATION_FAILURE, COMMUNICATION_ERROR, AUTHORIZATION_WAITING, SERVER_FILE_CORRUPTED
     }
 
     private final StateName stateName;
@@ -185,15 +185,17 @@ public abstract class State implements Serializable{
 
     public static class AbstractStateWithFile extends AbstractUpdateState{
 
-        private static final long serialVersionUID = -2699290571171611636L;
+        private static final long serialVersionUID = -7333406672136323945L;
 
         private final List<FileInfo> fileInfoList;
         private final int nextFileToDownload;
+        private final Hash lastHash;
 
-        public AbstractStateWithFile(StateName stateName, Long actionId, boolean isForced, List<FileInfo> fileInfoList, int nextFileToDownload) {
-            super(stateName, actionId,isForced);
+        public AbstractStateWithFile(StateName stateName, Long actionId, boolean isForced, List<FileInfo> fileInfoList, int nextFileToDownload, Hash lastHash) {
+            super(stateName, actionId, isForced);
             this.fileInfoList = fileInfoList;
             this.nextFileToDownload = nextFileToDownload;
+            this.lastHash = lastHash;
         }
 
         public FileInfo getFileInfo() {
@@ -211,20 +213,33 @@ public abstract class State implements Serializable{
         public List<FileInfo> getFileInfoList() {
             return Collections.unmodifiableList(fileInfoList);
         }
+
+        public Hash getLastHash() {
+            return lastHash;
+        }
     }
 
     public static class UpdateDownloadState extends AbstractStateWithFile{
         private static final long serialVersionUID = 8118466462503137691L;
 
+
+        public UpdateDownloadState(Long actionId,
+                                   boolean isForced,
+                                   List<FileInfo> fileInfoList,
+                                   int nextFileToDownload,
+                                   Hash lastHash) {
+            super(UPDATE_DOWNLOAD, actionId, isForced, fileInfoList, nextFileToDownload, lastHash);
+        }
+
         public UpdateDownloadState(Long actionId, boolean isForced, List<FileInfo> fileInfoList, int nextFileToDownload) {
-            super(UPDATE_DOWNLOAD, actionId,isForced, fileInfoList, nextFileToDownload);
+            this(actionId,isForced, fileInfoList, nextFileToDownload, null);
         }
 
         @Override
         public State onEvent(Event event) {
             switch (event.getEventName()){
                 case FILE_DOWNLOADED:
-                    return new SavingFileState(getActionId(),isForced(),getFileInfoList(),getNextFileToDownload());
+                    return new SavingFileState(getActionId(),isForced(),getFileInfoList(),getNextFileToDownload(), getLastHash());
                 default:
                     return super.onEvent(event);
             }
@@ -234,8 +249,8 @@ public abstract class State implements Serializable{
     public static class SavingFileState extends AbstractStateWithFile{
         private static final long serialVersionUID = -5509341524286505284L;
 
-        public SavingFileState(Long actionId, boolean isForced, List<FileInfo> fileInfoList, int nextFileToDownload) {
-            super(SAVING_FILE, actionId,isForced, fileInfoList, nextFileToDownload);
+        public SavingFileState(Long actionId, boolean isForced, List<FileInfo> fileInfoList, int nextFileToDownload, Hash lastHash) {
+            super(SAVING_FILE, actionId,isForced, fileInfoList, nextFileToDownload, lastHash);
         }
 
         @Override
@@ -246,7 +261,33 @@ public abstract class State implements Serializable{
                             new UpdateReadyState(getActionId(), isForced()) :
                             new UpdateDownloadState(getActionId(), isForced(), getFileInfoList(), getNextFileToDownload() +1);
                 case FILE_CORRUPTED:
-                    return new UpdateDownloadState(getActionId(), isForced(), getFileInfoList(), getNextFileToDownload());
+                    final FileCorruptedEvent corruptedEvent = (FileCorruptedEvent) event;
+                    final Hash currentHash = corruptedEvent.getDownloadedFileHash();
+                    return  currentHash == null || getLastHash() == null || !currentHash.equals(getLastHash()) ?
+                            new UpdateDownloadState(getActionId(),
+                                    isForced(),
+                                    getFileInfoList(),
+                                    getNextFileToDownload(),
+                                    currentHash) :
+                            new ServerFileCorruptedState(getActionId());
+
+                default:
+                    return super.onEvent(event);
+            }
+        }
+    }
+
+
+    public static class ServerFileCorruptedState extends StateWithAction{
+        public ServerFileCorruptedState(Long actionId) {
+            super(SERVER_FILE_CORRUPTED, actionId);
+        }
+
+        @Override
+        public State onEvent(Event event) {
+            switch (event.getEventName()){
+                case SUCCESS:
+                    return new WaitingState(0,null);
                 default:
                     return super.onEvent(event);
             }
