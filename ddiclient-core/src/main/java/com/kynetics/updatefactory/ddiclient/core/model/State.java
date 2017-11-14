@@ -247,7 +247,7 @@ public abstract class State implements Serializable{
     }
 
     public static class SavingFileState extends AbstractStateWithFile{
-        private static final long serialVersionUID = -4781913678780210095L;
+        private static final long serialVersionUID = -4330529885840336590L;
 
         public SavingFileState(Long actionId, boolean isForced, List<FileInfo> fileInfoList, int nextFileToDownload, Hash lastHash, InputStream inputStream) {
             super(SAVING_FILE, actionId,isForced, fileInfoList, nextFileToDownload, lastHash);
@@ -281,7 +281,7 @@ public abstract class State implements Serializable{
             return inputStream;
         }
 
-        private final InputStream inputStream;
+        transient private final InputStream inputStream;
     }
 
 

@@ -117,13 +117,21 @@ public class  UFService {
     }
 
     public void setUpdateSucceffullyUpdate(boolean success){
+        checkServiceRunning();
         if(!currentObservableState.get().getStateName().equals(State.StateName.UPDATE_STARTED)){
             throw new IllegalStateException("current state must be UPDATE_STARTED to call this method");
         }
         onEvent(success ? new Event.SuccessEvent() : new Event.UpdateErrorEvent(new String[]{"update error"}));
     }
 
+    private void checkServiceRunning(){
+        if(timer == null){
+            throw  new IllegalStateException("service isn't yet started");
+        }
+    }
+
     public void setAuthorized(boolean isAuthorized){
+        checkServiceRunning();
         if(!currentObservableState.get().getStateName().equals(State.StateName.AUTHORIZATION_WAITING)){
             throw new IllegalStateException("current state must be UPDATE_STARTED to call this method");
         }
@@ -131,6 +139,7 @@ public class  UFService {
     }
 
     public void restartSuspendState(){
+        checkServiceRunning();
         if(!currentObservableState.get().getStateName().equals(State.StateName.WAITING)){
             throw new IllegalStateException("current state must be WAITING to call this method");
         }
