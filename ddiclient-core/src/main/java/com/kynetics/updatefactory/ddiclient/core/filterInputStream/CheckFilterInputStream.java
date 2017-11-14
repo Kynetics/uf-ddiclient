@@ -8,14 +8,14 @@
  *
  */
 
-package com.kynetics.updatefactory.ddiclient.core.FilterInputStream;
+package com.kynetics.updatefactory.ddiclient.core.filterInputStream;
 
 import com.kynetics.updatefactory.ddiclient.core.model.Hash;
 
-import javax.xml.bind.DatatypeConverter;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -138,17 +138,24 @@ public class CheckFilterInputStream extends FilterInputStream {
                 currentHash);
     }
 
+    //Used toHex function instead of DatatypeConverter.printHexBinary to be usable from Android
     private Hash buildHash(){
         String md5 = null;
         String sha1 = null;
         if(md5Digest != null){
-            md5  = DatatypeConverter.printHexBinary(md5Digest.getMessageDigest().digest());
+//            md5  = DatatypeConverter.printHexBinary(md5Digest.getMessageDigest().digest());
+            md5  = toHex(md5Digest.getMessageDigest().digest());
         }
 
         if(sha1Digest != null){
-            sha1  = DatatypeConverter.printHexBinary(sha1Digest.getMessageDigest().digest());
+//            sha1  = DatatypeConverter.printHexBinary(sha1Digest.getMessageDigest().digest());
+            sha1  = toHex(sha1Digest.getMessageDigest().digest());
         }
         return new Hash(md5, sha1);
+    }
+
+    private String toHex(byte[] arg) {
+        return String.format("%x", new BigInteger(1, arg));
     }
 
     private boolean check(String correctValue, String valueToCheck){

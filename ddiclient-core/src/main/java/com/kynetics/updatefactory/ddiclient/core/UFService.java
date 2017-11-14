@@ -11,7 +11,7 @@
 package com.kynetics.updatefactory.ddiclient.core;
 
 import com.google.gson.Gson;
-import com.kynetics.updatefactory.ddiclient.core.FilterInputStream.CheckFilterInputStream;
+import com.kynetics.updatefactory.ddiclient.core.filterInputStream.CheckFilterInputStream;
 import com.kynetics.updatefactory.ddiclient.core.formatter.CurrentTimeFormatter;
 import com.kynetics.updatefactory.ddiclient.core.model.Event;
 import com.kynetics.updatefactory.ddiclient.core.model.FileInfo;
