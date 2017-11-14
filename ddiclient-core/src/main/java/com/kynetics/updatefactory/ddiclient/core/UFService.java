@@ -43,7 +43,7 @@ import static com.kynetics.updatefactory.ddiclient.api.model.request.DdiStatus.E
  */
 public class  UFService {
 
-    interface TargetData {
+    public interface TargetData {
         Map<String, String> get();
     }
 
@@ -104,11 +104,12 @@ public class  UFService {
         timer.cancel();
         timer.purge();
         timer = null;
+        currentObservableState.resetState();
     }
 
     public void restart(){
         stop();
-        timer = new Timer();
+        start();
     }
 
     public void addObserver(Observer observer){
@@ -333,13 +334,19 @@ public class  UFService {
 
         }
 
-        public void notifyEvent(){
+        private void notifyEvent(){
             if(eventToNotify == null){
                 return;
             }
             notifyObservers(eventToNotify);
         }
-        State get(){return state;}
+
+        private State get(){return state;}
+
+        private void resetState(){
+            state = new State.WaitingState(0, null);
+        }
+
     }
 
     private class DefaultDdiCallback<T> extends LogCallBack<T> {

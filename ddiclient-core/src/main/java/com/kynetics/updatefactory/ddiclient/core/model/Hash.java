@@ -10,11 +10,14 @@
 
 package com.kynetics.updatefactory.ddiclient.core.model;
 
+import java.io.Serializable;
+
 /**
  * @author Daniele Sergio
  */
-public class Hash {
+public class Hash implements Serializable{
 
+    private static final long serialVersionUID = -5692148452359794783L;
     private final String md5;
     private final String sha1;
 
