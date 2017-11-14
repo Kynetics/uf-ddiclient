@@ -13,6 +13,7 @@ package com.kynetics.updatefactory.ddiclient.core.model;
 import com.kynetics.updatefactory.ddiclient.api.model.response.DdiArtifact;
 import com.kynetics.updatefactory.ddiclient.api.model.response.DdiChunk;
 
+import java.io.InputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -238,7 +239,7 @@ public abstract class State implements Serializable{
         public State onEvent(Event event) {
             switch (event.getEventName()){
                 case FILE_DOWNLOADED:
-                    return new SavingFileState(getActionId(),isForced(),getFileInfoList(),getNextFileToDownload(), getLastHash());
+                    return new SavingFileState(getActionId(),isForced(),getFileInfoList(),getNextFileToDownload(), getLastHash(), ((Event.FileDownloadedEvent)event).getInputStream());
                 default:
                     return super.onEvent(event);
             }
@@ -246,10 +247,11 @@ public abstract class State implements Serializable{
     }
 
     public static class SavingFileState extends AbstractStateWithFile{
-        private static final long serialVersionUID = -5509341524286505284L;
+        private static final long serialVersionUID = -4781913678780210095L;
 
-        public SavingFileState(Long actionId, boolean isForced, List<FileInfo> fileInfoList, int nextFileToDownload, Hash lastHash) {
+        public SavingFileState(Long actionId, boolean isForced, List<FileInfo> fileInfoList, int nextFileToDownload, Hash lastHash, InputStream inputStream) {
             super(SAVING_FILE, actionId,isForced, fileInfoList, nextFileToDownload, lastHash);
+            this.inputStream = inputStream;
         }
 
         @Override
@@ -274,6 +276,12 @@ public abstract class State implements Serializable{
                     return super.onEvent(event);
             }
         }
+
+        public InputStream getInputStream() {
+            return inputStream;
+        }
+
+        private final InputStream inputStream;
     }
 
 
