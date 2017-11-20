@@ -31,7 +31,8 @@ public abstract class DdiCallback<T> implements Callback<T> {
             try {
                 final String errorString = response.errorBody().string();
                 System.out.println(errorString);
-                final Error error = gson.fromJson(errorString, Error.class);
+                Error error = gson.fromJson(errorString, Error.class);
+                error = error == null ? new Error() : error;
                 error.setCode(response.code());
                 onError(error);
             } catch (IOException e) {
