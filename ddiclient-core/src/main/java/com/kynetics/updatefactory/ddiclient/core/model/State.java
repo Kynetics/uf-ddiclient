@@ -26,7 +26,7 @@ import static com.kynetics.updatefactory.ddiclient.core.model.State.StateName.*;
  * @author Daniele Sergio
  */
 public abstract class State implements Serializable{
-    private static final long serialVersionUID = -5320330427452976158L;
+    private static final long serialVersionUID = 8624104209862658206L;
 
     public enum StateName{
         WAITING, CONFIG_DATA, UPDATE_INITIALIZATION, UPDATE_DOWNLOAD, SAVING_FILE, UPDATE_READY, UPDATE_STARTED, CANCELLATION_CHECK,
@@ -46,7 +46,10 @@ public abstract class State implements Serializable{
         switch (event.getEventName()){
             case ERROR:
                 Event.ErrorEvent errorEvent = (Event.ErrorEvent) event;
-                return new CommunicationErrorState(this,errorEvent.getCode(),errorEvent.getDetails());
+                return errorEvent.getCode() == 404 && errorEvent.getDetails()[0] != null &&
+                        errorEvent.getDetails()[0].equals("hawkbit.server.error.repo.entitiyNotFound") ?
+                        new WaitingState(0,null) :
+                        new CommunicationErrorState(this,errorEvent.getCode(),errorEvent.getDetails());
             case FAILURE:
                 Event.FailureEvent failureEvent = (Event.FailureEvent) event;
                 return new CommunicationFailureState(this,failureEvent.getThrowable());
@@ -98,7 +101,7 @@ public abstract class State implements Serializable{
     }
 
     public static class ConfigDataState extends State{
-        private static final long serialVersionUID = -6379269952019151139L;
+        private static final long serialVersionUID = 1510486692091734525L;
 
         public ConfigDataState() {
             super(CONFIG_DATA);
@@ -116,7 +119,7 @@ public abstract class State implements Serializable{
     }
 
     public static abstract class StateWithAction extends State{
-        private static final long serialVersionUID = 3107687832645865189L;
+        private static final long serialVersionUID = -6011000748604690610L;
 
         private final Long actionId;
 
@@ -131,7 +134,7 @@ public abstract class State implements Serializable{
     }
 
     public static abstract class AbstractUpdateState extends StateWithAction{
-        private static final long serialVersionUID = 6475503872241178057L;
+        private static final long serialVersionUID = -2826703270286073179L;
 
         private final boolean isForced;
 
@@ -147,7 +150,7 @@ public abstract class State implements Serializable{
 
     public static class UpdateInitialization extends StateWithAction{
 
-        private static final long serialVersionUID = -3633361480103392026L;
+        private static final long serialVersionUID = -703356064985341858L;
 
         public UpdateInitialization(Long actionId) {
             super(UPDATE_INITIALIZATION, actionId);
@@ -179,7 +182,7 @@ public abstract class State implements Serializable{
 
     public static class AbstractStateWithFile extends AbstractUpdateState{
 
-        private static final long serialVersionUID = -7333406672136323945L;
+        private static final long serialVersionUID = -6785284114160973170L;
 
         private final List<FileInfo> fileInfoList;
         private final int nextFileToDownload;
@@ -214,7 +217,7 @@ public abstract class State implements Serializable{
     }
 
     public static class UpdateDownloadState extends AbstractStateWithFile{
-        private static final long serialVersionUID = 8118466462503137691L;
+        private static final long serialVersionUID = -1998879559588928971L;
 
 
         public UpdateDownloadState(Long actionId,
@@ -280,6 +283,9 @@ public abstract class State implements Serializable{
 
 
     public static class ServerFileCorruptedState extends StateWithAction{
+
+        private static final long serialVersionUID = 3171662012367375837L;
+
         public ServerFileCorruptedState(Long actionId) {
             super(SERVER_FILE_CORRUPTED, actionId);
         }
@@ -296,7 +302,7 @@ public abstract class State implements Serializable{
     }
 
     public static class UpdateReadyState extends AbstractUpdateState{
-        private static final long serialVersionUID = -6261104686549440294L;
+        private static final long serialVersionUID = -8501350119987754124L;
 
         public UpdateReadyState(Long actionId, boolean isForced) {
             super(UPDATE_READY, actionId, isForced);
@@ -317,7 +323,7 @@ public abstract class State implements Serializable{
     }
 
     public static class UpdateStartedState extends StateWithAction{
-        private static final long serialVersionUID = 4112225711938631866L;
+        private static final long serialVersionUID = 6238930315498186356L;
 
         public UpdateStartedState(Long actionId) {
             super(UPDATE_STARTED, actionId);
@@ -338,7 +344,7 @@ public abstract class State implements Serializable{
     }
 
     public static class UpdateEndedState extends StateWithAction{
-        private static final long serialVersionUID = -8423028324228442845L;
+        private static final long serialVersionUID = -868250366352211123L;
 
         private final boolean isSuccessfullyUpdate;
         private final String[] details;
@@ -369,7 +375,7 @@ public abstract class State implements Serializable{
     }
 
     public static class CancellationCheckState extends StateWithAction{
-        private static final long serialVersionUID = -2556360283062075926L;
+        private static final long serialVersionUID = -771773165049497602L;
 
         private final State previousState;
 
@@ -399,7 +405,7 @@ public abstract class State implements Serializable{
     }
 
     public static class CancellationState extends StateWithAction{
-        private static final long serialVersionUID = -8128478062633603709L;
+        private static final long serialVersionUID = -2805589128447579587L;
 
         public CancellationState(Long actionId) {
             super(CANCELLATION, actionId);
@@ -417,7 +423,7 @@ public abstract class State implements Serializable{
     }
 
     public abstract static class AbstractStateWithInnerState extends State{
-        private static final long serialVersionUID = 68418421182598220L;
+        private static final long serialVersionUID = 8985897172839137083L;
 
         private final State state;
 
@@ -438,7 +444,7 @@ public abstract class State implements Serializable{
 
     public static class CommunicationFailureState extends AbstractStateWithInnerState {
 
-        private static final long serialVersionUID = 2252291454139960637L;
+        private static final long serialVersionUID = -3579197187124314852L;
 
         private final Throwable throwable;
 
@@ -466,7 +472,7 @@ public abstract class State implements Serializable{
     }
 
     public static class CommunicationErrorState extends AbstractStateWithInnerState {
-        private static final long serialVersionUID = -7238517877916633281L;
+        private static final long serialVersionUID = -6247174701252582069L;
 
         private final int code;
         private final String[] details;
@@ -500,7 +506,7 @@ public abstract class State implements Serializable{
 
     public static class AuthorizationWaitingState extends AbstractStateWithInnerState{
 
-        private static final long serialVersionUID = 8842122473954599874L;
+        private static final long serialVersionUID = -5937351953114830670L;
 
         public AuthorizationWaitingState(State state) {
             super(AUTHORIZATION_WAITING, state);

@@ -373,7 +373,7 @@ public class  UFService {
         @Override
         public void onError(Error error) {
             super.onError(error);
-            onEvent(new Event.ErrorEvent(new String[]{error.getMessage()},error.getCode()));
+            onEvent(new Event.ErrorEvent(new String[]{error.getErrorCode(), error.getMessage()},error.getCode()));
         }
 
         @Override

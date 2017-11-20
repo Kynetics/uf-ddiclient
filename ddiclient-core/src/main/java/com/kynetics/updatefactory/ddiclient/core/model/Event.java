@@ -22,7 +22,7 @@ import static com.kynetics.updatefactory.ddiclient.core.model.Event.EventName.*;
  */
 public class Event implements Serializable{
 
-    private static final long serialVersionUID = -4282270154808438827L;
+    private static final long serialVersionUID = -379773284801159482L;
 
     public enum EventName{
         SLEEP_REQUEST,  UPDATE_CONFIG_REQUEST, SUCCESS, FAILURE, ERROR, UPDATE_FOUND, DOWNLOAD_REQUEST, FILE_DOWNLOADED,
@@ -41,7 +41,7 @@ public class Event implements Serializable{
 
     public static class SleepEvent extends Event{
 
-        private static final long serialVersionUID = -1814494385021105781L;
+        private static final long serialVersionUID = -2879957856504030860L;
 
         final long sleepTime;
 
@@ -57,7 +57,7 @@ public class Event implements Serializable{
 
     public static class FailureEvent extends Event{
 
-        private static final long serialVersionUID = -792237867960643822L;
+        private static final long serialVersionUID = 4328037593651625818L;
 
         private final Throwable throwable;
         public FailureEvent(Throwable throwable) {
@@ -72,7 +72,7 @@ public class Event implements Serializable{
 
     public static abstract class EventWithActionId extends Event{
 
-        private static final long serialVersionUID = 4571448143777394644L;
+        private static final long serialVersionUID = -1216377107118471482L;
 
         private final Long actionId;
 
@@ -88,7 +88,7 @@ public class Event implements Serializable{
 
     public static class SuccessEvent extends EventWithActionId{
 
-        private static final long serialVersionUID = 7477070573336483724L;
+        private static final long serialVersionUID = -6072947302760156164L;
 
         public SuccessEvent() {
             super(SUCCESS,null);
@@ -101,7 +101,7 @@ public class Event implements Serializable{
 
     public static class UpdateConfigRequestEvent extends Event{
 
-        private static final long serialVersionUID = -8056650122962354394L;
+        private static final long serialVersionUID = -3653436535402906385L;
 
         public UpdateConfigRequestEvent() {
             super(UPDATE_CONFIG_REQUEST);
@@ -111,7 +111,7 @@ public class Event implements Serializable{
 
     public static class UpdateFoundEvent extends EventWithActionId{
 
-        private static final long serialVersionUID = 4985927319066489586L;
+        private static final long serialVersionUID = 7650031234900094550L;
 
         public UpdateFoundEvent(Long actionId) {
             super(UPDATE_FOUND, actionId);
@@ -120,7 +120,7 @@ public class Event implements Serializable{
 
     public static class CancelEvent extends EventWithActionId{
 
-        private static final long serialVersionUID = 703860981008558989L;
+        private static final long serialVersionUID = 4752976669552073063L;
 
         public CancelEvent(Long actionId) {
             super(CANCEL, actionId);
@@ -129,7 +129,7 @@ public class Event implements Serializable{
 
     public static class DownloadRequestEvent extends Event{
 
-        private static final long serialVersionUID = -7005721027575721248L;
+        private static final long serialVersionUID = -2032503661097142398L;
 
         private final DdiDeploymentBase ddiDeploymentBase;
 
@@ -145,7 +145,7 @@ public class Event implements Serializable{
 
     public static class FileDownloadedEvent extends Event{
 
-        private static final long serialVersionUID = -3646135518921050701L;
+        private static final long serialVersionUID = 7577600239523527986L;
         private final InputStream inputStream;
         private final String fileName;
 
@@ -167,7 +167,7 @@ public class Event implements Serializable{
 
     public static class FileCorruptedEvent extends Event{
 
-        private static final long serialVersionUID = 1845836489153063809L;
+        private static final long serialVersionUID = 7316816218729999447L;
 
         private final Hash downloadedFileHash;
 
@@ -183,7 +183,7 @@ public class Event implements Serializable{
 
     public static class ErrorEvent extends Event{
 
-        private static final long serialVersionUID = 8090013159293139724L;
+        private static final long serialVersionUID = -5100718411655042146L;
         private final String[] details;
         private final int code;
 
@@ -204,7 +204,7 @@ public class Event implements Serializable{
 
     public static class UpdateErrorEvent extends Event{
 
-        private static final long serialVersionUID = 1501593804339427112L;
+        private static final long serialVersionUID = -1971119330952172189L;
         private final String[] details;
 
         public UpdateErrorEvent(String[] details) {
@@ -219,8 +219,7 @@ public class Event implements Serializable{
 
     public static class AuthorizationGrantedEvent extends Event{
 
-
-        private static final long serialVersionUID = 8476644426568516165L;
+        private static final long serialVersionUID = 5441570052912573129L;
 
         public AuthorizationGrantedEvent() {
             super(AUTHORIZATION_GRANTED);
@@ -229,7 +228,7 @@ public class Event implements Serializable{
 
     public static class AuthorizationDeniedEvent extends Event{
 
-        private static final long serialVersionUID = 8190466160344336819L;
+        private static final long serialVersionUID = 5448969185950732296L;
 
         public AuthorizationDeniedEvent() {
             super(AUTHORIZATION_DENIED);
@@ -238,7 +237,7 @@ public class Event implements Serializable{
 
     public static class ResumeEvent extends Event{
 
-        private static final long serialVersionUID = 8081456162156585815L;
+        private static final long serialVersionUID = -279400326463388492L;
 
         public ResumeEvent() {
             super(RESUME);
