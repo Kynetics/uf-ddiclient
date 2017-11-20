@@ -56,17 +56,14 @@ public abstract class State implements Serializable{
     }
 
 
-    public static class WaitingState extends State{
-        private static final long serialVersionUID = 1418151631214100403L;
+    public static class WaitingState extends AbstractStateWithInnerState{
+        private static final long serialVersionUID = 7341623772039583604L;
 
         private final long sleepTime;
 
-        private final StateWithAction suspendState;
-
         public WaitingState(long sleepTime, StateWithAction suspendState){
-            super(WAITING);
+            super(WAITING, suspendState);
             this.sleepTime = sleepTime;
-            this.suspendState = suspendState;
         }
         public long getSleepTime() {
             return sleepTime;
@@ -76,30 +73,27 @@ public abstract class State implements Serializable{
         public State onEvent(Event event) {
             switch (event.getEventName()){
                 case SLEEP_REQUEST:
-                    return new WaitingState(((Event.SleepEvent)event).getSleepTime(), suspendState);
+                    return new WaitingState(((Event.SleepEvent)event).getSleepTime(), getState());
                 case UPDATE_CONFIG_REQUEST:
                     return new ConfigDataState();
                 case UPDATE_FOUND:
                     final Event.UpdateFoundEvent updateFoundEvent = (Event.UpdateFoundEvent) event;
-                    return suspendState != null && updateFoundEvent.getActionId() == suspendState.getActionId() ?
+                    return hasInnerState() && updateFoundEvent.getActionId().equals(getState().getActionId()) ?
                             this :
                             new UpdateInitialization(((Event.UpdateFoundEvent)event).getActionId());
                 case CANCEL:
                     return new CancellationCheckState(this, ((Event.CancelEvent) event).getActionId());
                 case RESUME:
-                    return new AuthorizationWaitingState(suspendState);
+                    return new AuthorizationWaitingState(getState());
                 default:
                     return super.onEvent(event);
             }
 
         }
 
-        public StateWithAction getSuspendState() {
-            return suspendState;
-        }
-
-        public boolean hasSuspendState(){
-            return suspendState != null;
+        @Override
+        public StateWithAction getState(){
+            return (StateWithAction) super.getState();
         }
     }
 
@@ -434,6 +428,10 @@ public abstract class State implements Serializable{
 
         public State getState() {
             return state;
+        }
+
+        public boolean hasInnerState(){
+            return state != null;
         }
 
     }

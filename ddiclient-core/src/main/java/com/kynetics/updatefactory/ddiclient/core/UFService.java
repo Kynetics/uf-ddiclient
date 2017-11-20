@@ -143,7 +143,9 @@ public class  UFService {
         if(!currentObservableState.get().getStateName().equals(State.StateName.WAITING)){
             throw new IllegalStateException("current state must be WAITING to call this method");
         }
-        restart();
+        timer.cancel();
+        timer.purge();
+        timer = new Timer();
         onEvent(new Event.ResumeEvent());
     }
 
@@ -175,18 +177,7 @@ public class  UFService {
                 execute(controllerBaseCall, new PollingCallback(), forceDelay > 0 ? forceDelay : ((State.WaitingState)currentState).getSleepTime());
                 break;
             case CONFIG_DATA:
-                final CurrentTimeFormatter currentTimeFormatter = new CurrentTimeFormatter();
-                final DdiConfigData configData = new DdiConfigData(
-                        null,
-                        currentTimeFormatter.formatCurrentTime(),
-                        new DdiStatus(
-                                DdiStatus.ExecutionStatus.CLOSED,
-                                new DdiResult(
-                                        DdiResult.FinalResult.SUCESS,
-                                        null),
-                                new ArrayList<>()),
-                        targetData.get());
-                final Call call =  client.putConfigData(configData,tenant, controllerId);
+                final Call call = getConfigDataCall();
                 execute(call, new DefaultDdiCallback(), forceDelay);
                 break;
             case UPDATE_INITIALIZATION:
@@ -233,6 +224,11 @@ public class  UFService {
                 break;
             case UPDATE_ENDED:
                 final State.UpdateEndedState updateEndedState = (State.UpdateEndedState)currentState;
+
+                if(updateEndedState.isSuccessfullyUpdate()){
+                    getConfigDataCall().enqueue(new LogCallBack());
+                }
+
                 final DdiActionFeedback lastFeedback = new FeedbackBuilder(updateEndedState.getActionId(),CLOSED,
                         updateEndedState.isSuccessfullyUpdate() ? SUCESS : FAILURE)
                         .withDetails(Arrays.asList(updateEndedState.getDetails()))
@@ -269,6 +265,21 @@ public class  UFService {
                 break;
         }
         currentObservableState.notifyEvent();
+    }
+
+    private Call getConfigDataCall() {
+        final CurrentTimeFormatter currentTimeFormatter = new CurrentTimeFormatter();
+        final DdiConfigData configData = new DdiConfigData(
+                null,
+                currentTimeFormatter.formatCurrentTime(),
+                new DdiStatus(
+                        ExecutionStatus.CLOSED,
+                        new DdiResult(
+                                FinalResult.SUCESS,
+                                null),
+                        new ArrayList<>()),
+                targetData.get());
+        return client.putConfigData(configData,tenant, controllerId);
     }
 
     private void handlerState(State currentState) {
