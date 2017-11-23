@@ -38,7 +38,7 @@ public class AuthenticationRequestInterceptor implements Interceptor {
 
         for(Authentication authentication: authentications){
             if(authentication.getType() != ANONYMOUS_AUTHENTICATION){
-                builder.addHeader(authentication.getType().getHeader(), authentication.getToken());
+                builder.addHeader(authentication.getHeader(), authentication.getHeaderValue());
             }
 
         }

@@ -92,7 +92,7 @@ public class UFServiceBuilder {
         final ClientBuilder clientBuilder = new ClientBuilder()
                 .withHttpBuilder(okHttpClientBuilder)
                 .withBaseUrl(url)
-                .withAutheintications(authentications);
+                .withAuthentications(authentications);
         return new UFService(clientBuilder.build(), tenant, controllerId, initialState, targetData, retryDelayOnCommunicationError);
     }
 

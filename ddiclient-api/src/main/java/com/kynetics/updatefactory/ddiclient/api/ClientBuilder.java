@@ -40,7 +40,7 @@ public class ClientBuilder {
         return this;
     }
 
-    public ClientBuilder withAutheintications(List<Authentication> authentications) {
+    public ClientBuilder withAuthentications(List<Authentication> authentications) {
         this.authentications = authentications;
         return this;
     }

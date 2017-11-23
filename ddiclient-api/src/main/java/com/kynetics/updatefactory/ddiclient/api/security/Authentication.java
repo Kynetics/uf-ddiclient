@@ -19,14 +19,20 @@ public class Authentication {
         GATEWAY_TOKEN_AUTHENTICATION("GatewayToken"),
         ANONYMOUS_AUTHENTICATION("");
 
-        private final String header;
+        private static final String HEADER = "Authorization";
 
-        AuthenticationType(String header) {
-            this.header = header;
+        private final String type;
+
+        AuthenticationType(String type) {
+            this.type = type;
         }
 
-        public String getHeader() {
-            return header;
+        private String getType() {
+            return type;
+        }
+
+        private String getHeader(){
+            return HEADER;
         }
     }
 
@@ -35,15 +41,25 @@ public class Authentication {
         this.token = token;
     }
 
-    public AuthenticationType getType() {
+    AuthenticationType getType() {
         return type;
     }
 
-    public String getToken() {
+    String getToken() {
         return token;
+    }
+
+    String getHeaderValue() {
+        return String.format(HEADER_VALUE_TEMPLATE, type.getType(), token);
+    }
+
+    String getHeader(){
+        return type.getHeader();
     }
 
     private final AuthenticationType type;
 
     private final String token;
+
+    private static final String HEADER_VALUE_TEMPLATE = "%s %s";
 }
