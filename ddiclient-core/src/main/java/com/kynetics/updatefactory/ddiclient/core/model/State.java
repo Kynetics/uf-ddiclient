@@ -391,7 +391,11 @@ public abstract class State implements Serializable{
                     if(getPreviousState().getStateName() == UPDATE_READY){
                         final Event.SuccessEvent successEvent = (Event.SuccessEvent) event;
                         final UpdateReadyState updateReadyState = (UpdateReadyState) getPreviousState();
-                        return updateReadyState.getActionId() == successEvent.getActionId() ? new CancellationState(getActionId()) : new UpdateStartedState(updateReadyState.getActionId());
+                        return updateReadyState.getActionId() == successEvent.getActionId() ?
+                                new CancellationState(getActionId()) :
+                                updateReadyState.isForced() ?
+                                        new AuthorizationWaitingState(updateReadyState) :
+                                        new UpdateStartedState(updateReadyState.getActionId());
                     }
                     return new CancellationState(getActionId());
                 default:
@@ -464,7 +468,7 @@ public abstract class State implements Serializable{
                     return this;
                 case ERROR:
                     Event.ErrorEvent errorEvent = (Event.ErrorEvent) event;
-                    return new CommunicationErrorState(this, errorEvent.getCode(),errorEvent.getDetails());
+                    return new CommunicationErrorState(getState(), errorEvent.getCode(),errorEvent.getDetails());
                 default:
                     return getState().onEvent(event);
             }
@@ -497,7 +501,7 @@ public abstract class State implements Serializable{
                     return this;
                 case FAILURE:
                     Event.FailureEvent errorEvent = (Event.FailureEvent) event;
-                    return new CommunicationFailureState(this, errorEvent.getThrowable());
+                    return new CommunicationFailureState(getState(), errorEvent.getThrowable());
                 default:
                     return getState().onEvent(event);
             }
