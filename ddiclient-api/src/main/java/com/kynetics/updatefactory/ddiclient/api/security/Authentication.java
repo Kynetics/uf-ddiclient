@@ -10,6 +10,8 @@
 
 package com.kynetics.updatefactory.ddiclient.api.security;
 
+import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.AuthenticationType.ANONYMOUS_AUTHENTICATION;
+
 /**
  * @author Daniele Sergio
  */
@@ -36,7 +38,11 @@ public class Authentication {
         }
     }
 
-    public Authentication(AuthenticationType type, String token) {
+    public static Authentication newInstance(AuthenticationType type, String token){
+        return type == ANONYMOUS_AUTHENTICATION ? getAnonymus() : new Authentication(type, token);
+    }
+
+    private Authentication(AuthenticationType type, String token) {
         this.type = type;
         this.token = token;
     }
@@ -57,9 +63,19 @@ public class Authentication {
         return type.getHeader();
     }
 
+    private static Authentication getAnonymus(){
+        if(anonymus == null){
+            anonymus = new Authentication(ANONYMOUS_AUTHENTICATION, "");;
+        }
+        return anonymus;
+    }
+
+
     private final AuthenticationType type;
 
     private final String token;
+
+    private static Authentication anonymus;
 
     private static final String HEADER_VALUE_TEMPLATE = "%s %s";
 }

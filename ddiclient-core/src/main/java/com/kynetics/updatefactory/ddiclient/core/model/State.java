@@ -171,7 +171,10 @@ public abstract class State implements Serializable{
                         }
                     }
                     final boolean isForced = downloadRequestEvent.getDdiDeploymentBase().getDeployment().getDownload() == FORCED;
-                    final State state = new UpdateDownloadState(getActionId(), isForced, fileInfoList, 0);
+                    final boolean noFile = fileInfoList.size() == 0;
+                    final State state = noFile ?
+                            new UpdateEndedState(getActionId(), true, new String[]{"Update doesn't have file"}) :
+                            new UpdateDownloadState(getActionId(), isForced, fileInfoList, 0);
                     return  isForced ? state : new AuthorizationWaitingState(state) ;
 
                 default:

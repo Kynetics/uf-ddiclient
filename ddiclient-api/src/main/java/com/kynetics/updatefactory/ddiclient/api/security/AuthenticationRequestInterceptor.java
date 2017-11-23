@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.AuthenticationType.ANONYMOUS_AUTHENTICATION;
+import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.newInstance;
 
 /**
  * @author Daniele Sergio
@@ -27,6 +28,7 @@ public class AuthenticationRequestInterceptor implements Interceptor {
 
     public AuthenticationRequestInterceptor(List<Authentication> authentications) {
         Objects.requireNonNull(authentications);
+        authentications.remove(newInstance(ANONYMOUS_AUTHENTICATION,null));
         this.authentications = authentications;
     }
 
@@ -35,16 +37,24 @@ public class AuthenticationRequestInterceptor implements Interceptor {
         final Request originalRequest = chain.request();
 
         final Request.Builder builder = originalRequest.newBuilder();
-
-        for(Authentication authentication: authentications){
-            if(authentication.getType() != ANONYMOUS_AUTHENTICATION){
-                builder.addHeader(authentication.getHeader(), authentication.getHeaderValue());
+        final int size = authentications.size();
+        final int exitValue = authenticationUse;
+        Response response = null;
+        do{
+            final Authentication authentication = authentications.get(authenticationUse);
+            builder.header(authentication.getHeader(), authentication.getHeaderValue());
+            response = chain.proceed(builder.build());
+            if(response.code() != 401){
+                break;
             }
+            authenticationUse = ++authenticationUse % size;
+        }while(authenticationUse != exitValue);
 
-        }
-
-        return chain.proceed(builder.build());
+        return response;
     }
 
+
+
     private final List<Authentication> authentications;
+    private int authenticationUse = 0;
 }

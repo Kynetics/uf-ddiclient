@@ -10,15 +10,16 @@
 
 package com.kynetics.updatefactory.ddiclient.core;
 
-import com.kynetics.updatefactory.ddiclient.core.model.State;
 import com.kynetics.updatefactory.ddiclient.api.ClientBuilder;
 import com.kynetics.updatefactory.ddiclient.api.security.Authentication;
+import com.kynetics.updatefactory.ddiclient.core.model.State;
 import okhttp3.OkHttpClient;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.AuthenticationType.*;
+import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.newInstance;
 
 /**
  * @author Daniele Sergio
@@ -34,7 +35,7 @@ public class UFServiceBuilder {
     private List<Authentication> authentications = new ArrayList<>();
 
     UFServiceBuilder() {
-        authentications.add(new Authentication(ANONYMOUS_AUTHENTICATION, ""));
+        authentications.add(newInstance(ANONYMOUS_AUTHENTICATION,null));
     }
 
     public UFServiceBuilder withUrl(String url) {
@@ -43,12 +44,12 @@ public class UFServiceBuilder {
     }
 
     public UFServiceBuilder withGatewayToken(String token) {
-        authentications.add(new Authentication(GATEWAY_TOKEN_AUTHENTICATION, token));
+        authentications.add(newInstance(GATEWAY_TOKEN_AUTHENTICATION, token));
         return this;
     }
 
     public UFServiceBuilder withTargetToken(String token) {
-        authentications.add(new Authentication(TARGET_TOKEN_AUTHENTICATION, token));
+        authentications.add(newInstance(TARGET_TOKEN_AUTHENTICATION, token));
         return this;
     }
 
