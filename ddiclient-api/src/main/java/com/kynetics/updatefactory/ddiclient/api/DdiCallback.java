@@ -20,12 +20,15 @@ import retrofit2.Response;
 
 import java.io.IOException;
 
+import static com.kynetics.updatefactory.ddiclient.api.api.DdiRestConstants.TARGET_TOKEN_HEADER_NAME;
+
 public abstract class DdiCallback<T> implements Callback<T> {
 
     @Override
     public void onResponse(Call<T> call, Response<T> response) {
         if(response.isSuccessful()){
             onSuccess(response.body());
+            _onTargetTokenReceived(response.headers().get(TARGET_TOKEN_HEADER_NAME));
         } else {
             final Gson gson = new Gson();
             try {
@@ -41,7 +44,18 @@ public abstract class DdiCallback<T> implements Callback<T> {
         }
     }
 
-    public abstract void onError(Error error);
-    public abstract void onSuccess(T response);
+    private void _onTargetTokenReceived(String value){
+        if(value == null || value.isEmpty()){
+            return;
+        }
+        onTargetTokenReceived(value);
+    }
+
+    protected void onTargetTokenReceived(String value){
+        System.out.println(String.format("Target token: %s", value));
+    }
+
+    protected abstract void onError(Error error);
+    protected abstract void onSuccess(T response);
 
 }

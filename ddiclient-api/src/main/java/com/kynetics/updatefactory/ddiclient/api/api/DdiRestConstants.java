@@ -55,7 +55,12 @@ public final class DdiRestConstants {
 
     public static final int DEFAULT_RESOURCE = -1;
 
+    public static final String TARGET_TOKEN_HEADER_NAME = "UF-target-token";
+
+    public static final String TARGET_TOKEN_REQUEST_HEADER_NAME = "Expect-UF-target-token";
+
+
     private DdiRestConstants() {
-        // constant class, private constructor.
+        throw new AssertionError();
     }
 }

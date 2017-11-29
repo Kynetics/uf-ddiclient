@@ -18,7 +18,11 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 
+import static com.kynetics.updatefactory.ddiclient.api.api.DdiRestConstants.CONFIG_DATA_ACTION;
+import static com.kynetics.updatefactory.ddiclient.api.api.DdiRestConstants.TARGET_TOKEN_HEADER_NAME;
+import static com.kynetics.updatefactory.ddiclient.api.api.DdiRestConstants.TARGET_TOKEN_REQUEST_HEADER_NAME;
 import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.AuthenticationType.ANONYMOUS_AUTHENTICATION;
+import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.AuthenticationType.TARGET_TOKEN_AUTHENTICATION;
 import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.newInstance;
 
 /**
@@ -38,11 +42,25 @@ public class UpdateFactoryAuthenticationRequestInterceptor implements Intercepto
 
         final Request.Builder builder = originalRequest.newBuilder();
 
+        final boolean isConfigDataRequest = originalRequest.url().toString().endsWith(CONFIG_DATA_ACTION);
+
         for(Authentication authentication:authentications){
             builder.addHeader(authentication.getHeader(), authentication.getHeaderValue());
         }
 
-        return chain.proceed(builder.build());
+        if(isConfigDataRequest){
+            builder.header(TARGET_TOKEN_REQUEST_HEADER_NAME, String.valueOf(true));
+        }
+
+        final Response response = chain.proceed(builder.build());
+
+        final String targetToken = response.header(TARGET_TOKEN_HEADER_NAME);
+
+        if (isConfigDataRequest && targetToken != null){
+            authentications.add(newInstance(TARGET_TOKEN_AUTHENTICATION, targetToken));
+        }
+
+        return response;
     }
 
 
