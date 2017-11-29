@@ -47,11 +47,17 @@ public class UFServiceBuilder {
     }
 
     public UFServiceBuilder withGatewayToken(String token) {
+        if(token == null || token.isEmpty()){
+            return this;
+        }
         authentications.add(newInstance(GATEWAY_TOKEN_AUTHENTICATION, token));
         return this;
     }
 
     public UFServiceBuilder withTargetToken(String token) {
+        if(token == null || token.isEmpty()){
+            return this;
+        }
         authentications.add(newInstance(TARGET_TOKEN_AUTHENTICATION, token));
         return this;
     }
