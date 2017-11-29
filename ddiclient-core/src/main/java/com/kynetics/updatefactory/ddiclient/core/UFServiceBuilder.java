@@ -11,6 +11,7 @@
 package com.kynetics.updatefactory.ddiclient.core;
 
 import com.kynetics.updatefactory.ddiclient.api.ClientBuilder;
+import com.kynetics.updatefactory.ddiclient.api.ServerType;
 import com.kynetics.updatefactory.ddiclient.api.security.Authentication;
 import com.kynetics.updatefactory.ddiclient.core.model.State;
 import okhttp3.OkHttpClient;
@@ -18,6 +19,7 @@ import okhttp3.OkHttpClient;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.kynetics.updatefactory.ddiclient.api.ServerType.HAWKBIT;
 import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.AuthenticationType.*;
 import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.newInstance;
 
@@ -32,6 +34,7 @@ public class UFServiceBuilder {
     private State initialState = new State.WaitingState(0, null);
     private long retryDelayOnCommunicationError = 30_000;
     private OkHttpClient.Builder okHttpClientBuilder;
+    private ServerType serverType = HAWKBIT;
     private List<Authentication> authentications = new ArrayList<>();
 
     UFServiceBuilder() {
@@ -83,6 +86,11 @@ public class UFServiceBuilder {
         return this;
     }
 
+    public UFServiceBuilder withServerType(ServerType serverType){
+       this.serverType = serverType;
+       return this;
+    }
+
     public UFService build() {
         validate(initialState, "initialState");
         validate(controllerId, "controllerId");
@@ -90,9 +98,11 @@ public class UFServiceBuilder {
         validate(tenant, "tenant");
         validate(targetData, "targetData");
         validate(retryDelayOnCommunicationError, "retryDelayOnCommunicationError");
+        validate(serverType, "serverType");
         final ClientBuilder clientBuilder = new ClientBuilder()
                 .withHttpBuilder(okHttpClientBuilder)
                 .withBaseUrl(url)
+                .withServerType(serverType)
                 .withAuthentications(authentications);
         return new UFService(clientBuilder.build(), tenant, controllerId, initialState, targetData, retryDelayOnCommunicationError);
     }

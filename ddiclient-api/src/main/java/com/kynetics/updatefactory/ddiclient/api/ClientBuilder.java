@@ -12,13 +12,14 @@ package com.kynetics.updatefactory.ddiclient.api;
 
 import com.kynetics.updatefactory.ddiclient.api.api.DdiRestApi;
 import com.kynetics.updatefactory.ddiclient.api.security.Authentication;
-import com.kynetics.updatefactory.ddiclient.api.security.AuthenticationRequestInterceptor;
+import com.kynetics.updatefactory.ddiclient.api.security.HawkbitAuthenticationRequestInterceptor;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 import java.util.List;
 
+import static com.kynetics.updatefactory.ddiclient.api.ServerType.HAWKBIT;
 import static retrofit2.Retrofit.Builder;
 
 /**
@@ -26,6 +27,7 @@ import static retrofit2.Retrofit.Builder;
  */
 public class ClientBuilder {
 
+    private ServerType serverType = HAWKBIT;
     private String baseUrl;
     private List<Authentication> authentications;
     private final Builder builder;
@@ -50,9 +52,13 @@ public class ClientBuilder {
         return this;
     }
 
+    public ClientBuilder withServerType(ServerType serverType) {
+        this.serverType = serverType;
+        return this;
+    }
+
     public DdiRestApi build(){
-        final Interceptor interceptor = new AuthenticationRequestInterceptor(authentications);
-        okHttpBuilder.interceptors().add(0, interceptor);
+        okHttpBuilder.interceptors().add(0, serverType.getAuthenticationRequestInterceptor(authentications));
         return builder
                 .baseUrl(baseUrl)
                 .addConverterFactory(GsonConverterFactory.create())

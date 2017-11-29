@@ -24,9 +24,9 @@ import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.n
 /**
  * @author Daniele Sergio
  */
-public class AuthenticationRequestInterceptor implements Interceptor {
+public class HawkbitAuthenticationRequestInterceptor implements Interceptor {
 
-    public AuthenticationRequestInterceptor(List<Authentication> authentications) {
+    public HawkbitAuthenticationRequestInterceptor(List<Authentication> authentications) {
         Objects.requireNonNull(authentications);
         authentications.remove(newInstance(ANONYMOUS_AUTHENTICATION,null));
         this.authentications = authentications;
