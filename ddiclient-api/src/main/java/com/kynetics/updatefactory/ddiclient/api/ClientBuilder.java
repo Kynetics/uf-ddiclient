@@ -13,13 +13,20 @@ package com.kynetics.updatefactory.ddiclient.api;
 import com.kynetics.updatefactory.ddiclient.api.api.DdiRestApi;
 import com.kynetics.updatefactory.ddiclient.api.security.Authentication;
 import com.kynetics.updatefactory.ddiclient.api.security.HawkbitAuthenticationRequestInterceptor;
-import okhttp3.Interceptor;
+import com.kynetics.updatefactory.ddiclient.api.security.UpdateFactoryAuthenticationRequestInterceptor;
+import com.kynetics.updatefactory.ddiclient.api.security.UpdateFactoryAuthenticationRequestInterceptor.OnTargetTokenFound;
 import okhttp3.OkHttpClient;
 import retrofit2.converter.gson.GsonConverterFactory;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static com.kynetics.updatefactory.ddiclient.api.ServerType.HAWKBIT;
+import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.AuthenticationType.GATEWAY_TOKEN_AUTHENTICATION;
+import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.AuthenticationType.TARGET_TOKEN_AUTHENTICATION;
+import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.newInstance;
 import static retrofit2.Retrofit.Builder;
 
 /**
@@ -29,9 +36,10 @@ public class ClientBuilder {
 
     private ServerType serverType = HAWKBIT;
     private String baseUrl;
-    private List<Authentication> authentications;
+    private Set<Authentication> authentications = new HashSet<>();
     private final Builder builder;
     private OkHttpClient.Builder okHttpBuilder;
+    private OnTargetTokenFound onTargetTokenFound;
 
     public ClientBuilder() {
         this.builder = new Builder();
@@ -39,11 +47,6 @@ public class ClientBuilder {
 
     public ClientBuilder withBaseUrl(String baseUrl) {
         this.baseUrl = baseUrl;
-        return this;
-    }
-
-    public ClientBuilder withAuthentications(List<Authentication> authentications) {
-        this.authentications = authentications;
         return this;
     }
 
@@ -57,8 +60,32 @@ public class ClientBuilder {
         return this;
     }
 
+    public ClientBuilder withOnTargetTokenFound(OnTargetTokenFound onTargetTokenFound) {
+        this.onTargetTokenFound = onTargetTokenFound;
+        return this;
+    }
+
+    public ClientBuilder withGatewayToken(String token) {
+        if(token == null || token.isEmpty()){
+            return this;
+        }
+        authentications.add(newInstance(GATEWAY_TOKEN_AUTHENTICATION, token));
+        return this;
+    }
+
+    public ClientBuilder withTargetToken(String token) {
+        if (token == null || token.isEmpty()) {
+            return this;
+        }
+        authentications.add(newInstance(TARGET_TOKEN_AUTHENTICATION, token));
+        return this;
+    }
+
     public DdiRestApi build(){
-        okHttpBuilder.interceptors().add(0, serverType.getAuthenticationRequestInterceptor(authentications));
+        okHttpBuilder.interceptors().add(0,serverType == HAWKBIT ?
+                new HawkbitAuthenticationRequestInterceptor(authentications) :
+                new UpdateFactoryAuthenticationRequestInterceptor(authentications, onTargetTokenFound));
+
         return builder
                 .baseUrl(baseUrl)
                 .addConverterFactory(GsonConverterFactory.create())

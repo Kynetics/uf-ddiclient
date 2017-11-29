@@ -17,11 +17,9 @@ import okhttp3.Response;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
-import static com.kynetics.updatefactory.ddiclient.api.api.DdiRestConstants.CONFIG_DATA_ACTION;
-import static com.kynetics.updatefactory.ddiclient.api.api.DdiRestConstants.TARGET_TOKEN_HEADER_NAME;
-import static com.kynetics.updatefactory.ddiclient.api.api.DdiRestConstants.TARGET_TOKEN_REQUEST_HEADER_NAME;
-import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.AuthenticationType.ANONYMOUS_AUTHENTICATION;
+import static com.kynetics.updatefactory.ddiclient.api.api.DdiRestConstants.*;
 import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.AuthenticationType.TARGET_TOKEN_AUTHENTICATION;
 import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.newInstance;
 
@@ -30,10 +28,14 @@ import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.n
  */
 public class UpdateFactoryAuthenticationRequestInterceptor implements Interceptor {
 
-    public UpdateFactoryAuthenticationRequestInterceptor(List<Authentication> authentications) {
+    public interface OnTargetTokenFound{
+        void onFound(String targetToken);
+    }
+
+    public UpdateFactoryAuthenticationRequestInterceptor(Set<Authentication> authentications, OnTargetTokenFound onTargetTokenFound) {
         Objects.requireNonNull(authentications);
-        authentications.remove(newInstance(ANONYMOUS_AUTHENTICATION,null));
         this.authentications = authentications;
+        this.onTargetTokenFound = onTargetTokenFound;
     }
 
     @Override
@@ -44,8 +46,13 @@ public class UpdateFactoryAuthenticationRequestInterceptor implements Intercepto
 
         final boolean isConfigDataRequest = originalRequest.url().toString().endsWith(CONFIG_DATA_ACTION);
 
+        Authentication targetTokenAuth = null;
+
         for(Authentication authentication:authentications){
             builder.addHeader(authentication.getHeader(), authentication.getHeaderValue());
+            if(authentication.getType() == TARGET_TOKEN_AUTHENTICATION){
+                targetTokenAuth = authentication;
+            }
         }
 
         if(isConfigDataRequest){
@@ -58,12 +65,14 @@ public class UpdateFactoryAuthenticationRequestInterceptor implements Intercepto
 
         if (isConfigDataRequest && targetToken != null){
             authentications.add(newInstance(TARGET_TOKEN_AUTHENTICATION, targetToken));
+            onTargetTokenFound.onFound(targetToken);
+            authentications.remove(targetTokenAuth);
         }
 
         return response;
     }
 
 
-
-    private final List<Authentication> authentications;
+    private final Set<Authentication> authentications;
+    private final OnTargetTokenFound onTargetTokenFound;
 }

@@ -21,17 +21,5 @@ import java.util.List;
  * @author Daniele Sergio
  */
 public enum ServerType {
-    UPDATE_FACTORY {
-        @Override
-        Interceptor getAuthenticationRequestInterceptor(List<Authentication> authentications) {
-            return new UpdateFactoryAuthenticationRequestInterceptor(authentications);
-        }
-    }, HAWKBIT {
-        @Override
-        Interceptor getAuthenticationRequestInterceptor(List<Authentication> authentications) {
-            return new HawkbitAuthenticationRequestInterceptor(authentications);
-        }
-    };
-
-    abstract Interceptor getAuthenticationRequestInterceptor(List<Authentication> authentications);
+    UPDATE_FACTORY, HAWKBIT;
 }

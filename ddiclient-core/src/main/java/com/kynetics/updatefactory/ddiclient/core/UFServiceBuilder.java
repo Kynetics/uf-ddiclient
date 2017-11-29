@@ -10,57 +10,22 @@
 
 package com.kynetics.updatefactory.ddiclient.core;
 
-import com.kynetics.updatefactory.ddiclient.api.ClientBuilder;
-import com.kynetics.updatefactory.ddiclient.api.ServerType;
-import com.kynetics.updatefactory.ddiclient.api.security.Authentication;
+import com.kynetics.updatefactory.ddiclient.api.api.DdiRestApi;
 import com.kynetics.updatefactory.ddiclient.core.model.State;
-import okhttp3.OkHttpClient;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static com.kynetics.updatefactory.ddiclient.api.ServerType.HAWKBIT;
-import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.AuthenticationType.*;
-import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.newInstance;
 
 /**
  * @author Daniele Sergio
  */
 public class UFServiceBuilder {
-    private String url;
     private String tenant;
     private String controllerId;
     private UFService.TargetData targetData;
     private State initialState = new State.WaitingState(0, null);
     private long retryDelayOnCommunicationError = 30_000;
-    private OkHttpClient.Builder okHttpClientBuilder;
-    private ServerType serverType = HAWKBIT;
-    private List<Authentication> authentications = new ArrayList<>();
+    private DdiRestApi client;
 
-    UFServiceBuilder() {
-        authentications.add(newInstance(ANONYMOUS_AUTHENTICATION,null));
-    }
+    UFServiceBuilder() { }
 
-    public UFServiceBuilder withUrl(String url) {
-        this.url = url;
-        return this;
-    }
-
-    public UFServiceBuilder withGatewayToken(String token) {
-        if(token == null || token.isEmpty()){
-            return this;
-        }
-        authentications.add(newInstance(GATEWAY_TOKEN_AUTHENTICATION, token));
-        return this;
-    }
-
-    public UFServiceBuilder withTargetToken(String token) {
-        if(token == null || token.isEmpty()){
-            return this;
-        }
-        authentications.add(newInstance(TARGET_TOKEN_AUTHENTICATION, token));
-        return this;
-    }
 
     public UFServiceBuilder withInitialState(State initialState) {
         this.initialState = initialState;
@@ -87,30 +52,24 @@ public class UFServiceBuilder {
         return this;
     }
 
-    public UFServiceBuilder withOkHttClientBuilder(OkHttpClient.Builder okHttpClientBuilder) {
-        this.okHttpClientBuilder = okHttpClientBuilder;
+    public UFServiceBuilder withClient(DdiRestApi ddiRestApi){
+        this.client = ddiRestApi;
         return this;
-    }
-
-    public UFServiceBuilder withServerType(ServerType serverType){
-       this.serverType = serverType;
-       return this;
     }
 
     public UFService build() {
         validate(initialState, "initialState");
         validate(controllerId, "controllerId");
-        validate(okHttpClientBuilder, "okHttpClientBuilder");
         validate(tenant, "tenant");
         validate(targetData, "targetData");
         validate(retryDelayOnCommunicationError, "retryDelayOnCommunicationError");
-        validate(serverType, "serverType");
-        final ClientBuilder clientBuilder = new ClientBuilder()
-                .withHttpBuilder(okHttpClientBuilder)
-                .withBaseUrl(url)
-                .withServerType(serverType)
-                .withAuthentications(authentications);
-        return new UFService(clientBuilder.build(), tenant, controllerId, initialState, targetData, retryDelayOnCommunicationError);
+        validate(client, "client");
+        return new UFService(client,
+                tenant,
+                controllerId,
+                initialState,
+                targetData,
+                retryDelayOnCommunicationError);
     }
 
     private static void validate(String item, String itemName) {

@@ -15,8 +15,10 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.AuthenticationType.ANONYMOUS_AUTHENTICATION;
 import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.newInstance;
@@ -26,10 +28,9 @@ import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.n
  */
 public class HawkbitAuthenticationRequestInterceptor implements Interceptor {
 
-    public HawkbitAuthenticationRequestInterceptor(List<Authentication> authentications) {
+    public HawkbitAuthenticationRequestInterceptor(Set<Authentication> authentications) {
         Objects.requireNonNull(authentications);
-        authentications.remove(newInstance(ANONYMOUS_AUTHENTICATION,null));
-        this.authentications = authentications;
+        this.authentications = new ArrayList<>(authentications);
     }
 
     @Override
