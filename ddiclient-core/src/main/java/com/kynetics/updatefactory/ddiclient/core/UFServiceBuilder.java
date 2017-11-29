@@ -13,6 +13,9 @@ package com.kynetics.updatefactory.ddiclient.core;
 import com.kynetics.updatefactory.ddiclient.api.api.DdiRestApi;
 import com.kynetics.updatefactory.ddiclient.core.model.State;
 
+import static com.kynetics.updatefactory.ddiclient.api.validation.Assert.NotEmpty;
+import static com.kynetics.updatefactory.ddiclient.api.validation.Assert.NotNull;
+
 /**
  * @author Daniele Sergio
  */
@@ -58,29 +61,17 @@ public class UFServiceBuilder {
     }
 
     public UFService build() {
-        validate(initialState, "initialState");
-        validate(controllerId, "controllerId");
-        validate(tenant, "tenant");
-        validate(targetData, "targetData");
-        validate(retryDelayOnCommunicationError, "retryDelayOnCommunicationError");
-        validate(client, "client");
+        NotNull(initialState, "initialState");
+        NotEmpty(controllerId, "controllerId");
+        NotEmpty(tenant, "tenant");
+        NotNull(targetData, "targetData");
+        NotNull(retryDelayOnCommunicationError, "retryDelayOnCommunicationError");
+        NotNull(client, "client");
         return new UFService(client,
                 tenant,
                 controllerId,
                 initialState,
                 targetData,
                 retryDelayOnCommunicationError);
-    }
-
-    private static void validate(String item, String itemName) {
-        if (item == null || item.isEmpty()) {
-            throw new IllegalStateException(String.format("%s could not be null or empty", itemName));
-        }
-    }
-
-    private static void validate(Object item, String itemName) {
-        if (item == null) {
-            throw new IllegalStateException(String.format("%s could not be null", itemName));
-        }
     }
 }
