@@ -35,6 +35,10 @@ public class HawkbitAuthenticationRequestInterceptor implements Interceptor {
 
     @Override
     public Response intercept(Chain chain) throws IOException {
+        if(authentications.size() == 0){
+            return chain.proceed(chain.request());
+        }
+
         final Request originalRequest = chain.request();
 
         final Request.Builder builder = originalRequest.newBuilder();
