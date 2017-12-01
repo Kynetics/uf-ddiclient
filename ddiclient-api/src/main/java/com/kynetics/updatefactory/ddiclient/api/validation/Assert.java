@@ -10,6 +10,9 @@
 
 package com.kynetics.updatefactory.ddiclient.api.validation;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+
 /**
  * @author Daniele Sergio
  */
@@ -27,6 +30,14 @@ public class Assert {
     public static void NotNull(Object item, String itemName) {
         if (item == null) {
             throw new IllegalStateException(String.format("%s could not be null", itemName));
+        }
+    }
+
+    public static void ValidateUrl(String url, String itemName){
+        try{
+            new URL(url);
+        } catch (MalformedURLException e){
+            throw new IllegalStateException(String.format("%s is a malformed url", itemName));
         }
     }
 }

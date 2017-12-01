@@ -29,6 +29,7 @@ import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.A
 import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.newInstance;
 import static com.kynetics.updatefactory.ddiclient.api.validation.Assert.NotEmpty;
 import static com.kynetics.updatefactory.ddiclient.api.validation.Assert.NotNull;
+import static com.kynetics.updatefactory.ddiclient.api.validation.Assert.ValidateUrl;
 import static retrofit2.Retrofit.Builder;
 
 /**
@@ -84,7 +85,7 @@ public class ClientBuilder {
     }
 
     public DdiRestApi build(){
-        NotEmpty(baseUrl, "baseUrl");
+        ValidateUrl(baseUrl, "baseUrl");
         NotNull(okHttpBuilder, "okHttpBuilder");
         NotNull(serverType, "serverType");
         okHttpBuilder.interceptors().add(0,serverType == HAWKBIT ?
