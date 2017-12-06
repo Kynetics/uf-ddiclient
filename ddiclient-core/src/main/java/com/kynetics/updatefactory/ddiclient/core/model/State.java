@@ -175,7 +175,7 @@ public abstract class State implements Serializable{
                     final State state = noFile ?
                             new UpdateEndedState(getActionId(), true, new String[]{"Update doesn't have file"}) :
                             new UpdateDownloadState(getActionId(), isForced, fileInfoList, 0);
-                    return  isForced ? state : new AuthorizationWaitingState(state) ;
+                    return  isForced || noFile ? state : new AuthorizationWaitingState(state) ;
 
                 default:
                     return super.onEvent(event);
