@@ -35,7 +35,6 @@ public class Assert {
     }
 
     public static void ValidateUrl(String url, String itemName){
-        System.out.println("validateURL");
         try{
             final URL test = new URL(url);
             test.toURI();
