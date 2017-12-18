@@ -74,6 +74,7 @@ public interface DdiRestApi {
      * @param fileName
      *            of the related local artifact
      */
+    @Streaming
     @GET(DdiRestConstants.BASE_V1_REQUEST_MAPPING + "/{controllerId}/softwaremodules/{softwareModuleId}/artifacts/{fileName}")
     Call<ResponseBody> downloadArtifact(@Path("tenant") final String tenant,
                                         @Path("controllerId") final String controllerId,
