@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Executors;
 
 import static com.kynetics.updatefactory.ddiclient.api.ServerType.HAWKBIT;
 import static com.kynetics.updatefactory.ddiclient.api.security.Authentication.AuthenticationType.GATEWAY_TOKEN_AUTHENTICATION;
@@ -95,6 +96,7 @@ public class ClientBuilder {
         return builder
                 .baseUrl(baseUrl)
                 .addConverterFactory(GsonConverterFactory.create())
+                .callbackExecutor(Executors.newSingleThreadExecutor())
                 .client(okHttpBuilder.build())
                 .build()
                 .create(DdiRestApi.class);
