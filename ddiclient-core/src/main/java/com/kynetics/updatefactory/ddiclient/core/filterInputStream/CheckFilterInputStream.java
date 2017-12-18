@@ -144,18 +144,19 @@ public class CheckFilterInputStream extends FilterInputStream {
         String sha1 = null;
         if(md5Digest != null){
 //            md5  = DatatypeConverter.printHexBinary(md5Digest.getMessageDigest().digest());
-            md5  = toHex(md5Digest.getMessageDigest().digest());
+            md5  = toHex(md5Digest.getMessageDigest().digest(), false);
         }
 
         if(sha1Digest != null){
 //            sha1  = DatatypeConverter.printHexBinary(sha1Digest.getMessageDigest().digest());
-            sha1  = toHex(sha1Digest.getMessageDigest().digest());
+            sha1  = toHex(sha1Digest.getMessageDigest().digest(), true);
         }
         return new Hash(md5, sha1);
     }
 
-    private String toHex(byte[] arg) {
-        return String.format("%x", new BigInteger(1, arg));
+    private String toHex(byte[] arg, boolean isSha1) {
+        final String template = isSha1 ? "%040X" : "%X";
+        return String.format(template, new BigInteger(1, arg));
     }
 
     private boolean check(String correctValue, String valueToCheck){
