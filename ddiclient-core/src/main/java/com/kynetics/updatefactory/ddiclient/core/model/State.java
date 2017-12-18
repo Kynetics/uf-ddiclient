@@ -46,16 +46,20 @@ public abstract class State implements Serializable{
         switch (event.getEventName()){
             case ERROR:
                 Event.ErrorEvent errorEvent = (Event.ErrorEvent) event;
-                return errorEvent.getCode() == 404 && errorEvent.getDetails()[0] != null &&
-                        errorEvent.getDetails()[0].equals("hawkbit.server.error.repo.entitiyNotFound") ?
-                        new WaitingState(0,null) :
-                        new CommunicationErrorState(this,errorEvent.getCode(),errorEvent.getDetails());
+                return getStateOnError(errorEvent, this);
             case FAILURE:
                 Event.FailureEvent failureEvent = (Event.FailureEvent) event;
                 return new CommunicationFailureState(this,failureEvent.getThrowable());
             default:
                 throw new IllegalStateException(String.format("Event %s not handler in %s state", event.getEventName(), stateName));
         }
+    }
+
+    private static State getStateOnError(Event.ErrorEvent errorEvent, State state) {
+        return errorEvent.getCode() == 404 && errorEvent.getDetails()[0] != null &&
+                errorEvent.getDetails()[0].equals("hawkbit.server.error.repo.entitiyNotFound") ?
+                new WaitingState(0,null) :
+                new CommunicationErrorState(state,errorEvent.getCode(),errorEvent.getDetails());
     }
 
 
@@ -468,10 +472,11 @@ public abstract class State implements Serializable{
         public State onEvent(Event event) {
             switch (event.getEventName()){
                 case FAILURE:
-                    return this;
+                    Event.FailureEvent failureEvent = (Event.FailureEvent) event;
+                    return new CommunicationFailureState(getState(), failureEvent.getThrowable());
                 case ERROR:
-                    Event.ErrorEvent errorEvent = (Event.ErrorEvent) event;
-                    return new CommunicationErrorState(getState(), errorEvent.getCode(),errorEvent.getDetails());
+                    final Event.ErrorEvent errorEvent = (Event.ErrorEvent)event;
+                    return getStateOnError(errorEvent, getState());
                 default:
                     return getState().onEvent(event);
             }
@@ -501,10 +506,11 @@ public abstract class State implements Serializable{
         public State onEvent(Event event) {
             switch (event.getEventName()){
                 case ERROR:
-                    return this;
+                    final Event.ErrorEvent errorEvent = (Event.ErrorEvent)event;
+                    return getStateOnError(errorEvent, getState());
                 case FAILURE:
-                    Event.FailureEvent errorEvent = (Event.FailureEvent) event;
-                    return new CommunicationFailureState(getState(), errorEvent.getThrowable());
+                    Event.FailureEvent failureEvent = (Event.FailureEvent) event;
+                    return new CommunicationFailureState(getState(), failureEvent.getThrowable());
                 default:
                     return getState().onEvent(event);
             }
