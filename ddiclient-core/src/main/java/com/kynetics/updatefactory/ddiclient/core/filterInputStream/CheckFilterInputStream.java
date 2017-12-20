@@ -155,7 +155,7 @@ public class CheckFilterInputStream extends FilterInputStream {
     }
 
     private String toHex(byte[] arg, boolean isSha1) {
-        final String template = isSha1 ? "%040X" : "%X";
+        final String template = isSha1 ? "%040X" : "%032X";
         return String.format(template, new BigInteger(1, arg));
     }
 
