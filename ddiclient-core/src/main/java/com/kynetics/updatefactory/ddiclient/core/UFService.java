@@ -94,7 +94,18 @@ public class  UFService {
             stop();
         }
         timer = new Timer();
-        handlerState(currentObservableState.get());
+        final State state = currentObservableState.get();
+        handlerState(state);
+        if(state.getStateName() != State.StateName.WAITING) {
+            return;
+        }
+
+        final State.WaitingState waitingState = (State.WaitingState) state;
+
+        if(waitingState.innerStateIsCommunicationState()){
+            restartSuspendState();
+        }
+
     }
 
     public void stop(){
@@ -174,7 +185,9 @@ public class  UFService {
         switch (currentState.getStateName()){
             case WAITING:
                 final Call controllerBaseCall =  client.getControllerBase(tenant, controllerId);
-                execute(controllerBaseCall, new PollingCallback(), forceDelay > 0 ? forceDelay : ((State.WaitingState)currentState).getSleepTime());
+                final State.WaitingState waitingState = ((State.WaitingState)currentState);
+                forceDelay = waitingState.innerStateIsCommunicationState() ? LAST_SLEEP_TIME_FOUND : forceDelay;
+                execute(controllerBaseCall, new PollingCallback(), forceDelay > 0 ? forceDelay : waitingState.getSleepTime());
                 break;
             case CONFIG_DATA:
                 final Call call = getConfigDataCall();
@@ -389,9 +402,22 @@ public class  UFService {
         }
     }
 
+    // TODO: 12/20/17 moved in to PollingCallback
+    public static long LAST_SLEEP_TIME_FOUND = 30_000;
+
     private class PollingCallback extends DefaultDdiCallback<DdiControllerBase>{
+
         @Override
         public void onSuccess(DdiControllerBase response) {
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("hh:mm:ss");
+            try {
+                simpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+                Date date = simpleDateFormat.parse(response.getConfig().getPolling().getSleep());
+                LAST_SLEEP_TIME_FOUND = date.getTime();
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+
             final LinkEntry configDataLink = response.getLink("configData");
             if(configDataLink!=null){
                 onEvent(new Event.UpdateConfigRequestEvent());
@@ -411,16 +437,8 @@ public class  UFService {
                 return;
             }
 
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("hh:mm:ss");
-            long sleepTime = 30_000;
-            try {
-                simpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-                Date date = simpleDateFormat.parse(response.getConfig().getPolling().getSleep());
-                sleepTime = date.getTime();
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
-            onEvent(new Event.SleepEvent(sleepTime));
+
+            onEvent(new Event.SleepEvent(LAST_SLEEP_TIME_FOUND));
         }
     }
 

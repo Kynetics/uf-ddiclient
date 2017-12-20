@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.kynetics.updatefactory.ddiclient.api.model.response.DdiDeployment.HandlingType.FORCED;
+import static com.kynetics.updatefactory.ddiclient.core.model.State.AbstractCommunicationState.MAX_ATTEMPTS;
 import static com.kynetics.updatefactory.ddiclient.core.model.State.StateName.*;
 
 /**
@@ -46,7 +47,7 @@ public abstract class State implements Serializable{
         switch (event.getEventName()){
             case ERROR:
                 Event.ErrorEvent errorEvent = (Event.ErrorEvent) event;
-                return getStateOnError(errorEvent, this);
+                return getStateOnError(errorEvent, this, MAX_ATTEMPTS);
             case FAILURE:
                 Event.FailureEvent failureEvent = (Event.FailureEvent) event;
                 return new CommunicationFailureState(this,failureEvent.getThrowable());
@@ -55,20 +56,20 @@ public abstract class State implements Serializable{
         }
     }
 
-    private static State getStateOnError(Event.ErrorEvent errorEvent, State state) {
+    private static State getStateOnError(Event.ErrorEvent errorEvent, State state, int retry) {
         return errorEvent.getCode() == 404 && errorEvent.getDetails()[0] != null &&
                 errorEvent.getDetails()[0].equals("hawkbit.server.error.repo.entitiyNotFound") ?
                 new WaitingState(0,null) :
-                new CommunicationErrorState(state,errorEvent.getCode(),errorEvent.getDetails());
+                new CommunicationErrorState(state,errorEvent.getCode(), retry, errorEvent.getDetails());
     }
 
 
     public static class WaitingState extends AbstractStateWithInnerState{
-        private static final long serialVersionUID = 7341623772039583604L;
+        private static final long serialVersionUID = -8905024383731749954L;
 
         private final long sleepTime;
 
-        public WaitingState(long sleepTime, StateWithAction suspendState){
+        public WaitingState(long sleepTime, State suspendState){
             super(WAITING, suspendState);
             this.sleepTime = sleepTime;
         }
@@ -85,22 +86,38 @@ public abstract class State implements Serializable{
                     return new ConfigDataState();
                 case UPDATE_FOUND:
                     final Event.UpdateFoundEvent updateFoundEvent = (Event.UpdateFoundEvent) event;
-                    return hasInnerState() && updateFoundEvent.getActionId().equals(getState().getActionId()) ?
+                    return hasInnerState() && updateFoundEvent.getActionId().equals(getInnerStateActionId()) ?
                             this :
                             new UpdateInitialization(((Event.UpdateFoundEvent)event).getActionId());
                 case CANCEL:
                     return new CancellationCheckState(this, ((Event.CancelEvent) event).getActionId());
                 case RESUME:
-                    return new AuthorizationWaitingState(getState());
+                    return innerStateIsCommunicationState() ?
+                            getMostInnerState() :
+                            new AuthorizationWaitingState(getState());
                 default:
                     return super.onEvent(event);
             }
 
         }
 
-        @Override
-        public StateWithAction getState(){
-            return (StateWithAction) super.getState();
+        public boolean innerStateIsCommunicationState(){
+            if(!hasInnerState()){
+                return false;
+            }
+            final StateName innerStateName = getState().getStateName();
+            return innerStateName == COMMUNICATION_ERROR || innerStateName == COMMUNICATION_FAILURE;
+        }
+
+        private State getMostInnerState(){
+            return innerStateIsCommunicationState() ? ((AbstractCommunicationState)getState()).getState() : getState();
+        }
+
+        private Long getInnerStateActionId(){
+            final State state = getMostInnerState();
+            return  state instanceof StateWithAction ?
+                    ((StateWithAction)state).getActionId() :
+                    null;
         }
     }
 
@@ -187,7 +204,7 @@ public abstract class State implements Serializable{
         }
     }
 
-    public static class AbstractStateWithFile extends AbstractUpdateState{
+    public abstract static class AbstractStateWithFile extends AbstractUpdateState{
 
         private static final long serialVersionUID = -6785284114160973170L;
 
@@ -453,45 +470,73 @@ public abstract class State implements Serializable{
 
     }
 
-    public static class CommunicationFailureState extends AbstractStateWithInnerState {
+    public static abstract class AbstractCommunicationState extends AbstractStateWithInnerState{
 
-        private static final long serialVersionUID = -3579197187124314852L;
+        static final int MAX_ATTEMPTS = 5;
 
-        private final Throwable throwable;
+        private static final long serialVersionUID = -2987878585212623357L;
 
-        public CommunicationFailureState(State state, Throwable throwable) {
-            super(COMMUNICATION_FAILURE, state);
-            this.throwable = throwable;
-        }
+        private final int attemptsRemaining;
 
-        public Throwable getThrowable() {
-            return throwable;
+        public AbstractCommunicationState(StateName stateName, State state, int attemptsRemaining) {
+            super(stateName, state);
+            if(state != null && state.getStateName().equals(UPDATE_DOWNLOAD)){
+                this.attemptsRemaining = attemptsRemaining;
+            } else {
+                this.attemptsRemaining = MAX_ATTEMPTS;
+            }
         }
 
         @Override
         public State onEvent(Event event) {
             switch (event.getEventName()){
-                case FAILURE:
-                    Event.FailureEvent failureEvent = (Event.FailureEvent) event;
-                    return new CommunicationFailureState(getState(), failureEvent.getThrowable());
                 case ERROR:
                     final Event.ErrorEvent errorEvent = (Event.ErrorEvent)event;
-                    return getStateOnError(errorEvent, getState());
+                    return attemptsRemaining == 0 ? new WaitingState(0, this) : getStateOnError(errorEvent, getState(), attemptsRemaining -1);
+                case FAILURE:
+                    Event.FailureEvent failureEvent = (Event.FailureEvent) event;
+                    return attemptsRemaining == 0 ? new WaitingState(0, this) : new CommunicationFailureState(getState(), attemptsRemaining -1, failureEvent.getThrowable() );
                 default:
                     return getState().onEvent(event);
             }
         }
     }
 
-    public static class CommunicationErrorState extends AbstractStateWithInnerState {
-        private static final long serialVersionUID = -6247174701252582069L;
+    public static class CommunicationFailureState extends AbstractCommunicationState {
+
+        private static final long serialVersionUID = -2674723538926673012L;
+
+        private final Throwable throwable;
+
+        public CommunicationFailureState( State state, int retry, Throwable throwable) {
+            super(COMMUNICATION_FAILURE, state, retry);
+            this.throwable = throwable;
+        }
+
+        public CommunicationFailureState(State state, Throwable throwable) {
+            this(state, MAX_ATTEMPTS, throwable);
+        }
+
+        public Throwable getThrowable() {
+            return throwable;
+        }
+
+    }
+
+    public static class CommunicationErrorState extends AbstractCommunicationState {
+        private static final long serialVersionUID = 3416210232557335517L;
 
         private final int code;
         private final String[] details;
-        public CommunicationErrorState(State state, int code, String[] details) {
-            super(COMMUNICATION_ERROR, state);
+
+        public CommunicationErrorState(State state, int retry, int code, String[] details) {
+            super(COMMUNICATION_ERROR, state, retry);
             this.code = code;
             this.details = details;
+        }
+
+        public CommunicationErrorState(State state, int code, String[] details) {
+            this(state, MAX_ATTEMPTS, code, details);
         }
 
         public long getCode() {
@@ -500,20 +545,6 @@ public abstract class State implements Serializable{
 
         public String[] getDetails() {
             return details.clone();
-        }
-
-        @Override
-        public State onEvent(Event event) {
-            switch (event.getEventName()){
-                case ERROR:
-                    final Event.ErrorEvent errorEvent = (Event.ErrorEvent)event;
-                    return getStateOnError(errorEvent, getState());
-                case FAILURE:
-                    Event.FailureEvent failureEvent = (Event.FailureEvent) event;
-                    return new CommunicationFailureState(getState(), failureEvent.getThrowable());
-                default:
-                    return getState().onEvent(event);
-            }
         }
     }
 
