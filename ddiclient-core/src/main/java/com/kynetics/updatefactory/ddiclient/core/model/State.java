@@ -60,7 +60,7 @@ public abstract class State implements Serializable{
         return errorEvent.getCode() == 404 && errorEvent.getDetails()[0] != null &&
                 errorEvent.getDetails()[0].equals("hawkbit.server.error.repo.entitiyNotFound") ?
                 new WaitingState(0,null) :
-                new CommunicationErrorState(state,errorEvent.getCode(), retry, errorEvent.getDetails());
+                new CommunicationErrorState(state,retry, errorEvent.getCode(), errorEvent.getDetails());
     }
 
 

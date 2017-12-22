@@ -1,4 +1,4 @@
-# UF-DDICLIET #
+# UF-DDICLIENT #
 
 UF-DDICLIENT is a java library that help the creation of a client to [UpdateFactory](https://www.kynetics.com/iot-platform-update-factory) or [Hawkbit](https://eclipse.org/hawkbit/) servers.
 
