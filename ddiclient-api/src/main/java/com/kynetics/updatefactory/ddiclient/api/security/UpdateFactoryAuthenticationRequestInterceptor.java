@@ -1,5 +1,5 @@
 /*
- * Copyright © 2017 Kynetics LLC
+ * Copyright © 2017-2018 Kynetics LLC
  *
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
