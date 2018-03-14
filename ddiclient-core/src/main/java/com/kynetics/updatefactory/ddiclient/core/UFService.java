@@ -13,9 +13,7 @@ package com.kynetics.updatefactory.ddiclient.core;
 import com.google.gson.Gson;
 import com.kynetics.updatefactory.ddiclient.core.filterInputStream.CheckFilterInputStream;
 import com.kynetics.updatefactory.ddiclient.core.formatter.CurrentTimeFormatter;
-import com.kynetics.updatefactory.ddiclient.core.model.Event;
-import com.kynetics.updatefactory.ddiclient.core.model.FileInfo;
-import com.kynetics.updatefactory.ddiclient.core.model.State;
+import com.kynetics.updatefactory.ddiclient.core.model.*;
 import com.kynetics.updatefactory.ddiclient.api.DdiCallback;
 import com.kynetics.updatefactory.ddiclient.api.api.DdiRestApi;
 import com.kynetics.updatefactory.ddiclient.api.api.DdiRestConstants;
@@ -27,6 +25,8 @@ import com.kynetics.updatefactory.ddiclient.api.model.response.DdiControllerBase
 import com.kynetics.updatefactory.ddiclient.api.model.response.DdiDeploymentBase;
 import com.kynetics.updatefactory.ddiclient.api.model.response.Error;
 import com.kynetics.updatefactory.ddiclient.api.model.response.ResourceSupport.LinkEntry;
+import com.kynetics.updatefactory.ddiclient.core.model.event.*;
+import com.kynetics.updatefactory.ddiclient.core.model.state.*;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -48,25 +48,25 @@ public class  UFService {
     }
 
     public static class SharedEvent {
-        private final Event event;
-        private final State newState;
-        private final State oldState;
+        private final AbstractEvent event;
+        private final AbstractState newState;
+        private final AbstractState oldState;
 
-        public SharedEvent(Event event, State newState, State oldState) {
+        public SharedEvent(AbstractEvent event, AbstractState newState, AbstractState oldState) {
             this.event = event;
             this.newState = newState;
             this.oldState = oldState;
         }
 
-        public Event getEvent() {
+        public AbstractEvent getEvent() {
             return event;
         }
 
-        public State getNewState() {
+        public AbstractState getNewState() {
             return newState;
         }
 
-        public State getOldState() {
+        public AbstractState getOldState() {
             return oldState;
         }
     }
@@ -78,7 +78,7 @@ public class  UFService {
     UFService(DdiRestApi client,
               String tenant,
               String controllerId,
-              State initialState,
+              AbstractState initialState,
               TargetData targetData,
               long retryDelayOnCommunicationError){
         currentObservableState = new ObservableState(initialState);
@@ -94,13 +94,13 @@ public class  UFService {
             stop();
         }
         timer = new Timer();
-        final State state = currentObservableState.get();
+        final AbstractState state = currentObservableState.get();
         handlerState(state);
-        if(state.getStateName() != State.StateName.WAITING) {
+        if(state.getStateName() != AbstractState.StateName.WAITING) {
             return;
         }
 
-        final State.WaitingState waitingState = (State.WaitingState) state;
+        final WaitingState waitingState = (WaitingState) state;
 
         if(waitingState.innerStateIsCommunicationState()){
             restartSuspendState();
@@ -129,10 +129,10 @@ public class  UFService {
 
     public void setUpdateSucceffullyUpdate(boolean success){
         checkServiceRunning();
-        if(!currentObservableState.get().getStateName().equals(State.StateName.UPDATE_STARTED)){
+        if(!currentObservableState.get().getStateName().equals(AbstractState.StateName.UPDATE_STARTED)){
             throw new IllegalStateException("current state must be UPDATE_STARTED to call this method");
         }
-        onEvent(success ? new Event.SuccessEvent() : new Event.UpdateErrorEvent(new String[]{"update error"}));
+        onEvent(success ? new SuccessEvent() : new UpdateErrorEvent(new String[]{"update error"}));
     }
 
     private void checkServiceRunning(){
@@ -143,21 +143,21 @@ public class  UFService {
 
     public void setAuthorized(boolean isAuthorized){
         checkServiceRunning();
-        if(!currentObservableState.get().getStateName().equals(State.StateName.AUTHORIZATION_WAITING)){
+        if(!currentObservableState.get().getStateName().equals(AbstractState.StateName.AUTHORIZATION_WAITING)){
             throw new IllegalStateException("current state must be UPDATE_STARTED to call this method");
         }
-        onEvent(isAuthorized ? new Event.AuthorizationGrantedEvent() : new Event.AuthorizationDeniedEvent());
+        onEvent(isAuthorized ? new AuthorizationGrantedEvent() : new AuthorizationDeniedEvent());
     }
 
     public void restartSuspendState(){
         checkServiceRunning();
-        if(!currentObservableState.get().getStateName().equals(State.StateName.WAITING)){
+        if(!currentObservableState.get().getStateName().equals(AbstractState.StateName.WAITING)){
             throw new IllegalStateException("current state must be WAITING to call this method");
         }
         timer.cancel();
         timer.purge();
         timer = new Timer();
-        onEvent(new Event.ResumeEvent());
+        onEvent(new ResumeEvent());
     }
 
     private void execute(Call call, Callback callback, long delay){
@@ -176,16 +176,16 @@ public class  UFService {
         execute(call,callback,0);
     }
 
-    private void onEvent(Event event){
-        final State currentState = currentObservableState.onEvent(event).get();
+    private void onEvent(AbstractEvent event){
+        final AbstractState currentState = currentObservableState.onEvent(event).get();
         handlerState(currentState);
     }
 
-    private void handlerState(State currentState, long forceDelay){
+    private void handlerState(AbstractState currentState, long forceDelay){
         switch (currentState.getStateName()){
             case WAITING:
                 final Call controllerBaseCall =  client.getControllerBase(tenant, controllerId);
-                final State.WaitingState waitingState = ((State.WaitingState)currentState);
+                final WaitingState waitingState = ((WaitingState)currentState);
                 forceDelay = waitingState.innerStateIsCommunicationState() ? LAST_SLEEP_TIME_FOUND : forceDelay;
                 execute(controllerBaseCall, new PollingCallback(), forceDelay > 0 ? forceDelay : waitingState.getSleepTime());
                 break;
@@ -194,7 +194,7 @@ public class  UFService {
                 execute(call, new DefaultDdiCallback(), forceDelay);
                 break;
             case UPDATE_INITIALIZATION:
-                final State.UpdateInitialization updateInitializationState = (State.UpdateInitialization) currentState;
+                final UpdateInitialization updateInitializationState = (UpdateInitialization) currentState;
                 final Call baseDeploymentAction = client.getControllerBasedeploymentAction(
                         tenant,
                         controllerId,
@@ -209,7 +209,7 @@ public class  UFService {
                 execute(baseDeploymentAction, new ControllerBaseDeploymentAction(), forceDelay);
                 break;
             case UPDATE_DOWNLOAD:
-                final State.UpdateDownloadState updateDownloadState = (State.UpdateDownloadState) currentState;
+                final UpdateDownloadState updateDownloadState = (UpdateDownloadState) currentState;
                 final Call downloadArtifactCall = client.downloadArtifact(
                         tenant,
                         controllerId,
@@ -222,12 +222,12 @@ public class  UFService {
                 execute(checkCancellation,new CheckCancellationCallback(), forceDelay);
                 break;
             case CANCELLATION_CHECK:
-                final State.CancellationCheckState cancellationCheckState = (State.CancellationCheckState)currentState;
+                final CancellationCheckState cancellationCheckState = (CancellationCheckState)currentState;
                 final Call controllerCancelAction = client.getControllerCancelAction(tenant,controllerId,cancellationCheckState.getActionId());
                 execute(controllerCancelAction, new CancelCallback(), forceDelay);
                 break;
             case CANCELLATION:
-                final State.CancellationState cancellationState = (State.CancellationState)currentState;
+                final CancellationState cancellationState = (CancellationState)currentState;
                 DdiActionFeedback actionFeedback = new FeedbackBuilder(cancellationState.getActionId(),CLOSED, SUCESS).build();
                 final Call postCancelActionFeedback = client.postCancelActionFeedback(actionFeedback, tenant,controllerId,cancellationState.getActionId());
                 execute(postCancelActionFeedback, new DefaultDdiCallback(), forceDelay);
@@ -236,7 +236,7 @@ public class  UFService {
             case AUTHORIZATION_WAITING:
                 break;
             case UPDATE_ENDED:
-                final State.UpdateEndedState updateEndedState = (State.UpdateEndedState)currentState;
+                final UpdateEndedState updateEndedState = (UpdateEndedState)currentState;
 
                 if(updateEndedState.isSuccessfullyUpdate()){
                     getConfigDataCall().enqueue(new LogCallBack());
@@ -256,7 +256,7 @@ public class  UFService {
                 execute(lastFeedbackCall,new DefaultDdiCallback(), forceDelay);
                 break;
             case SERVER_FILE_CORRUPTED:
-                final State.ServerFileCorruptedState serverFileCorruptedState = (State.ServerFileCorruptedState)currentState;
+                final ServerFileCorruptedState serverFileCorruptedState = (ServerFileCorruptedState)currentState;
 
                 final DdiActionFeedback serverErrorFeedback = new FeedbackBuilder(serverFileCorruptedState.getActionId(),CLOSED,
                         FAILURE)
@@ -274,7 +274,7 @@ public class  UFService {
                 break;
             case COMMUNICATION_ERROR:
             case COMMUNICATION_FAILURE:
-                handlerState(((State.AbstractStateWithInnerState)currentState).getState(), retryDelayOnCommunicationError);
+                handlerState(((AbstractStateWithInnerState)currentState).getState(), retryDelayOnCommunicationError);
                 break;
         }
         currentObservableState.notifyEvent();
@@ -295,7 +295,7 @@ public class  UFService {
         return client.putConfigData(configData,tenant, controllerId);
     }
 
-    private void handlerState(State currentState) {
+    private void handlerState(AbstractState currentState) {
         handlerState(currentState,0);
     }
 
@@ -350,16 +350,16 @@ public class  UFService {
 
     private class ObservableState extends Observable{
 
-        public ObservableState(State state) {
+        public ObservableState(AbstractState state) {
             this.state = state;
         }
 
-        private State state;
+        private AbstractState state;
 
         private SharedEvent eventToNotify;
 
-        private ObservableState onEvent(Event event){
-            final State oldState = state;
+        private ObservableState onEvent(AbstractEvent event){
+            final AbstractState oldState = state;
             state = state.onEvent(event);
             setChanged();
             eventToNotify = new SharedEvent(event, state, oldState);
@@ -374,10 +374,10 @@ public class  UFService {
             notifyObservers(eventToNotify);
         }
 
-        private State get(){return state;}
+        private AbstractState get(){return state;}
 
         private void resetState(){
-            state = new State.WaitingState(0, null);
+            state = new WaitingState(0, null);
         }
 
     }
@@ -386,19 +386,19 @@ public class  UFService {
         @Override
         public void onError(Error error) {
             super.onError(error);
-            onEvent(new Event.ErrorEvent(new String[]{error.getErrorCode(), error.getMessage()},error.getCode()));
+            onEvent(new ErrorEvent(new String[]{error.getErrorCode(), error.getMessage()},error.getCode()));
         }
 
         @Override
         public void onSuccess(T response) {
             super.onSuccess(response);
-            onEvent(new Event.SuccessEvent());
+            onEvent(new SuccessEvent());
         }
 
         @Override
         public void onFailure(Call<T> call, Throwable t) {
             super.onFailure(call,t);
-            onEvent(new Event.FailureEvent(t));
+            onEvent(new FailureEvent(t));
         }
     }
 
@@ -420,25 +420,25 @@ public class  UFService {
 
             final LinkEntry configDataLink = response.getLink("configData");
             if(configDataLink!=null){
-                onEvent(new Event.UpdateConfigRequestEvent());
+                onEvent(new UpdateConfigRequestEvent());
                 return;
             }
 
             final LinkEntry deploymentBaseLink = response.getLink("deploymentBase");
 
             if(deploymentBaseLink!=null){
-                onEvent(new Event.UpdateFoundEvent(deploymentBaseLink.parseLink().getActionId()));
+                onEvent(new UpdateFoundEvent(deploymentBaseLink.parseLink().getActionId()));
                 return;
             }
 
             final LinkEntry cancelAction = response.getLink("cancelAction");
             if(cancelAction!=null){
-                onEvent(new Event.CancelEvent(cancelAction.parseLink().getActionId()));
+                onEvent(new CancelEvent(cancelAction.parseLink().getActionId()));
                 return;
             }
 
 
-            onEvent(new Event.SleepEvent(LAST_SLEEP_TIME_FOUND));
+            onEvent(new SleepEvent(LAST_SLEEP_TIME_FOUND));
         }
     }
 
@@ -447,17 +447,17 @@ public class  UFService {
         public void onSuccess(DdiControllerBase response) {
             final LinkEntry cancelAction = response.getLink("cancelAction");
             if(cancelAction!=null){
-                onEvent(new Event.CancelEvent(cancelAction.parseLink().getActionId()));
+                onEvent(new CancelEvent(cancelAction.parseLink().getActionId()));
                 return;
             }
-            onEvent(new Event.SuccessEvent());
+            onEvent(new SuccessEvent());
         }
     }
 
     private class CancelCallback extends DefaultDdiCallback<DdiCancel>{
         @Override
         public void onSuccess(DdiCancel response) {
-            onEvent(new Event.SuccessEvent(Long.parseLong(response.getCancelAction().getStopId())));
+            onEvent(new SuccessEvent(Long.parseLong(response.getCancelAction().getStopId())));
         }
     }
 
@@ -465,21 +465,21 @@ public class  UFService {
         @Override
         public void onSuccess(DdiDeploymentBase response) {
             //super.onSuccess(response);
-            onEvent(new Event.DownloadRequestEvent(response));
+            onEvent(new DownloadRequestEvent(response));
         }
     }
 
     private class DownloadArtifact extends DefaultDdiCallback<ResponseBody>{
-        private final State.UpdateDownloadState state;
+        private final UpdateDownloadState state;
 
-        public DownloadArtifact(State.UpdateDownloadState state) {
+        public DownloadArtifact(UpdateDownloadState state) {
             this.state = state;
         }
 
         @Override
         public void onSuccess(ResponseBody response) {
             //super.onSuccess(response);
-            //onEvent(new Event.DownloadRequestEvent(response));
+            //onEvent(new AbstractEvent.DownloadRequestEvent(response));
             client.postBasedeploymentActionFeedback(
                     new FeedbackBuilder(state.getActionId(),PROCEEDING,NONE)
                             .withProgess(state.getNextFileToDownload()+1,state.getSize()).build(),
@@ -496,7 +496,7 @@ public class  UFService {
                     .withListener(fileCheckListener)
                     .build();
 
-            onEvent(new Event.FileDownloadedEvent(stream,
+            onEvent(new FileDownloadedEvent(stream,
                     fileInfo.getLinkInfo().getFileName()));
         }
     }
@@ -504,9 +504,9 @@ public class  UFService {
 
     private final CheckFilterInputStream.FileCheckListener fileCheckListener = (isValid, hash) -> {
         if(isValid){
-            onEvent(new Event.SuccessEvent());
+            onEvent(new SuccessEvent());
         } else {
-            onEvent(new Event.FileCorruptedEvent(hash));
+            onEvent(new FileCorruptedEvent(hash));
         }
     };
 
