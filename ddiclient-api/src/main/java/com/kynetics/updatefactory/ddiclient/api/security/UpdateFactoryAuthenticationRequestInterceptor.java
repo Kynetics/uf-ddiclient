@@ -35,7 +35,7 @@ public class UpdateFactoryAuthenticationRequestInterceptor implements Intercepto
     public UpdateFactoryAuthenticationRequestInterceptor(Set<Authentication> authentications, OnTargetTokenFound onTargetTokenFound) {
         Objects.requireNonNull(authentications);
         this.authentications = authentications;
-        this.onTargetTokenFound = onTargetTokenFound;
+        this.onTargetTokenFound = onTargetTokenFound == null ? targetToken -> {} : onTargetTokenFound;
     }
 
     @Override
