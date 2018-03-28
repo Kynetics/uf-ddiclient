@@ -253,7 +253,7 @@ public class  UFService {
                         controllerId,
                         updateEndedState.getActionId()
                 );
-                execute(lastFeedbackCall,new DefaultDdiCallback(), forceDelay);
+                execute(lastFeedbackCall,new LastFeedbackCallback(), forceDelay);
                 break;
             case SERVER_FILE_CORRUPTED:
                 final ServerFileCorruptedState serverFileCorruptedState = (ServerFileCorruptedState)currentState;
@@ -348,6 +348,17 @@ public class  UFService {
         }
     }
 
+    private class LastFeedbackCallback<T> extends DefaultDdiCallback<T>{
+        @Override
+        public void onError(Error error) {
+            if(error.getCode() == 410){
+                System.out.println("onError 410");
+                onEvent(new SuccessEvent());
+            } else {
+                super.onError(error);
+            }
+        }
+    }
     private class ObservableState extends Observable{
 
         public ObservableState(AbstractState state) {
