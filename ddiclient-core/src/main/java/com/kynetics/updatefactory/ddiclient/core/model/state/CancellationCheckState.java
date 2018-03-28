@@ -39,8 +39,8 @@ public class CancellationCheckState extends AbstractStateWithAction {
                     return updateReadyState.getActionId() == successEvent.getActionId() ?
                             new CancellationState(getActionId()) :
                             updateReadyState.isForced() ?
-                                    new AuthorizationWaitingState(updateReadyState) :
-                                    new UpdateStartedState(updateReadyState.getActionId());
+                                    new UpdateStartedState(updateReadyState.getActionId()) :
+                                    new AuthorizationWaitingState(updateReadyState);
                 }
                 return new CancellationState(getActionId());
             default:

@@ -14,16 +14,16 @@ package com.kynetics.updatefactory.ddiclient.core.model.state;
  * @author Daniele Sergio
  */
 public abstract class AbstractStateWithAction extends AbstractState {
-    private static final long serialVersionUID = -6011000748604690610L;
+    private static final long serialVersionUID = 7423883109789941001L;
 
-    private final Long actionId;
+    private final long actionId;
 
-    public AbstractStateWithAction(StateName stateName, Long actionId) {
+    public AbstractStateWithAction(StateName stateName, long actionId) {
         super(stateName);
         this.actionId = actionId;
     }
 
-    public Long getActionId() {
+    public long getActionId() {
         return actionId;
     }
 }
