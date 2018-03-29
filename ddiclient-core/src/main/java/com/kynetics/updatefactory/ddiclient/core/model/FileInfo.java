@@ -20,13 +20,15 @@ import java.io.Serializable;
  */
 public class FileInfo implements Serializable {
 
-    private static final long serialVersionUID = 1191642138337839065L;
+    private static final long serialVersionUID = -4430835128376273893L;
     private final ResourceSupport.LinkEntry.LinkInfo linkInfo;
-    private Hash hash;
+    private final Hash hash;
+    private final long size;
 
-    public FileInfo(LinkInfo linkInfo, Hash hash) {
+    public FileInfo(LinkInfo linkInfo, Hash hash, long size) {
         this.linkInfo = linkInfo;
         this.hash = hash;
+        this.size = size;
     }
 
     public ResourceSupport.LinkEntry.LinkInfo getLinkInfo() {
@@ -35,5 +37,9 @@ public class FileInfo implements Serializable {
 
     public Hash getHash() {
         return hash;
+    }
+
+    public long getSize() {
+        return size;
     }
 }

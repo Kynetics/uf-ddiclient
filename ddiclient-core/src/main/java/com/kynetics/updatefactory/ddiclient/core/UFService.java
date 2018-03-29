@@ -12,6 +12,7 @@ package com.kynetics.updatefactory.ddiclient.core;
 
 import com.google.gson.Gson;
 import com.kynetics.updatefactory.ddiclient.core.filterInputStream.CheckFilterInputStream;
+import com.kynetics.updatefactory.ddiclient.core.filterInputStream.NotifyStatusFilterInputStream;
 import com.kynetics.updatefactory.ddiclient.core.formatter.CurrentTimeFormatter;
 import com.kynetics.updatefactory.ddiclient.core.model.*;
 import com.kynetics.updatefactory.ddiclient.api.DdiCallback;
@@ -331,7 +332,7 @@ public class  UFService {
 
     }
 
-    private class LogCallBack<T> extends DdiCallback<T>{
+    private static class LogCallBack<T> extends DdiCallback<T>{
         @Override
         public void onError(Error error) {
             System.out.println("onError:   "+ new Gson().toJson(error));
@@ -500,18 +501,61 @@ public class  UFService {
                     .enqueue(new LogCallBack<>());
             final FileInfo fileInfo = state.getFileInfo();
 
-            final CheckFilterInputStream stream = CheckFilterInputStream.builder()
+            final CheckFilterInputStream streamWithChecker = CheckFilterInputStream.builder()
                     .withStream(response.byteStream())
                     .withMd5Value(fileInfo.getHash().getMd5())
                     .withSha1Value(fileInfo.getHash().getSha1())
                     .withListener(fileCheckListener)
                     .build();
 
-            onEvent(new FileDownloadedEvent(stream,
-                    fileInfo.getLinkInfo().getFileName()));
+            final String fileName = fileInfo.getLinkInfo().getFileName();
+            final NotifyStatusFilterInputStream stream = new NotifyStatusFilterInputStream(
+                    streamWithChecker,
+                    fileInfo.getSize(),
+                    new ServerNotifier(client, 10, state.getActionId(), tenant, controllerId, fileName)
+            );
+
+            onEvent(new FileDownloadedEvent(stream,fileName));
         }
     }
 
+    private static class ServerNotifier implements NotifyStatusFilterInputStream.Notifier{
+        private int lastNotify = 0;
+        private final DdiRestApi client;
+        private final int notifyThreshold;
+        private final long actionId;
+        private final String tenant;
+        private final String controllerId;
+        private final String fileName;
+
+        public ServerNotifier(DdiRestApi client, int notifyThreshold, long actionId, String tenant, String controllerId, String fileName) {
+            this.client = client;
+            this.notifyThreshold = notifyThreshold;
+            this.actionId = actionId;
+            this.tenant = tenant;
+            this.controllerId = controllerId;
+            this.fileName = fileName;
+        }
+
+        @Override
+        public void notify(double percent) {
+            final int per = (int) Math.floor(percent * 100);
+            if(per / notifyThreshold != lastNotify / notifyThreshold){
+                lastNotify = per;
+                final String message = String.format("Downloading %s - %s%%", fileName, lastNotify);
+                System.out.println(message);
+                List<String> details = new ArrayList<>(1);
+                details.add(message);
+                client.postBasedeploymentActionFeedback(
+                        new FeedbackBuilder(actionId,PROCEEDING,NONE)
+                                .withDetails(details).build(),
+                        tenant,
+                        controllerId,
+                        actionId)
+                        .enqueue(new LogCallBack<>());
+            }
+        }
+    }
 
     private final CheckFilterInputStream.FileCheckListener fileCheckListener = (isValid, hash) -> {
         if(isValid){

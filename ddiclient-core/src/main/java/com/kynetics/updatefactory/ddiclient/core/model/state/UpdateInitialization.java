@@ -45,7 +45,8 @@ public class UpdateInitialization extends AbstractStateWithAction {
                         fileInfoList.add(new FileInfo(
                                 artifact.getLink("download-http").parseLink2(),
                                 new Hash(artifact.getHashes().getMd5(),
-                                        artifact.getHashes().getSha1())));
+                                        artifact.getHashes().getSha1()),
+                                artifact.getSize()));
                     }
                 }
                 final boolean isForced = downloadRequestEvent.getDdiDeploymentBase().getDeployment().getDownload() == FORCED;
