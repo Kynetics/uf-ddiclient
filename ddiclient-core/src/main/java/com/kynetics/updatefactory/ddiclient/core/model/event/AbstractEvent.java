@@ -17,11 +17,12 @@ import java.io.Serializable;
  */
 public abstract class AbstractEvent implements Serializable{
 
-    private static final long serialVersionUID = -379773284801159482L;
+    private static final long serialVersionUID = 3311499215842422409L;
 
     public enum EventName{
         SLEEP_REQUEST,  UPDATE_CONFIG_REQUEST, SUCCESS, FAILURE, ERROR, UPDATE_FOUND, DOWNLOAD_REQUEST, DOWNLOAD_STARTED,
-        FILE_CORRUPTED, CANCEL, UPDATE_ERROR, AUTHORIZATION_GRANTED, AUTHORIZATION_DENIED, RESUME
+        FILE_CORRUPTED, CANCEL, UPDATE_ERROR, AUTHORIZATION_GRANTED, AUTHORIZATION_DENIED, RESUME, DOWNLOAD_PENDING,
+        FORCE_CANCEL
     }
 
     private final EventName eventName;

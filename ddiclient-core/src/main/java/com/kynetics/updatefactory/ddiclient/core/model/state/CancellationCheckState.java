@@ -14,6 +14,7 @@ import com.kynetics.updatefactory.ddiclient.core.model.event.AbstractEvent;
 import com.kynetics.updatefactory.ddiclient.core.model.event.SuccessEvent;
 
 import static com.kynetics.updatefactory.ddiclient.core.model.state.AbstractState.StateName.CANCELLATION_CHECK;
+import static com.kynetics.updatefactory.ddiclient.core.model.state.AbstractState.StateName.SAVING_FILE;
 import static com.kynetics.updatefactory.ddiclient.core.model.state.AbstractState.StateName.UPDATE_READY;
 
 /**
@@ -33,16 +34,23 @@ public class CancellationCheckState extends AbstractStateWithAction {
     public AbstractState onEvent(AbstractEvent event) {
         switch (event.getEventName()) {
             case SUCCESS: //must cancel the action into the event (successEvent.getActionId()) but I need to send the feedback to the action inside the nextFileToDownload state (getAction);
-                if (getPreviousState().getStateName() == UPDATE_READY) {
-                    final SuccessEvent successEvent = (SuccessEvent) event;
+                final StateName stateName = getPreviousState().getStateName();
+                final SuccessEvent successEvent = (SuccessEvent) event;
+                if (stateName == UPDATE_READY) {
                     final UpdateReadyState updateReadyState = (UpdateReadyState) getPreviousState();
                     return updateReadyState.getActionId() == successEvent.getActionId() ?
                             new CancellationState(getActionId()) :
                             updateReadyState.isForced() ?
                                     new UpdateStartedState(updateReadyState.getActionId()) :
                                     new AuthorizationWaitingState(updateReadyState);
+                } else if (stateName == SAVING_FILE){
+                    final SavingFileState savingFileState = (SavingFileState) getPreviousState();
+                    return  savingFileState.getActionId() == successEvent.getActionId() ?
+                            new CancellationState(getActionId()) : savingFileState;
                 }
                 return new CancellationState(getActionId());
+            case CANCEL:
+                return this;
             default:
                 return super.onEvent(event);
         }

@@ -44,6 +44,8 @@ public abstract class AbstractState implements Serializable{
             case FAILURE:
                 FailureEvent failureEvent = (FailureEvent) event;
                 return new CommunicationFailureState(this,failureEvent.getThrowable());
+            case FORCE_CANCEL:
+                return new WaitingState(30_000,null);
             default:
                 throw new IllegalStateException(String.format("AbstractEvent %s not handler in %s state", event.getEventName(), stateName));
         }

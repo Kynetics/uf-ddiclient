@@ -10,9 +10,11 @@
 
 package com.kynetics.updatefactory.ddiclient.core.model.state;
 
+import com.kynetics.updatefactory.ddiclient.core.filterInputStream.NotifyStatusFilterInputStream;
 import com.kynetics.updatefactory.ddiclient.core.model.FileInfo;
 import com.kynetics.updatefactory.ddiclient.core.model.Hash;
 import com.kynetics.updatefactory.ddiclient.core.model.event.AbstractEvent;
+import com.kynetics.updatefactory.ddiclient.core.model.event.CancelEvent;
 import com.kynetics.updatefactory.ddiclient.core.model.event.FileCorruptedEvent;
 
 import java.io.InputStream;
@@ -28,7 +30,11 @@ public class SavingFileState extends AbstractStateWithFile {
 
     public SavingFileState(Long actionId, boolean isForced, List<FileInfo> fileInfoList, int nextFileToDownload, Hash lastHash, InputStream inputStream) {
         super(SAVING_FILE, actionId, isForced, fileInfoList, nextFileToDownload, lastHash);
-        this.inputStream = inputStream;
+        this.inputStream = new NotifyStatusFilterInputStream(inputStream, getFileInfo().getSize(), p -> percent = p);
+    }
+
+    public double getPercent() {
+        return percent;
     }
 
     @Override
@@ -38,6 +44,8 @@ public class SavingFileState extends AbstractStateWithFile {
                 return getSize() - 1 == getNextFileToDownload() ?
                         new UpdateReadyState(getActionId(), isForced()) :
                         new UpdateDownloadState(getActionId(), isForced(), getFileInfoList(), getNextFileToDownload() + 1);
+            case CANCEL:
+                return new CancellationCheckState(this, ((CancelEvent) event).getActionId());
             case FILE_CORRUPTED:
                 final FileCorruptedEvent corruptedEvent = (FileCorruptedEvent) event;
                 final Hash currentHash = corruptedEvent.getDownloadedFileHash();
@@ -48,7 +56,8 @@ public class SavingFileState extends AbstractStateWithFile {
                                 getNextFileToDownload(),
                                 currentHash) :
                         new ServerFileCorruptedState(getActionId());
-
+            case DOWNLOAD_PENDING:
+                return this;
             default:
                 return super.onEvent(event);
         }
@@ -59,4 +68,6 @@ public class SavingFileState extends AbstractStateWithFile {
     }
 
     transient private final InputStream inputStream;
+
+    private transient double percent;
 }
