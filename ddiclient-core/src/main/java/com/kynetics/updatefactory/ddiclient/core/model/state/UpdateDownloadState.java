@@ -13,7 +13,7 @@ package com.kynetics.updatefactory.ddiclient.core.model.state;
 import com.kynetics.updatefactory.ddiclient.core.model.FileInfo;
 import com.kynetics.updatefactory.ddiclient.core.model.Hash;
 import com.kynetics.updatefactory.ddiclient.core.model.event.AbstractEvent;
-import com.kynetics.updatefactory.ddiclient.core.model.event.FileDownloadedEvent;
+import com.kynetics.updatefactory.ddiclient.core.model.event.DownloadStartedEvent;
 
 import java.util.List;
 
@@ -41,8 +41,8 @@ public class UpdateDownloadState extends AbstractStateWithFile {
     @Override
     public AbstractState onEvent(AbstractEvent event) {
         switch (event.getEventName()) {
-            case FILE_DOWNLOADED:
-                return new SavingFileState(getActionId(), isForced(), getFileInfoList(), getNextFileToDownload(), getLastHash(), ((FileDownloadedEvent) event).getInputStream());
+            case DOWNLOAD_STARTED:
+                return new SavingFileState(getActionId(), isForced(), getFileInfoList(), getNextFileToDownload(), getLastHash(), ((DownloadStartedEvent) event).getInputStream());
             default:
                 return super.onEvent(event);
         }

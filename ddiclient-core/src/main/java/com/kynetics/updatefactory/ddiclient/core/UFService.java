@@ -515,7 +515,7 @@ public class  UFService {
                     new ServerNotifier(client, 10, state.getActionId(), tenant, controllerId, fileName)
             );
 
-            onEvent(new FileDownloadedEvent(stream,fileName));
+            onEvent(new DownloadStartedEvent(stream,fileName));
         }
     }
 

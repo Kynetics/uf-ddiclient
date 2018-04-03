@@ -12,20 +12,20 @@ package com.kynetics.updatefactory.ddiclient.core.model.event;
 
 import java.io.InputStream;
 
-import static com.kynetics.updatefactory.ddiclient.core.model.event.AbstractEvent.EventName.FILE_DOWNLOADED;
+import static com.kynetics.updatefactory.ddiclient.core.model.event.AbstractEvent.EventName.DOWNLOAD_STARTED;
 
 /**
  * @author Daniele Sergio
  */
-public class FileDownloadedEvent extends AbstractEvent {
+public class DownloadStartedEvent extends AbstractEvent {
 
     private static final long serialVersionUID = 3387645367585872962L;
     private final InputStream inputStream;
     private final String fileName;
 
-    public FileDownloadedEvent(InputStream inputStream,
-                               String fileName) {
-        super(FILE_DOWNLOADED);
+    public DownloadStartedEvent(InputStream inputStream,
+                                String fileName) {
+        super(DOWNLOAD_STARTED);
         this.inputStream = inputStream;
         this.fileName = fileName;
     }
