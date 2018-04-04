@@ -238,7 +238,7 @@ public class  UFService {
                 execute(postCancelActionFeedback, new DefaultDdiCallback(), forceDelay);
                 break;
             case SAVING_FILE:
-                execute(client.getControllerBase(tenant, controllerId), new SavingCallback(),LAST_SLEEP_TIME_FOUND/3);
+                execute(client.getControllerBase(tenant, controllerId), new SavingCallback(),LAST_SLEEP_TIME_FOUND);
                 break;
             case UPDATE_STARTED:
             case AUTHORIZATION_WAITING:
