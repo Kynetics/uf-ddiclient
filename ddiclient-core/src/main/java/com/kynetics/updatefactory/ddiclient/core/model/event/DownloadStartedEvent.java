@@ -19,8 +19,8 @@ import static com.kynetics.updatefactory.ddiclient.core.model.event.AbstractEven
  */
 public class DownloadStartedEvent extends AbstractEvent {
 
-    private static final long serialVersionUID = 3387645367585872962L;
-    private final InputStream inputStream;
+    private static final long serialVersionUID = 3952484262164404297L;
+    private final transient InputStream inputStream;
     private final String fileName;
 
     public DownloadStartedEvent(InputStream inputStream,
