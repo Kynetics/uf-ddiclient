@@ -498,6 +498,12 @@ public class  UFService {
                 return;
             }
 
+            final LinkEntry configDataLink = response.getLink("configData");
+            if(configDataLink!=null){
+                onEvent(new ForceCancelEvent());
+                return;
+            }
+
 
             onEvent(new DownloadPendingEvent());
         }
@@ -605,7 +611,7 @@ public class  UFService {
                         .enqueue(new LogCallBack<Void>(){
                             @Override
                             public void onError(Error error) {
-                                if(error.getCode() == 410){
+                                if(error.getCode() == 410 || error.getCode() == 404){
                                     onEvent(new ForceCancelEvent());
                                 } else {
                                     super.onError(error);
