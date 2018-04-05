@@ -13,15 +13,13 @@ package com.kynetics.updatefactory.ddiclient.core.model.state;
 import com.kynetics.updatefactory.ddiclient.core.model.event.AbstractEvent;
 import com.kynetics.updatefactory.ddiclient.core.model.event.SuccessEvent;
 
-import static com.kynetics.updatefactory.ddiclient.core.model.state.AbstractState.StateName.CANCELLATION_CHECK;
-import static com.kynetics.updatefactory.ddiclient.core.model.state.AbstractState.StateName.SAVING_FILE;
-import static com.kynetics.updatefactory.ddiclient.core.model.state.AbstractState.StateName.UPDATE_READY;
+import static com.kynetics.updatefactory.ddiclient.core.model.state.AbstractState.StateName.*;
 
 /**
  * @author Daniele Sergio
  */
 public class CancellationCheckState extends AbstractStateWithAction {
-    private static final long serialVersionUID = 7842141220101864204L;
+    private static final long serialVersionUID = -8085857299755753381L;
 
     private final AbstractState previousState;
 
@@ -47,6 +45,13 @@ public class CancellationCheckState extends AbstractStateWithAction {
                     final SavingFileState savingFileState = (SavingFileState) getPreviousState();
                     return  savingFileState.getActionId() == successEvent.getActionId() ?
                             new CancellationState(getActionId()) : savingFileState;
+                } else if (stateName == AUTHORIZATION_WAITING){
+                    final AuthorizationWaitingState authorizationWaitingState = (AuthorizationWaitingState) getPreviousState();
+                    final AbstractState innerState = authorizationWaitingState.getState();
+                    final long innerStateId = innerState instanceof AbstractStateWithAction ?
+                            ((AbstractStateWithAction) innerState).getActionId() : -1;
+                    return innerStateId == successEvent.getActionId() ?
+                            new CancellationState(getActionId()) : authorizationWaitingState;
                 }
                 return new CancellationState(getActionId());
             case CANCEL:

@@ -28,6 +28,8 @@ import com.kynetics.updatefactory.ddiclient.api.model.response.Error;
 import com.kynetics.updatefactory.ddiclient.api.model.response.ResourceSupport.LinkEntry;
 import com.kynetics.updatefactory.ddiclient.core.model.event.*;
 import com.kynetics.updatefactory.ddiclient.core.model.state.*;
+import com.kynetics.updatefactory.ddiclient.core.servicecallback.SystemOperation;
+import com.kynetics.updatefactory.ddiclient.core.servicecallback.UserInteraction;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -35,11 +37,10 @@ import retrofit2.Callback;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.*;
 
 import static com.kynetics.updatefactory.ddiclient.api.model.request.DdiResult.FinalResult.*;
 import static com.kynetics.updatefactory.ddiclient.api.model.request.DdiStatus.ExecutionStatus.*;
-import static com.kynetics.updatefactory.ddiclient.core.model.event.AbstractEvent.EventName.DOWNLOAD_PENDING;
-import static com.kynetics.updatefactory.ddiclient.core.model.event.AbstractEvent.EventName.FORCE_CANCEL;
 
 /**
  * @author Daniele Sergio
@@ -49,6 +50,7 @@ public class  UFService {
     public interface TargetData {
         Map<String, String> get();
     }
+
 
     public static class SharedEvent {
         private final AbstractEvent event;
@@ -83,13 +85,21 @@ public class  UFService {
               String controllerId,
               AbstractState initialState,
               TargetData targetData,
+              SystemOperation systemOperation,
+              UserInteraction userInteraction,
               long retryDelayOnCommunicationError){
+        if(initialState.getStateName() == AbstractState.StateName.SAVING_FILE &&
+                ((SavingFileState)initialState).getInputStream() == null){
+            initialState = new WaitingState(0, null);
+        }
         currentObservableState = new ObservableState(initialState);
         this.client = client;
         this.retryDelayOnCommunicationError = retryDelayOnCommunicationError;
         this.tenant = tenant;
         this.controllerId = controllerId;
         this.targetData = targetData;
+        this.systemOperation = systemOperation;
+        this.userInteraction = userInteraction;
     }
 
     public void start(){
@@ -130,7 +140,7 @@ public class  UFService {
         currentObservableState.addObserver(observer);
     }
 
-    public void setUpdateSucceffullyUpdate(boolean success){
+    private void setUpdateSucceffullyUpdate(boolean success){
         checkServiceRunning();
         if(!currentObservableState.get().getStateName().equals(AbstractState.StateName.UPDATE_STARTED)){
             throw new IllegalStateException("current state must be UPDATE_STARTED to call this method");
@@ -144,7 +154,10 @@ public class  UFService {
         }
     }
 
-    public void setAuthorized(boolean isAuthorized){
+    private void setAuthorized(AuthorizationWaitingState state, boolean isAuthorized){
+        if(!state.equals(currentObservableState.get())){
+            return;
+        }
         checkServiceRunning();
         if(!currentObservableState.get().getStateName().equals(AbstractState.StateName.AUTHORIZATION_WAITING)){
             throw new IllegalStateException("current state must be UPDATE_STARTED to call this method");
@@ -238,10 +251,41 @@ public class  UFService {
                 execute(postCancelActionFeedback, new DefaultDdiCallback(), forceDelay);
                 break;
             case SAVING_FILE:
-                execute(client.getControllerBase(tenant, controllerId), new SavingCallback(),LAST_SLEEP_TIME_FOUND);
+                final SavingFileState savingFileState = (SavingFileState) currentState;
+                if(savingFileState.isInputStreamAvailable()){
+                    new Thread(() -> systemOperation.savingFile(savingFileState.getInputStream(), savingFileState.getFileInfo())).start();
+                }
+                execute(client.getControllerBase(tenant, controllerId), new CheckCancelEventCallback(currentState, new DownloadPendingEvent()),LAST_SLEEP_TIME_FOUND);
                 break;
             case UPDATE_STARTED:
+                final UpdateStartedState updateStartedState = (UpdateStartedState)currentState;
+                if(systemOperation.updateStatus() == SystemOperation.UpdateStatus.NOT_APPLIED){
+                    systemOperation.executeUpdate(updateStartedState.getActionId());
+                }
+                if(systemOperation.updateStatus() != SystemOperation.UpdateStatus.NOT_APPLIED){
+                    setUpdateSucceffullyUpdate(systemOperation.updateStatus() == SystemOperation.UpdateStatus.SUCCESSFULLY_APPLIED);
+                }
+                break;
             case AUTHORIZATION_WAITING:
+                final AuthorizationWaitingState authorizationWaitingState = (AuthorizationWaitingState) currentState;
+                if(!authorizationWaitingState.isRequestSend()) {
+                    authorizationWaitingState.sendRequest();
+                    final AbstractState.StateName innerStateName = authorizationWaitingState.getState().getStateName();
+                    new Thread(() -> {
+                        Boolean authorization = Boolean.FALSE;
+                        try {
+                            authorization = userInteraction.grantAuthorization(
+                                    innerStateName == AbstractState.StateName.UPDATE_DOWNLOAD ? UserInteraction.Authorization.DOWNLOAD : UserInteraction.Authorization.UPDATE)
+                                    .get();
+                        } catch (InterruptedException | ExecutionException e) {
+                            e.printStackTrace();
+                        }
+                        setAuthorized(authorizationWaitingState, authorization);
+                    }
+                    ).start();
+                }
+                execute(client.getControllerBase(tenant, controllerId), new CheckCancelEventCallback(currentState, new AuthorizationWaitingEvent()),LAST_SLEEP_TIME_FOUND);
+
                 break;
             case UPDATE_ENDED:
                 final UpdateEndedState updateEndedState = (UpdateEndedState)currentState;
@@ -467,7 +511,15 @@ public class  UFService {
         }
     }
 
-    private class SavingCallback extends DefaultDdiCallback<DdiControllerBase>{
+    private class CheckCancelEventCallback extends DefaultDdiCallback<DdiControllerBase>{
+
+        private final AbstractEvent event;
+        private final AbstractState state;
+
+        public CheckCancelEventCallback(AbstractState state, AbstractEvent event) {
+            this.event = event;
+            this.state = state;
+        }
 
         @Override
         public void onError(Error error) {
@@ -480,7 +532,7 @@ public class  UFService {
 
         @Override
         public void onSuccess(DdiControllerBase response) {
-            if(currentObservableState.get().getStateName() != AbstractState.StateName.SAVING_FILE){
+            if(currentObservableState.get().getStateName() != state.getStateName()){
                 return;
             }
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("hh:mm:ss");
@@ -504,8 +556,13 @@ public class  UFService {
                 return;
             }
 
+            final LinkEntry deploymentBaseLink = response.getLink("deploymentBase");
+            if(deploymentBaseLink==null){
+                onEvent(new ForceCancelEvent());
+                return;
+            }
 
-            onEvent(new DownloadPendingEvent());
+            onEvent(event);
         }
     }
 
@@ -645,4 +702,6 @@ public class  UFService {
     private Timer timer;
     private DdiRestApi client;
     private long retryDelayOnCommunicationError;
+    private final SystemOperation systemOperation;
+    private final UserInteraction userInteraction;
 }

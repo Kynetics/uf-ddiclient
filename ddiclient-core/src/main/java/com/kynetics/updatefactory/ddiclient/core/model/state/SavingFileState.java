@@ -26,11 +26,12 @@ import static com.kynetics.updatefactory.ddiclient.core.model.state.AbstractStat
  * @author Daniele Sergio
  */
 public class SavingFileState extends AbstractStateWithFile {
-    private static final long serialVersionUID = -5031030863198820438L;
+    private static final long serialVersionUID = -3343778431939740518L;
 
     public SavingFileState(Long actionId, boolean isForced, List<FileInfo> fileInfoList, int nextFileToDownload, Hash lastHash, InputStream inputStream) {
         super(SAVING_FILE, actionId, isForced, fileInfoList, nextFileToDownload, lastHash);
         this.inputStream = new NotifyStatusFilterInputStream(inputStream, getFileInfo().getSize(), p -> percent = p);
+        inputStreamAvailable = true;
     }
 
     public double getPercent() {
@@ -64,10 +65,20 @@ public class SavingFileState extends AbstractStateWithFile {
     }
 
     public InputStream getInputStream() {
+        if(!inputStreamAvailable){
+            throw new IllegalStateException("inputStream not available");
+        }
+        inputStreamAvailable = false;
         return inputStream;
+    }
+
+    public boolean isInputStreamAvailable() {
+        return inputStreamAvailable;
     }
 
     transient private final InputStream inputStream;
 
     transient private double percent;
+
+    transient boolean inputStreamAvailable;
 }
