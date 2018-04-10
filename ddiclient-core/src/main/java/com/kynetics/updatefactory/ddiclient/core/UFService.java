@@ -89,7 +89,8 @@ public class  UFService {
               UserInteraction userInteraction,
               long retryDelayOnCommunicationError){
         if(initialState.getStateName() == AbstractState.StateName.SAVING_FILE &&
-                ((SavingFileState)initialState).getInputStream() == null){
+                (!((SavingFileState)initialState).isInputStreamAvailable() ||
+                ((SavingFileState)initialState).getInputStream() == null)){
             initialState = new WaitingState(0, null);
         }
         currentObservableState = new ObservableState(initialState);
