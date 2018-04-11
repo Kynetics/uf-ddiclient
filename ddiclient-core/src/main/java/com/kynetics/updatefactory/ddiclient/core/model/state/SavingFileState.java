@@ -26,7 +26,7 @@ import static com.kynetics.updatefactory.ddiclient.core.model.state.AbstractStat
  * @author Daniele Sergio
  */
 public class SavingFileState extends AbstractStateWithFile {
-    private static final long serialVersionUID = -3343778431939740518L;
+    private static final long serialVersionUID = -5818181881740447753L;
 
     public SavingFileState(Long actionId, boolean isForced, List<FileInfo> fileInfoList, int nextFileToDownload, Hash lastHash, InputStream inputStream) {
         super(SAVING_FILE, actionId, isForced, fileInfoList, nextFileToDownload, lastHash);
@@ -65,15 +65,19 @@ public class SavingFileState extends AbstractStateWithFile {
     }
 
     public InputStream getInputStream() {
-        if(!inputStreamAvailable){
-            throw new IllegalStateException("inputStream not available");
+        synchronized (lock){
+            if(!inputStreamAvailable || inputStream == null){
+                throw new IllegalStateException("inputStream not available");
+            }
+            inputStreamAvailable = false;
+            return inputStream;
         }
-        inputStreamAvailable = false;
-        return inputStream;
     }
 
     public boolean isInputStreamAvailable() {
-        return inputStreamAvailable;
+        synchronized (lock){
+            return inputStreamAvailable && inputStream != null;
+        }
     }
 
     transient private final InputStream inputStream;
@@ -81,4 +85,7 @@ public class SavingFileState extends AbstractStateWithFile {
     transient private double percent;
 
     transient boolean inputStreamAvailable;
+
+    transient Object lock = new Object();
+
 }
