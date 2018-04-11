@@ -32,7 +32,7 @@ public class AuthorizationWaitingState extends AbstractStateWithInnerState {
     @Override
     public AbstractState onEvent(AbstractEvent event) {
         switch (event.getEventName()) {
-            case AUTHORIZATION_WAITING:
+            case AUTHORIZATION_PENDING:
                 return this;
             case AUTHORIZATION_GRANTED:
                 return getState();

@@ -10,16 +10,16 @@
 
 package com.kynetics.updatefactory.ddiclient.core.model.event;
 
-import static com.kynetics.updatefactory.ddiclient.core.model.event.AbstractEvent.EventName.AUTHORIZATION_WAITING;
+import static com.kynetics.updatefactory.ddiclient.core.model.event.AbstractEvent.EventName.AUTHORIZATION_PENDING;
 
 /**
  * @author Daniele Sergio
  */
-public class AuthorizationWaitingEvent extends AbstractEvent {
+public class AuthorizationPendingEvent extends AbstractEvent {
     private static final long serialVersionUID = -2086057101722612301L;
 
-    public AuthorizationWaitingEvent() {
-        super(AUTHORIZATION_WAITING);
+    public AuthorizationPendingEvent() {
+        super(AUTHORIZATION_PENDING);
     }
 
 

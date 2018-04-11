@@ -284,7 +284,7 @@ public class  UFService {
                     }
                     ).start();
                 }
-                execute(client.getControllerBase(tenant, controllerId), new CheckCancelEventCallback(currentState, new AuthorizationWaitingEvent()),LAST_SLEEP_TIME_FOUND);
+                execute(client.getControllerBase(tenant, controllerId), new CheckCancelEventCallback(currentState, new AuthorizationPendingEvent()),LAST_SLEEP_TIME_FOUND);
 
                 break;
             case UPDATE_ENDED:

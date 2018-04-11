@@ -10,7 +10,7 @@
 
 package com.kynetics.updatefactory.ddiclient.core.model.state;
 
-import com.kynetics.updatefactory.ddiclient.core.filterInputStream.NotifyStatusFilterInputStream;
+import com.kynetics.updatefactory.ddiclient.core.filterinputstream.NotifyStatusFilterInputStream;
 import com.kynetics.updatefactory.ddiclient.core.model.FileInfo;
 import com.kynetics.updatefactory.ddiclient.core.model.Hash;
 import com.kynetics.updatefactory.ddiclient.core.model.event.AbstractEvent;
