@@ -8,7 +8,7 @@
  *
  */
 
-package com.kynetics.updatefactory.ddiclient.core.filterInputStream;
+package com.kynetics.updatefactory.ddiclient.core.filterinputstream;
 
 
 import org.testng.annotations.BeforeMethod;

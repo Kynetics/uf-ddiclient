@@ -8,19 +8,11 @@
  *
  */
 
-package com.kynetics.updatefactory.ddiclient.core.filterInputStream;
+package com.kynetics.updatefactory.ddiclient.core.filterinputstream;
 
-import com.kynetics.updatefactory.ddiclient.core.model.Hash;
-
-import java.io.FileInputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigInteger;
-import java.security.DigestInputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Objects;
 
 /**
  * @author Daniele Sergio
