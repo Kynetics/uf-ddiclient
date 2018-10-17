@@ -255,14 +255,13 @@ public class  UFService {
                 if(savingFileState.isInputStreamAvailable()){
                     new Thread(() -> systemOperation.savingFile(savingFileState.getInputStream(), savingFileState.getFileInfo())).start();
                 }
-                execute(client.getControllerBase(tenant, controllerId), new CheckCancelEventCallback(currentState, new DownloadPendingEvent()),LAST_SLEEP_TIME_FOUND);
+                execute(client.getControllerBase(tenant, controllerId), new CheckCancelEventCallback(currentState, new DownloadPendingEvent()),30_000);
                 break;
             case UPDATE_STARTED:
                 final UpdateStartedState updateStartedState = (UpdateStartedState)currentState;
                 if(systemOperation.updateStatus() == SystemOperation.UpdateStatus.NOT_APPLIED){
                     systemOperation.executeUpdate(updateStartedState.getActionId());
-                }
-                if(systemOperation.updateStatus() != SystemOperation.UpdateStatus.NOT_APPLIED){
+                }else{
                     setUpdateSucceffullyUpdate(systemOperation.updateStatus() == SystemOperation.UpdateStatus.SUCCESSFULLY_APPLIED);
                 }
                 break;
@@ -522,7 +521,20 @@ public class  UFService {
         }
 
         @Override
+        public void onFailure(Call<DdiControllerBase> call, Throwable t) {
+            if(currentObservableState.get().getStateName() != state.getStateName()){
+                return;
+            }
+
+            super.onFailure(call, t);
+        }
+
+        @Override
         public void onError(Error error) {
+            if(currentObservableState.get().getStateName() != state.getStateName()){
+                return;
+            }
+
             if(error.getCode() == 410){
                 onEvent(new ForceCancelEvent());
             } else {
