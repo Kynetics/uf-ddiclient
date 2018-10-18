@@ -1,0 +1,30 @@
+sudo: required
+language: java
+jdk: oraclejdk8
+env:
+  global:
+  - secure: f4g7R8+4kH9cRkiEnhUMA72F1ihX1HtYrDw4cJhhurdOs/R0IkksxzOarbWHCLytc8miBkNaCDZWddkyNUfcLKVZnNX7qOkj/KhlircjCaTbksdf4gojUHCPDwybvZhXFLRe26ubxwtUFqVgBhdPqN8RYGTtGEbfHkHMbD1jIFl/WLIs4cxT6ez6oUHBsP4xtcRokf9SEO+c1nRs1l3c2F2NijgouechqLdiHwqRf8GovwOC1uEglfykXIMzb4TNqArYU+iCEvRu4y+7qV/I7Rj362DDLrNlpqiR1KOeqOND0mVYSq7M8T1+LBx2iUrF53p8mjHNmHYmZZyfbsPxxs3/zeKkczUzxX2xOKPoTcjmK2/N84fwdgnGK5PV6nka+fgju1EzPwmVZjnEV1OBiiIjBJqZ0PbAkG5W4V82KuxL8c6VwVXt7NYNm/W9IPGqlOUrXpGKcQtvZKDf+uXx7QC1KXg9r1sixaXi4RF9UBqzPsoE/S0Y2AQ1QmGaQqYrYtdZZhtgYUMyfgTsTTiTH6vfYdxN8+mu19bpr3C7JQrNqCN6jPbqZR6jdmeKPiOPS/pHYJmzfw7WgGwc6vL0U0MAcsyCdJF0x01psItemjoF8NEAqAvRTxxyyAvb/ucMyCoKvotyX7ql4Pn3IKeszd7bjw0xZKPP6kvzHrx62L4=
+before_cache:
+- rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+- rm -rf $HOME/.gradle/caches/*/plugin-resolution/
+cache:
+  directories:
+  - "$HOME/.gradle/caches/"
+  - "$HOME/.gradle/wrapper/"
+  - "$HOME/.android/build-cache"
+
+deploy:
+  provider: releases
+  overwrite: true
+  skip_cleanup: true
+  file_glob: true
+  api_key:
+    secure: "xQaujpMdRJ0IQFE1wbmdJ592+rzyWHAUrPi6ECZr0jDa4h7gnMCBfVOctAsvvMGUxtrHrhUYzXTcHStvVhf8Wo0W+onC6ZHMKjO3VzXep7rQ8V+pAZt2AVCPrlkxZlzXvnMtAKH/EyzWKR1VNU9PvAywFVpgv14vO9yW18Yac/rJIbQUyI7P9vatq5O19P/Leg5Unuut2ZCEFXhMCJW2xTFmFFyWsFVFK8MfbVbXLVVu55hbxxghArWfBWW0fi9mBntsagAjxxVKn81debje4oL+BW2AFEQTS3yYLz0Nd40f7PtpxwAvIoYaTpr4nsmnvUJc5rjBtSRsJosSvF4owSW2XJRb5i1D5izLmkh8KHnPLh+gRALwX4vtoDZym/U4PsUJuY3uq8mTyV/tcxbF54Fd7dWQe0s1MA2Rx7ejHf/t6iHcIJMWnqewjD+W1RUd2YQep6VfxNUAfs/hS1F7CzR7hvuQzQICOiJasrvKqKkJP8qm3rb+hLDmBtA2KMJJD78jjBcXBLBSwzejmrIyfQgxlqOtkJdMSjXyzY+OwTjR4dg9RpS5zQ5oiiJ+f5P968V7lbexuf6KQAX62iud30+o8Vx41RziY4jVsOzmoN28y+A1uYD6YnCFrtQ309HJ13uElHulKf4VF7X5m4r73scwjE0uEaxYRYse5NI9F3s="
+  file:
+  - "ddiclient-api/build/libs/*"
+  - "ddiclient-core/build/libs/*"
+  - "ddiclient-example/build/libs/*"
+  on:
+    repo: Kynetics/uf-ddiclient
+    all_branches: true
+    tags: true
