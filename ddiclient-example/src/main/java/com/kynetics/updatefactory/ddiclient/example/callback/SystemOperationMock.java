@@ -31,7 +31,7 @@ public class SystemOperationMock implements SystemOperation {
         try {
             Files.copy(
                     inputStream,
-                    new File("update.zip").toPath(),
+                    new File(fileInfo.getLinkInfo().getFileName()).toPath(),
                     StandardCopyOption.REPLACE_EXISTING);
             return true;
         } catch (IOException e) {

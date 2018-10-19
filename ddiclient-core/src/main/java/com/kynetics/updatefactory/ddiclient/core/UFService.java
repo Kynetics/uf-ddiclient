@@ -261,9 +261,8 @@ public class  UFService {
                 final UpdateStartedState updateStartedState = (UpdateStartedState)currentState;
                 if(systemOperation.updateStatus() == SystemOperation.UpdateStatus.NOT_APPLIED){
                     systemOperation.executeUpdate(updateStartedState.getActionId());
-                }else{
-                    setUpdateSucceffullyUpdate(systemOperation.updateStatus() == SystemOperation.UpdateStatus.SUCCESSFULLY_APPLIED);
                 }
+                setUpdateSucceffullyUpdate(systemOperation.updateStatus() == SystemOperation.UpdateStatus.SUCCESSFULLY_APPLIED);
                 break;
             case AUTHORIZATION_WAITING:
                 final AuthorizationWaitingState authorizationWaitingState = (AuthorizationWaitingState) currentState;
@@ -635,7 +634,7 @@ public class  UFService {
                 final NotifyStatusFilterInputStream stream = new NotifyStatusFilterInputStream(
                         streamWithChecker,
                         fileInfo.getSize(),
-                        new ServerNotifier(client, 10, state.getActionId(), tenant, controllerId, fileName)
+                        new ServerNotifier(client, 10, state.getActionId(), tenant, controllerId, fileName, state)
                 );
 
                 onEvent(new DownloadStartedEvent(stream,fileName));
@@ -652,14 +651,16 @@ public class  UFService {
         private final String tenant;
         private final String controllerId;
         private final String fileName;
+        private final AbstractState state;
 
-        public ServerNotifier(DdiRestApi client, int notifyThreshold, long actionId, String tenant, String controllerId, String fileName) {
+        public ServerNotifier(DdiRestApi client, int notifyThreshold, long actionId, String tenant, String controllerId, String fileName, AbstractState currentState) {
             this.client = client;
             this.notifyThreshold = notifyThreshold;
             this.actionId = actionId;
             this.tenant = tenant;
             this.controllerId = controllerId;
             this.fileName = fileName;
+            this.state = currentState;
         }
 
         @Override
@@ -680,6 +681,9 @@ public class  UFService {
                         .enqueue(new LogCallBack<Void>(){
                             @Override
                             public void onError(Error error) {
+                                if(currentObservableState.get().getStateName() != state.getStateName()){
+                                    return;
+                                }
                                 if(error.getCode() == 410 || error.getCode() == 404){
                                     onEvent(new ForceCancelEvent());
                                 } else {
