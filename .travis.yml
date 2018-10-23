@@ -1,6 +1,10 @@
 sudo: required
 language: java
 jdk: oraclejdk8
+branches:
+  only:
+  - master
+  - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
 env:
   global:
   - secure: f4g7R8+4kH9cRkiEnhUMA72F1ihX1HtYrDw4cJhhurdOs/R0IkksxzOarbWHCLytc8miBkNaCDZWddkyNUfcLKVZnNX7qOkj/KhlircjCaTbksdf4gojUHCPDwybvZhXFLRe26ubxwtUFqVgBhdPqN8RYGTtGEbfHkHMbD1jIFl/WLIs4cxT6ez6oUHBsP4xtcRokf9SEO+c1nRs1l3c2F2NijgouechqLdiHwqRf8GovwOC1uEglfykXIMzb4TNqArYU+iCEvRu4y+7qV/I7Rj362DDLrNlpqiR1KOeqOND0mVYSq7M8T1+LBx2iUrF53p8mjHNmHYmZZyfbsPxxs3/zeKkczUzxX2xOKPoTcjmK2/N84fwdgnGK5PV6nka+fgju1EzPwmVZjnEV1OBiiIjBJqZ0PbAkG5W4V82KuxL8c6VwVXt7NYNm/W9IPGqlOUrXpGKcQtvZKDf+uXx7QC1KXg9r1sixaXi4RF9UBqzPsoE/S0Y2AQ1QmGaQqYrYtdZZhtgYUMyfgTsTTiTH6vfYdxN8+mu19bpr3C7JQrNqCN6jPbqZR6jdmeKPiOPS/pHYJmzfw7WgGwc6vL0U0MAcsyCdJF0x01psItemjoF8NEAqAvRTxxyyAvb/ucMyCoKvotyX7ql4Pn3IKeszd7bjw0xZKPP6kvzHrx62L4=
@@ -23,8 +27,6 @@ deploy:
   file:
   - "ddiclient-api/build/libs/*"
   - "ddiclient-core/build/libs/*"
-  - "ddiclient-example/build/libs/*"
   on:
-    repo: Kynetics/uf-ddiclient
-    all_branches: true
+    branch: /^v\d+\.\d+(\.\d+)?(-\S*)?$/
     tags: true
