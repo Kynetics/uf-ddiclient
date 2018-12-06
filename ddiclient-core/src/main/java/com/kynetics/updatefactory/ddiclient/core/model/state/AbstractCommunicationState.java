@@ -14,6 +14,8 @@ import com.kynetics.updatefactory.ddiclient.core.model.event.AbstractEvent;
 import com.kynetics.updatefactory.ddiclient.core.model.event.ErrorEvent;
 import com.kynetics.updatefactory.ddiclient.core.model.event.FailureEvent;
 
+import java.net.SocketTimeoutException;
+
 import static com.kynetics.updatefactory.ddiclient.core.model.state.AbstractState.StateName.UPDATE_DOWNLOAD;
 
 /**
@@ -44,7 +46,8 @@ public abstract class AbstractCommunicationState extends AbstractStateWithInnerS
                 return attemptsRemaining == 0 ? new WaitingState(0, this) : getStateOnError(errorEvent, getState(), attemptsRemaining - 1);
             case FAILURE:
                 FailureEvent failureEvent = (FailureEvent) event;
-                return attemptsRemaining == 0 ? new WaitingState(0, this) : new CommunicationFailureState(getState(), attemptsRemaining - 1, failureEvent.getThrowable());
+                int newAttemptsRemaining = failureEvent.getThrowable() instanceof SocketTimeoutException ? attemptsRemaining : attemptsRemaining - 1;
+                return newAttemptsRemaining < 0 ? new WaitingState(0, this) : new CommunicationFailureState(getState(), newAttemptsRemaining, failureEvent.getThrowable());
             default:
                 return getState().onEvent(event);
         }
