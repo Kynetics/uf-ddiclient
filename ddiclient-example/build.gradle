@@ -9,13 +9,23 @@
  */
 
 group 'com.kynetics.updatefactory'
-version '0.4.2'
+version '0.4.4'
 apply plugin: 'java'
 
 sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
+}
+
+jar {
+    manifest {
+        attributes "Main-Class": "com.kynetics.updatefactory.ddiclient.example.TestClient"
+    }
+
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
 }
 
 dependencies {
