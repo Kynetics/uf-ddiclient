@@ -91,6 +91,6 @@ public class UFServiceBuilder {
                 targetData,
                 systemOperation,
                 userInteraction,
-                retryDelayOnCommunicationError);
+                Math.max(retryDelayOnCommunicationError, 30_000));
     }
 }
