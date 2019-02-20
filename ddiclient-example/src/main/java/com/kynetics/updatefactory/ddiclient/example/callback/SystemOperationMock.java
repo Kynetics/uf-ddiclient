@@ -24,7 +24,7 @@ import java.nio.file.StandardCopyOption;
  */
 public class SystemOperationMock implements SystemOperation {
 
-    private UpdateStatus status = UpdateStatus.NOT_APPLIED;
+    private UpdateStatus status = UpdateStatus.newPendingStatus();
 
     @Override
     public boolean savingFile(InputStream inputStream, FileInfo fileInfo) {
@@ -42,7 +42,7 @@ public class SystemOperationMock implements SystemOperation {
 
     @Override
     public void executeUpdate(long actionId) {
-        status = UpdateStatus.SUCCESSFULLY_APPLIED;
+        status = UpdateStatus.newSuccessStatus(null);
     }
 
     @Override

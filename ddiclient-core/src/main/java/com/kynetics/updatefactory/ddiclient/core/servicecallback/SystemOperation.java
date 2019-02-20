@@ -24,7 +24,41 @@ public interface SystemOperation {
 
     UpdateStatus updateStatus();
 
-    enum UpdateStatus {
+    class UpdateStatus{
+        private final StatusName statusName;
+        private final String[] messages;
+
+        public static UpdateStatus newSuccessStatus(String[] details){
+            return new UpdateStatus(StatusName.SUCCESSFULLY_APPLIED, getMessages(details));
+        }
+
+        public static UpdateStatus newFailureStatus(String[] details){
+            return new UpdateStatus(StatusName.APPLIED_WITH_ERROR, getMessages(details));
+        }
+
+        public static UpdateStatus newPendingStatus(){
+            return new UpdateStatus(StatusName.NOT_APPLIED, getMessages(null));
+        }
+
+        private static String[] getMessages(String[] messages) {
+            return messages == null ? new String[0] : messages;
+        }
+
+        UpdateStatus(StatusName statusName, String[] details) {
+            this.statusName = statusName;
+            this.messages = details;
+        }
+
+        public StatusName getStatusName() {
+            return statusName;
+        }
+
+        public String[] getMessages() {
+            return messages;
+        }
+    }
+
+    enum StatusName {
         NOT_APPLIED, APPLIED_WITH_ERROR, SUCCESSFULLY_APPLIED
     }
 }

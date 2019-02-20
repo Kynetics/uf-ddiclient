@@ -41,6 +41,8 @@ import java.util.concurrent.*;
 
 import static com.kynetics.updatefactory.ddiclient.api.model.request.DdiResult.FinalResult.*;
 import static com.kynetics.updatefactory.ddiclient.api.model.request.DdiStatus.ExecutionStatus.*;
+import static com.kynetics.updatefactory.ddiclient.core.servicecallback.SystemOperation.StatusName.NOT_APPLIED;
+import static com.kynetics.updatefactory.ddiclient.core.servicecallback.SystemOperation.StatusName.SUCCESSFULLY_APPLIED;
 
 /**
  * @author Daniele Sergio
@@ -140,12 +142,12 @@ public class  UFService {
         currentObservableState.addObserver(observer);
     }
 
-    private void setUpdateSucceffullyUpdate(boolean success){
+    private void setUpdateSucceffullyUpdate(SystemOperation.UpdateStatus updateStatus){
         checkServiceRunning();
         if(!currentObservableState.get().getStateName().equals(AbstractState.StateName.UPDATE_STARTED)){
             throw new IllegalStateException("current state must be UPDATE_STARTED to call this method");
         }
-        onEvent(success ? new SuccessEvent() : new UpdateErrorEvent(new String[]{"update error"}));
+        onEvent(updateStatus.getStatusName() == SUCCESSFULLY_APPLIED ? new SuccessEvent() : new UpdateErrorEvent(updateStatus.getMessages()));
     }
 
     private void checkServiceRunning(){
@@ -259,10 +261,11 @@ public class  UFService {
                 break;
             case UPDATE_STARTED:
                 final UpdateStartedState updateStartedState = (UpdateStartedState)currentState;
-                if(systemOperation.updateStatus() == SystemOperation.UpdateStatus.NOT_APPLIED){
+                final SystemOperation.UpdateStatus updateStatus = systemOperation.updateStatus();
+                if( updateStatus.getStatusName() == NOT_APPLIED){
                     systemOperation.executeUpdate(updateStartedState.getActionId());
                 }
-                setUpdateSucceffullyUpdate(systemOperation.updateStatus() == SystemOperation.UpdateStatus.SUCCESSFULLY_APPLIED);
+                setUpdateSucceffullyUpdate(systemOperation.updateStatus());
                 break;
             case AUTHORIZATION_WAITING:
                 final AuthorizationWaitingState authorizationWaitingState = (AuthorizationWaitingState) currentState;
