@@ -49,4 +49,9 @@ public class SystemOperationMock implements SystemOperation {
     public UpdateStatus updateStatus() {
         return status;
     }
+
+    @Override
+    public boolean checkSpace(long spaceNeeded) {
+        return true;
+    }
 }

@@ -43,7 +43,9 @@ public class UpdateDownloadState extends AbstractStateWithFile {
         switch (event.getEventName()) {
             case DOWNLOAD_STARTED:
                 return new SavingFileState(getActionId(), isForced(), getFileInfoList(), getNextFileToDownload(), getLastHash(), ((DownloadStartedEvent) event).getInputStream());
-            default:
+            case INSUFFICIENT_SPACE:
+                return new UpdateEndedState(getActionId(), false, new String[]{"Not enough space"});
+                default:
                 return super.onEvent(event);
         }
     }

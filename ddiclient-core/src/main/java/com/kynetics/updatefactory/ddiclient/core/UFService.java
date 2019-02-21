@@ -229,12 +229,22 @@ public class  UFService {
                 break;
             case UPDATE_DOWNLOAD:
                 final UpdateDownloadState updateDownloadState = (UpdateDownloadState) currentState;
-                callToAbort = client.downloadArtifact(
-                        tenant,
-                        controllerId,
-                        updateDownloadState.getFileInfo().getLinkInfo().getSoftwareModules(),
-                        updateDownloadState.getFileInfo().getLinkInfo().getFileName());
-                execute(callToAbort, new DownloadArtifact(updateDownloadState), forceDelay);
+                long spaceNeeded = 0;
+                for(int i = updateDownloadState.getNextFileToDownload(); i<updateDownloadState.getFileInfoList().size(); i++){
+                    spaceNeeded += updateDownloadState.getFileInfoList().get(i).getSize();
+                }
+
+                if(systemOperation.checkSpace(spaceNeeded)){
+                    callToAbort = client.downloadArtifact(
+                            tenant,
+                            controllerId,
+                            updateDownloadState.getFileInfo().getLinkInfo().getSoftwareModules(),
+                            updateDownloadState.getFileInfo().getLinkInfo().getFileName());
+                    execute(callToAbort, new DownloadArtifact(updateDownloadState), forceDelay);
+                } else {
+                    onEvent(new InsufficientSpaceEvent());
+                }
+
                 break;
             case UPDATE_READY:
                 final Call checkCancellation = client.getControllerBase(tenant, controllerId);

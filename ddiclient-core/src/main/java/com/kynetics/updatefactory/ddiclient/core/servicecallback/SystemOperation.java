@@ -24,6 +24,8 @@ public interface SystemOperation {
 
     UpdateStatus updateStatus();
 
+    boolean checkSpace(long spaceNeeded);
+
     class UpdateStatus{
         private final StatusName statusName;
         private final String[] messages;
