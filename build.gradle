@@ -13,6 +13,7 @@ plugins {
     id 'java'
     id 'maven'
 }
+apply from: "${project.rootDir.path}/gradle/dependencies.gradle"
 
 group 'com.kynetics.updatefactory'
 version '0.4.3'
@@ -21,8 +22,4 @@ sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
-}
-
-dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
 }

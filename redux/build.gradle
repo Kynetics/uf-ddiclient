@@ -19,14 +19,9 @@ repositories {
     mavenCentral()
 }
 
-dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    compile "org.slf4j:slf4j-api:1.7.25"
-}
+apply from: "${project.rootDir.path}/gradle/dependencies.gradle"
 
-compileKotlin {
-    kotlinOptions.jvmTarget = "1.8"
-}
-compileTestKotlin {
-    kotlinOptions.jvmTarget = "1.8"
+dependencies {
+    implementation app_dependencies.kotlin_stdlib
+    implementation app_dependencies.slf4j_api
 }

@@ -10,6 +10,9 @@ repositories {
     mavenCentral()
 }
 
+apply from: "${project.rootDir.path}/gradle/dependencies.gradle"
+
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation app_dependencies.kotlin_stdlib
+    testCompile test_dependencies.junit
 }

@@ -1,5 +1,5 @@
 plugins {
-    id 'org.jetbrains.kotlin.jvm' 
+    id 'org.jetbrains.kotlin.jvm'
 }
 
 group 'com.kynetics.updatefactory.ddiapi-client'
@@ -9,6 +9,9 @@ repositories {
     mavenCentral()
 }
 
+apply from: "${project.rootDir.path}/gradle/dependencies.gradle"
+
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation app_dependencies.kotlin_stdlib
+    testCompile test_dependencies.junit
 }
