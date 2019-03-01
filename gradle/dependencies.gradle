@@ -24,7 +24,7 @@ ext{
     ]
 
     test_dependencies = [
-        junit: "junit:unit:4.12"
+        junit: "junit:junit:4.12"
     ]
 
 
