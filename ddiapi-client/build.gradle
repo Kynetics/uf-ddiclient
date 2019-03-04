@@ -7,11 +7,14 @@
  *  http://www.eclipse.org/legal/epl-v10.html
  *
  */
+plugins {
+    id 'org.jetbrains.kotlin.jvm'
+    id 'java'
+    id 'maven'
+}
 
 group 'com.kynetics.updatefactory'
 
-apply plugin: 'java'
-apply plugin: 'maven'
 apply from: "${project.rootDir.path}/gradle/dependencies.gradle"
 sourceCompatibility = 1.8
 
@@ -21,10 +24,21 @@ repositories {
 
 
 dependencies {
+    compile project(":ddiapi-client:ddiapi-client-api")
     compile app_dependencies.retrofit
     compile app_dependencies.retrofit_converter
     compile app_dependencies.okhttp
-
+    compile app_dependencies.kotlin_stdlib
     compile app_dependencies.gson
     testCompile test_dependencies.junit
+}
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+compileTestKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
 }

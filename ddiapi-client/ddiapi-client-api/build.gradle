@@ -12,6 +12,10 @@ repositories {
 apply from: "${project.rootDir.path}/gradle/dependencies.gradle"
 
 dependencies {
-    implementation app_dependencies.kotlin_stdlib
+    compile app_dependencies.retrofit
+    compile app_dependencies.retrofit_converter
+    compile app_dependencies.okhttp
+    compile app_dependencies.kotlin_stdlib
+    compile app_dependencies.gson
     testCompile test_dependencies.junit
 }
