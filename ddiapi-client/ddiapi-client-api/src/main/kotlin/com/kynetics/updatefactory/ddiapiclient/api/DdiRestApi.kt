@@ -11,7 +11,7 @@ package com.kynetics.updatefactory.ddiapiclient.api
 
 import com.kynetics.updatefactory.ddiapiclient.model.request.DdiActionFeedback
 import com.kynetics.updatefactory.ddiapiclient.model.request.DdiConfigData
-import com.kynetics.updatefactory.ddiapiclient.model.response.DdiArtifact
+import com.kynetics.updatefactory.ddiapiclient.model.DdiArtifact
 import com.kynetics.updatefactory.ddiapiclient.model.response.DdiCancel
 import com.kynetics.updatefactory.ddiapiclient.model.response.DdiControllerBase
 import com.kynetics.updatefactory.ddiapiclient.model.response.DdiDeploymentBase
