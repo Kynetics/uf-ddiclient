@@ -17,5 +17,7 @@ dependencies {
     compile app_dependencies.okhttp
     compile app_dependencies.kotlin_stdlib
     compile app_dependencies.gson
-    testCompile test_dependencies.junit
+    
+    testCompile test_dependencies.testng
+    testCompile test_dependencies.mockito
 }

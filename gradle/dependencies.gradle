@@ -21,10 +21,13 @@ ext{
             retrofit: "com.squareup.retrofit2:retrofit:${retrofitVersion}",
             retrofit_converter: "com.squareup.retrofit2:converter-gson:${retrofitVersion}",
             okhttp: "com.squareup.okhttp3:okhttp:${okhttpVersion}",
+
     ]
 
     test_dependencies = [
-        junit: "junit:junit:4.12"
+            junit: "junit:junit:4.12",
+            testng: "org.testng:testng:6.11",
+            mockito: "org.mockito:mockito-core:2.+"
     ]
 
 
