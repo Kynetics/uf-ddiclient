@@ -11,13 +11,14 @@
 package com.kynetics.updatefactory.ddiapiclient.api.model
 
 import com.google.gson.annotations.SerializedName
+import java.util.HashMap
 
 data class DdiCancel(val id: String, val cancelAction: DdiCancelActionToStop)
 
-data class DdiControllerBase(val config: DdiConfig) : ResourceSupport() {
+data class DdiControllerBase(val config: DdiConfig, @SerializedName("_links") val links : Map<String, LinkEntry>) : ResourceSupport(links) {
     val requireDeploynet = getLink("deploymentBase") != null
     val requireCancel = getLink("cancelAction") != null
-    val requireConfigData = getLink("configData") != null
+    fun requireConfigData() = links["configData"] != null
     val actionId = getLink("deploymentBase")?.actionId
 
 }

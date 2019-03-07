@@ -52,9 +52,11 @@ private constructor(scope: ActorScope<In>, private val client: IDdiClient): Acto
                 }
 
             is Ping -> {
+
                 try {
                     val res = client.getControllerActions()
-                    if(res.requireConfigData){
+                    //println(res)
+                    if(res.requireConfigData()){
                         this.send(ConfigDataRequired, state)
                     }
                     if(res.requireDeploynet) {

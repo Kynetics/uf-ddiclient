@@ -15,13 +15,14 @@ import java.net.MalformedURLException
 import java.net.URL
 import java.util.*
 
-open class ResourceSupport(@SerializedName("_links") private val links : Map<String, LinkEntry> = HashMap()){
+open class ResourceSupport(private val links : Map<String, LinkEntry> = HashMap()){
 
     fun getLink(key: String): LinkEntry? {
         return links[key]
     }
 
 }
+
 data class LinkEntry(val href: String) {
 
     //TODO USE A REGEX!
