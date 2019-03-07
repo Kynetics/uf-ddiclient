@@ -19,23 +19,23 @@ $docker-compuse up
 
 ## DISTRIBUTIONS
 - osWithApps: type os with apps, with app, apps and os software module
-- osOnly: type os, with software module named os
+- os: type os, with software module named os
 - app: type app, with softwrae module named app
 
 ## DDI SECURITY:
-- Gataway token: e3d458bb8328c09dcce94ba8b7078ea4
-- Target1 target token: dcb29877211ec01b195c2786ad773608
-- Target2 target token: 9cb5d32400d0bc22d18eae55b62086a2
-- Target3 target token: 57c60decca852cacfc6e318626a3d542
+- Gataway token: 66076ab945a127dd80b15e9011995109
+- Target1 target token: 447fb8b5b3ea156470e852b94166a673
+- Target2 target token: 0fe7b8c9de2102ec6bf305b6f66df5b2
+- Target3 target token: 4a28d893bb841def706073c789c0f3a7
 
 ## Server request:
 - Target1 server request: 
   * put target metadata
-  * cancel update osOnly;
+  * cancel update osWithApps;
   * apply update app;
 - Target2 server request:
   * put target metadata
-  * apply update app
+  * apply update os
 - Target3 server request:
   * put target metadata
   * apply osWithApps

@@ -1,8 +1,8 @@
--- MySQL dump 10.17  Distrib 10.3.12-MariaDB, for debian-linux-gnu (x86_64)
+-- MySQL dump 10.17  Distrib 10.3.13-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: localhost    Database: hawkbit
 -- ------------------------------------------------------
--- Server version	10.3.12-MariaDB-1:10.3.12+maria~bionic
+-- Server version	10.3.13-MariaDB-1:10.3.13+maria~bionic
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -47,7 +47,7 @@ CREATE TABLE `schema_version` (
 
 LOCK TABLES `schema_version` WRITE;
 /*!40000 ALTER TABLE `schema_version` DISABLE KEYS */;
-INSERT INTO `schema_version` VALUES (1,1,'1.0.1','init   ','SQL','MYSQL/V1_0_1__init___MYSQL.sql',1018732788,'hawkbit','2019-03-07 14:52:15',154,1),(13,13,'1.10.0','advanced rolloutgroup  ','SQL','MYSQL/V1_10_0__advanced_rolloutgroup__MYSQL.sql',664507985,'hawkbit','2019-03-07 14:52:16',2,1),(14,14,'1.10.1','consolidate artifact sha1  ','SQL','MYSQL/V1_10_1__consolidate_artifact_sha1__MYSQL.sql',-360463156,'hawkbit','2019-03-07 14:52:16',7,1),(15,15,'1.10.2','rollout auto start  ','SQL','MYSQL/V1_10_2__rollout_auto_start__MYSQL.sql',1887828765,'hawkbit','2019-03-07 14:52:16',2,1),(16,16,'1.10.3','add rollout deleted flag  ','SQL','MYSQL/V1_10_3__add_rollout_deleted_flag__MYSQL.sql',1292572859,'hawkbit','2019-03-07 14:52:16',32,1),(17,17,'1.11.0','drop target info  ','SQL','MYSQL/V1_11_0__drop_target_info__MYSQL.sql',413839248,'hawkbit','2019-03-07 14:52:16',15,1),(18,18,'1.11.1','target filter query UQ   ','SQL','MYSQL/V1_11_1__target_filter_query_UQ___MYSQL.sql',-115576513,'hawkbit','2019-03-07 14:52:16',3,1),(19,19,'1.11.2','remove unused idexes   ','SQL','MYSQL/V1_11_2__remove_unused_idexes___MYSQL.sql',-507567816,'hawkbit','2019-03-07 14:52:16',7,1),(20,20,'1.11.2.1','create tenant usage  ','SQL','MYSQL/V1_11_2_1__create_tenant_usage__MYSQL.sql',-206019792,'hawkbit','2019-03-07 14:52:16',3,1),(21,21,'1.11.3','add module md targetvis  ','SQL','MYSQL/V1_11_3__add_module_md_targetvis__MYSQL.sql',185590925,'hawkbit','2019-03-07 14:52:16',2,1),(22,22,'1.12.0','action performance   ','SQL','MYSQL/V1_12_0__action_performance___MYSQL.sql',603109923,'hawkbit','2019-03-07 14:52:16',20,1),(23,23,'1.12.1','missing non null   ','SQL','MYSQL/V1_12_1__missing_non_null___MYSQL.sql',193177367,'hawkbit','2019-03-07 14:52:16',12,1),(24,24,'1.12.2','missing non null enum   ','SQL','MYSQL/V1_12_2__missing_non_null_enum___MYSQL.sql',1849006417,'hawkbit','2019-03-07 14:52:16',8,1),(25,25,'1.12.3','cascade delete   ','SQL','MYSQL/V1_12_3__cascade_delete___MYSQL.sql',2033261637,'hawkbit','2019-03-07 14:52:16',2,1),(26,26,'1.12.4','add maintenance window   ','SQL','MYSQL/V1_12_4__add_maintenance_window___MYSQL.sql',120260775,'hawkbit','2019-03-07 14:52:16',3,1),(27,27,'1.12.6','add index   ','SQL','MYSQL/V1_12_6__add_index___MYSQL.sql',-859477542,'hawkbit','2019-03-07 14:52:16',2,1),(28,28,'1.12.7','add rollout approval fields   ','SQL','MYSQL/V1_12_7__add_rollout_approval_fields___MYSQL.sql',-146076213,'hawkbit','2019-03-07 14:52:16',2,1),(29,29,'1.12.8','change length of created last modified by   ','SQL','MYSQL/V1_12_8__change_length_of_created_last_modified_by___MYSQL.sql',1152232785,'hawkbit','2019-03-07 14:52:16',8,1),(2,2,'1.2.0','update target info for message   ','SQL','MYSQL/V1_2_0__update_target_info_for_message___MYSQL.sql',1912199924,'hawkbit','2019-03-07 14:52:15',7,1),(3,3,'1.4.0','cascade delete   ','SQL','MYSQL/V1_4_0__cascade_delete___MYSQL.sql',695610035,'hawkbit','2019-03-07 14:52:15',41,1),(4,4,'1.4.1','cascade delete   ','SQL','MYSQL/V1_4_1__cascade_delete___MYSQL.sql',71258789,'hawkbit','2019-03-07 14:52:15',5,1),(5,5,'1.5.0','target filter query   ','SQL','MYSQL/V1_5_0__target_filter_query___MYSQL.sql',1822904321,'hawkbit','2019-03-07 14:52:15',4,1),(6,6,'1.6.0','rollout management   ','SQL','MYSQL/V1_6_0__rollout_management___MYSQL.sql',-1974636320,'hawkbit','2019-03-07 14:52:15',34,1),(7,7,'1.7.0','swmType maxAssignment greater 0  ','SQL','MYSQL/V1_7_0__swmType_maxAssignment_greater_0__MYSQL.sql',-251836914,'hawkbit','2019-03-07 14:52:15',1,1),(8,8,'1.7.1','reduce length enums   ','SQL','MYSQL/V1_7_1__reduce_length_enums___MYSQL.sql',-593689229,'hawkbit','2019-03-07 14:52:16',16,1),(9,9,'1.8.0','auto assign ds filter  ','SQL','MYSQL/V1_8_0__auto_assign_ds_filter__MYSQL.sql',342236577,'hawkbit','2019-03-07 14:52:16',4,1),(10,10,'1.8.1','cascade delete   ','SQL','MYSQL/V1_8_1__cascade_delete___MYSQL.sql',1697028621,'hawkbit','2019-03-07 14:52:16',16,1),(11,11,'1.8.2','remove external artifact   ','SQL','MYSQL/V1_8_2__remove_external_artifact___MYSQL.sql',415836704,'hawkbit','2019-03-07 14:52:16',3,1),(12,12,'1.9.0','add rollout groups created   ','SQL','MYSQL/V1_9_0__add_rollout_groups_created___MYSQL.sql',1685327539,'hawkbit','2019-03-07 14:52:16',2,1);
+INSERT INTO `schema_version` VALUES (1,1,'1.0.1','init   ','SQL','MYSQL/V1_0_1__init___MYSQL.sql',1018732788,'hawkbit','2019-03-07 16:10:59',151,1),(13,13,'1.10.0','advanced rolloutgroup  ','SQL','MYSQL/V1_10_0__advanced_rolloutgroup__MYSQL.sql',664507985,'hawkbit','2019-03-07 16:10:59',2,1),(14,14,'1.10.1','consolidate artifact sha1  ','SQL','MYSQL/V1_10_1__consolidate_artifact_sha1__MYSQL.sql',-360463156,'hawkbit','2019-03-07 16:10:59',8,1),(15,15,'1.10.2','rollout auto start  ','SQL','MYSQL/V1_10_2__rollout_auto_start__MYSQL.sql',1887828765,'hawkbit','2019-03-07 16:10:59',1,1),(16,16,'1.10.3','add rollout deleted flag  ','SQL','MYSQL/V1_10_3__add_rollout_deleted_flag__MYSQL.sql',1292572859,'hawkbit','2019-03-07 16:10:59',31,1),(17,17,'1.11.0','drop target info  ','SQL','MYSQL/V1_11_0__drop_target_info__MYSQL.sql',413839248,'hawkbit','2019-03-07 16:10:59',14,1),(18,18,'1.11.1','target filter query UQ   ','SQL','MYSQL/V1_11_1__target_filter_query_UQ___MYSQL.sql',-115576513,'hawkbit','2019-03-07 16:10:59',2,1),(19,19,'1.11.2','remove unused idexes   ','SQL','MYSQL/V1_11_2__remove_unused_idexes___MYSQL.sql',-507567816,'hawkbit','2019-03-07 16:10:59',6,1),(20,20,'1.11.2.1','create tenant usage  ','SQL','MYSQL/V1_11_2_1__create_tenant_usage__MYSQL.sql',-206019792,'hawkbit','2019-03-07 16:10:59',2,1),(21,21,'1.11.3','add module md targetvis  ','SQL','MYSQL/V1_11_3__add_module_md_targetvis__MYSQL.sql',185590925,'hawkbit','2019-03-07 16:10:59',2,1),(22,22,'1.12.0','action performance   ','SQL','MYSQL/V1_12_0__action_performance___MYSQL.sql',603109923,'hawkbit','2019-03-07 16:10:59',20,1),(23,23,'1.12.1','missing non null   ','SQL','MYSQL/V1_12_1__missing_non_null___MYSQL.sql',193177367,'hawkbit','2019-03-07 16:10:59',12,1),(24,24,'1.12.2','missing non null enum   ','SQL','MYSQL/V1_12_2__missing_non_null_enum___MYSQL.sql',1849006417,'hawkbit','2019-03-07 16:10:59',9,1),(25,25,'1.12.3','cascade delete   ','SQL','MYSQL/V1_12_3__cascade_delete___MYSQL.sql',2033261637,'hawkbit','2019-03-07 16:10:59',1,1),(26,26,'1.12.4','add maintenance window   ','SQL','MYSQL/V1_12_4__add_maintenance_window___MYSQL.sql',120260775,'hawkbit','2019-03-07 16:10:59',2,1),(27,27,'1.12.6','add index   ','SQL','MYSQL/V1_12_6__add_index___MYSQL.sql',-859477542,'hawkbit','2019-03-07 16:10:59',3,1),(28,28,'1.12.7','add rollout approval fields   ','SQL','MYSQL/V1_12_7__add_rollout_approval_fields___MYSQL.sql',-146076213,'hawkbit','2019-03-07 16:10:59',2,1),(29,29,'1.12.8','change length of created last modified by   ','SQL','MYSQL/V1_12_8__change_length_of_created_last_modified_by___MYSQL.sql',1152232785,'hawkbit','2019-03-07 16:10:59',7,1),(2,2,'1.2.0','update target info for message   ','SQL','MYSQL/V1_2_0__update_target_info_for_message___MYSQL.sql',1912199924,'hawkbit','2019-03-07 16:10:59',5,1),(3,3,'1.4.0','cascade delete   ','SQL','MYSQL/V1_4_0__cascade_delete___MYSQL.sql',695610035,'hawkbit','2019-03-07 16:10:59',37,1),(4,4,'1.4.1','cascade delete   ','SQL','MYSQL/V1_4_1__cascade_delete___MYSQL.sql',71258789,'hawkbit','2019-03-07 16:10:59',6,1),(5,5,'1.5.0','target filter query   ','SQL','MYSQL/V1_5_0__target_filter_query___MYSQL.sql',1822904321,'hawkbit','2019-03-07 16:10:59',3,1),(6,6,'1.6.0','rollout management   ','SQL','MYSQL/V1_6_0__rollout_management___MYSQL.sql',-1974636320,'hawkbit','2019-03-07 16:10:59',36,1),(7,7,'1.7.0','swmType maxAssignment greater 0  ','SQL','MYSQL/V1_7_0__swmType_maxAssignment_greater_0__MYSQL.sql',-251836914,'hawkbit','2019-03-07 16:10:59',1,1),(8,8,'1.7.1','reduce length enums   ','SQL','MYSQL/V1_7_1__reduce_length_enums___MYSQL.sql',-593689229,'hawkbit','2019-03-07 16:10:59',14,1),(9,9,'1.8.0','auto assign ds filter  ','SQL','MYSQL/V1_8_0__auto_assign_ds_filter__MYSQL.sql',342236577,'hawkbit','2019-03-07 16:10:59',5,1),(10,10,'1.8.1','cascade delete   ','SQL','MYSQL/V1_8_1__cascade_delete___MYSQL.sql',1697028621,'hawkbit','2019-03-07 16:10:59',15,1),(11,11,'1.8.2','remove external artifact   ','SQL','MYSQL/V1_8_2__remove_external_artifact___MYSQL.sql',415836704,'hawkbit','2019-03-07 16:10:59',3,1),(12,12,'1.9.0','add rollout groups created   ','SQL','MYSQL/V1_9_0__add_rollout_groups_created___MYSQL.sql',1685327539,'hawkbit','2019-03-07 16:10:59',2,1);
 /*!40000 ALTER TABLE `schema_version` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -98,7 +98,7 @@ CREATE TABLE `sp_action` (
 
 LOCK TABLES `sp_action` WRITE;
 /*!40000 ALTER TABLE `sp_action` DISABLE KEYS */;
-INSERT INTO `sp_action` VALUES (1,1551970614289,'test',1551970618158,'test',2,'DEFAULT','',0,5,2,1,NULL,NULL,0,NULL,NULL,NULL),(2,1551970618155,'test',1551970618155,'test',1,'DEFAULT','',0,3,3,1,NULL,NULL,0,NULL,NULL,NULL),(3,1551970628390,'test',1551970628390,'test',1,'DEFAULT','',0,3,3,2,NULL,NULL,0,NULL,NULL,NULL),(4,1551970631848,'test',1551970631848,'test',1,'DEFAULT','',0,3,1,3,NULL,NULL,0,NULL,NULL,NULL);
+INSERT INTO `sp_action` VALUES (1,1551975366225,'test',1551975382340,'test',2,'DEFAULT','',0,5,1,1,NULL,NULL,0,NULL,NULL,NULL),(2,1551975382333,'test',1551975382333,'test',1,'DEFAULT','',0,3,3,1,NULL,NULL,0,NULL,NULL,NULL),(3,1551975391415,'test',1551975391415,'test',1,'DEFAULT','',0,3,2,2,NULL,NULL,0,NULL,NULL,NULL),(4,1551975395587,'test',1551975395587,'test',1,'DEFAULT','',0,3,1,3,NULL,NULL,0,NULL,NULL,NULL);
 /*!40000 ALTER TABLE `sp_action` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -134,7 +134,7 @@ CREATE TABLE `sp_action_status` (
 
 LOCK TABLES `sp_action_status` WRITE;
 /*!40000 ALTER TABLE `sp_action_status` DISABLE KEYS */;
-INSERT INTO `sp_action_status` VALUES (1,1551970614376,'test',1551970614376,'test',1,'DEFAULT',1551970614289,3,1),(2,1551970618156,'test',1551970618156,'test',1,'DEFAULT',1551970618155,3,2),(3,1551970618150,'test',1551970618150,'test',1,'DEFAULT',1551970618147,5,1),(4,1551970628391,'test',1551970628391,'test',1,'DEFAULT',1551970628390,3,3),(5,1551970631849,'test',1551970631849,'test',1,'DEFAULT',1551970631848,3,4);
+INSERT INTO `sp_action_status` VALUES (1,1551975366325,'test',1551975366325,'test',1,'DEFAULT',1551975366225,3,1),(2,1551975382335,'test',1551975382335,'test',1,'DEFAULT',1551975382333,3,2),(3,1551975382319,'test',1551975382319,'test',1,'DEFAULT',1551975382313,5,1),(4,1551975391416,'test',1551975391416,'test',1,'DEFAULT',1551975391415,3,3),(5,1551975395589,'test',1551975395589,'test',1,'DEFAULT',1551975395587,3,4);
 /*!40000 ALTER TABLE `sp_action_status` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -189,7 +189,7 @@ CREATE TABLE `sp_artifact` (
   KEY `fk_assigned_sm` (`software_module`),
   KEY `sp_idx_artifact_02` (`tenant`,`sha1_hash`),
   CONSTRAINT `fk_assigned_sm` FOREIGN KEY (`software_module`) REFERENCES `sp_base_software_module` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -198,7 +198,7 @@ CREATE TABLE `sp_artifact` (
 
 LOCK TABLES `sp_artifact` WRITE;
 /*!40000 ALTER TABLE `sp_artifact` DISABLE KEYS */;
-INSERT INTO `sp_artifact` VALUES (1,1551970447035,'test',1551970447035,'test',1,'DEFAULT','2490a3d39b0004e4afeb517ef0ddbe2d',7,'test_1','b54e43082887d1e7cdb10b7a21fe4a1e56b44b5a',1),(2,1551970473721,'test',1551970473721,'test',1,'DEFAULT','b0b3b0dbf5330e3179c6ae3e0ac524c9',7,'test_2','a096a9d3cb96fa4cf6c63bd736a84cb7a7e4b61e',2),(3,1551970481214,'test',1551970481214,'test',1,'DEFAULT','2244fbd6bee5dcbe312e387c062ce6e6',7,'test_3','cde0c01b26634f869bb876326e4fbe969792bf94',2),(5,1551970507769,'test',1551970507769,'test',1,'DEFAULT','94424c5ce3f8c57a5b26d02f37dc06fc',7,'test_4','07fa4d03ac54d0b2a52f23d8e878c96db7aadd0a',3);
+INSERT INTO `sp_artifact` VALUES (1,1551975265210,'test',1551975265210,'test',1,'DEFAULT','94424c5ce3f8c57a5b26d02f37dc06fc',7,'test_4','07fa4d03ac54d0b2a52f23d8e878c96db7aadd0a',3),(2,1551975273780,'test',1551975273780,'test',1,'DEFAULT','b0b3b0dbf5330e3179c6ae3e0ac524c9',7,'test_2','a096a9d3cb96fa4cf6c63bd736a84cb7a7e4b61e',2),(3,1551975277575,'test',1551975277575,'test',1,'DEFAULT','2244fbd6bee5dcbe312e387c062ce6e6',7,'test_3','cde0c01b26634f869bb876326e4fbe969792bf94',2),(4,1551975287265,'test',1551975287265,'test',1,'DEFAULT','2490a3d39b0004e4afeb517ef0ddbe2d',7,'test_1','b54e43082887d1e7cdb10b7a21fe4a1e56b44b5a',1);
 /*!40000 ALTER TABLE `sp_artifact` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -238,7 +238,7 @@ CREATE TABLE `sp_base_software_module` (
 
 LOCK TABLES `sp_base_software_module` WRITE;
 /*!40000 ALTER TABLE `sp_base_software_module` DISABLE KEYS */;
-INSERT INTO `sp_base_software_module` VALUES (1,1551970437101,'test',1551970447075,'test',2,'DEFAULT','','app','1','\0','',1),(2,1551970468783,'test',1551970497050,'test',5,'DEFAULT','','apps','1','\0','',1),(3,1551970504574,'test',1551970507775,'test',2,'DEFAULT','','os','1','\0','',2);
+INSERT INTO `sp_base_software_module` VALUES (1,1551975246120,'test',1551975287270,'test',2,'DEFAULT','','app','1','\0','',1),(2,1551975253978,'test',1551975277579,'test',3,'DEFAULT','','apps','1','\0','',1),(3,1551975260304,'test',1551975265228,'test',2,'DEFAULT','','os','1','\0','',2);
 /*!40000 ALTER TABLE `sp_base_software_module` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -279,7 +279,7 @@ CREATE TABLE `sp_distribution_set` (
 
 LOCK TABLES `sp_distribution_set` WRITE;
 /*!40000 ALTER TABLE `sp_distribution_set` DISABLE KEYS */;
-INSERT INTO `sp_distribution_set` VALUES (1,1551970560600,'test',1551970566070,'test',2,'DEFAULT','','osWithApps','1','','\0','\0',2),(2,1551970574651,'test',1551970578051,'test',2,'DEFAULT','','osOnly','1','','\0','\0',1),(3,1551970587057,'test',1551970590468,'test',2,'DEFAULT','','app','1','','\0','\0',3);
+INSERT INTO `sp_distribution_set` VALUES (1,1551975312567,'test',1551975318503,'test',2,'DEFAULT','','osWithApps','1','','\0','\0',1),(2,1551975326181,'test',1551975329294,'test',2,'DEFAULT','','os','1','','\0','\0',2),(3,1551975338674,'test',1551975342114,'test',2,'DEFAULT','','app','1','','\0','\0',3);
 /*!40000 ALTER TABLE `sp_distribution_set` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -317,7 +317,7 @@ CREATE TABLE `sp_distribution_set_type` (
 
 LOCK TABLES `sp_distribution_set_type` WRITE;
 /*!40000 ALTER TABLE `sp_distribution_set_type` DISABLE KEYS */;
-INSERT INTO `sp_distribution_set_type` VALUES (1,1551970415462,'system',1551970415462,'system',1,'DEFAULT','Default type with Firmware/OS only.','OS only',NULL,'\0','os'),(2,1551970415476,'system',1551970415476,'system',1,'DEFAULT','Default type with Firmware/OS and optional app(s).','OS with app(s)',NULL,'\0','os_app'),(3,1551970415473,'system',1551970415473,'system',1,'DEFAULT','Default type with app(s) only.','App(s) only',NULL,'\0','app');
+INSERT INTO `sp_distribution_set_type` VALUES (1,1551975231012,'system',1551975231012,'system',1,'DEFAULT','Default type with Firmware/OS and optional app(s).','OS with app(s)',NULL,'\0','os_app'),(2,1551975230999,'system',1551975230999,'system',1,'DEFAULT','Default type with Firmware/OS only.','OS only',NULL,'\0','os'),(3,1551975231009,'system',1551975231009,'system',1,'DEFAULT','Default type with app(s) only.','App(s) only',NULL,'\0','app');
 /*!40000 ALTER TABLE `sp_distribution_set_type` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -457,7 +457,7 @@ CREATE TABLE `sp_ds_type_element` (
 
 LOCK TABLES `sp_ds_type_element` WRITE;
 /*!40000 ALTER TABLE `sp_ds_type_element` DISABLE KEYS */;
-INSERT INTO `sp_ds_type_element` VALUES ('',1,2),('\0',2,1),('',2,2),('',3,1);
+INSERT INTO `sp_ds_type_element` VALUES ('\0',1,1),('',1,2),('',2,2),('',3,1);
 /*!40000 ALTER TABLE `sp_ds_type_element` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -616,7 +616,7 @@ CREATE TABLE `sp_software_module_type` (
 
 LOCK TABLES `sp_software_module_type` WRITE;
 /*!40000 ALTER TABLE `sp_software_module_type` DISABLE KEYS */;
-INSERT INTO `sp_software_module_type` VALUES (1,1551970415248,'system',1551970415248,'system',1,'DEFAULT','Application Addons','Application',NULL,'\0','application',2147483647),(2,1551970415329,'system',1551970415329,'system',1,'DEFAULT','Core firmware or operationg system','OS',NULL,'\0','os',1);
+INSERT INTO `sp_software_module_type` VALUES (1,1551975230809,'system',1551975230809,'system',1,'DEFAULT','Application Addons','Application',NULL,'\0','application',2147483647),(2,1551975230869,'system',1551975230869,'system',1,'DEFAULT','Core firmware or operationg system','OS',NULL,'\0','os',1);
 /*!40000 ALTER TABLE `sp_software_module_type` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -692,7 +692,7 @@ CREATE TABLE `sp_target` (
 
 LOCK TABLES `sp_target` WRITE;
 /*!40000 ALTER TABLE `sp_target` DISABLE KEYS */;
-INSERT INTO `sp_target` VALUES (1,1551970599801,'test',1551970618153,'test',3,'DEFAULT','','target1','target1','dcb29877211ec01b195c2786ad773608',3,NULL,NULL,NULL,'',NULL,2),(2,1551970603090,'test',1551970628385,'test',2,'DEFAULT','','target2','target2','9cb5d32400d0bc22d18eae55b62086a2',3,NULL,NULL,NULL,'',NULL,2),(3,1551970607876,'test',1551970631846,'test',2,'DEFAULT','','target3','target3','57c60decca852cacfc6e318626a3d542',1,NULL,NULL,NULL,'',NULL,2);
+INSERT INTO `sp_target` VALUES (1,1551975352117,'test',1551975382326,'test',3,'DEFAULT','','target1','target1','447fb8b5b3ea156470e852b94166a673',3,NULL,NULL,NULL,'',NULL,2),(2,1551975356776,'test',1551975391405,'test',2,'DEFAULT','','target2','target2','0fe7b8c9de2102ec6bf305b6f66df5b2',2,NULL,NULL,NULL,'',NULL,2),(3,1551975361488,'test',1551975395581,'test',2,'DEFAULT','','target3','target3','4a28d893bb841def706073c789c0f3a7',1,NULL,NULL,NULL,'',NULL,2);
 /*!40000 ALTER TABLE `sp_target` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -845,7 +845,7 @@ CREATE TABLE `sp_tenant` (
 
 LOCK TABLES `sp_tenant` WRITE;
 /*!40000 ALTER TABLE `sp_tenant` DISABLE KEYS */;
-INSERT INTO `sp_tenant` VALUES (1,1551970415539,'system',1551970415539,'system',1,'Default',2);
+INSERT INTO `sp_tenant` VALUES (1,1551975231074,'system',1551975231074,'system',1,'Default',1);
 /*!40000 ALTER TABLE `sp_tenant` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -877,7 +877,7 @@ CREATE TABLE `sp_tenant_configuration` (
 
 LOCK TABLES `sp_tenant_configuration` WRITE;
 /*!40000 ALTER TABLE `sp_tenant_configuration` DISABLE KEYS */;
-INSERT INTO `sp_tenant_configuration` VALUES (1,1551971216714,'test',1551971216714,'test',1,'DEFAULT','authentication.gatewaytoken.enabled','true'),(2,1551971216804,'test',1551971216804,'test',1,'DEFAULT','authentication.gatewaytoken.key','e3d458bb8328c09dcce94ba8b7078ea4');
+INSERT INTO `sp_tenant_configuration` VALUES (1,1551975294139,'test',1551975294139,'test',1,'DEFAULT','authentication.gatewaytoken.enabled','true'),(2,1551975294188,'test',1551975294188,'test',1,'DEFAULT','authentication.gatewaytoken.key','66076ab945a127dd80b15e9011995109');
 /*!40000 ALTER TABLE `sp_tenant_configuration` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -916,4 +916,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-03-07 15:07:41
+-- Dump completed on 2019-03-07 16:19:21

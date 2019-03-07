@@ -34,6 +34,8 @@ services:
     networks:
     - uf-network
 
+    volumes:
+    - ./artifactrepo:/opt/uf-update-server/artifactrepo
     depends_on:
     - maria-db
 
