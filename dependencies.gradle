@@ -8,28 +8,24 @@
  *
  */
 
-ext{
-    javaSourceCompatibility = "1.8"
-
-    retrofitVersion = '2.3.0'
-    okhttpVersion = '3.9.0'
-
+ext {
+    javaSourceCompatibility = '1.8'
+    retrofitVersion = '2.5.0'
+    okhttpVersion = '3.13.1'
     app_dependencies = [
-            slf4j_api:"org.slf4j:slf4j-api:1.7.25",
-            kotlin_stdlib: "org.jetbrains.kotlin:kotlin-stdlib-jdk8",
-            gson: "com.google.code.gson:gson:2.8.1",
+            slf4j_api:'org.slf4j:slf4j-api:1.7.25',
+            kotlin_stdlib: 'org.jetbrains.kotlin:kotlin-stdlib-jdk8',
+            kotlin_x: 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.1.1',
+            gson: 'com.google.code.gson:gson:2.8.1',
             retrofit: "com.squareup.retrofit2:retrofit:${retrofitVersion}",
             retrofit_converter: "com.squareup.retrofit2:converter-gson:${retrofitVersion}",
+            retrofit_coroutines: 'com.jakewharton.retrofit:retrofit2-kotlin-coroutines-adapter:0.9.2',
             okhttp: "com.squareup.okhttp3:okhttp:${okhttpVersion}",
 
     ]
-
     test_dependencies = [
-            junit: "junit:junit:4.12",
-            testng: "org.testng:testng:6.11",
-            mockito: "org.mockito:mockito-core:2.+"
+            junit: 'junit:junit:4.12',
+            testng: 'org.testng:testng:6.11',
+            mockito: 'org.mockito:mockito-core:2.+'
     ]
-
-
-
 }

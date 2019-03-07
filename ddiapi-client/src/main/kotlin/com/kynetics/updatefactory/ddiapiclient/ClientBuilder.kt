@@ -10,6 +10,7 @@
 
 package com.kynetics.updatefactory.ddiapiclient
 
+import com.jakewharton.retrofit2.adapter.kotlin.coroutines.CoroutineCallAdapterFactory
 import com.kynetics.updatefactory.ddiapiclient.api.DdiRestApi
 import com.kynetics.updatefactory.ddiapiclient.security.Authentication
 import com.kynetics.updatefactory.ddiapiclient.security.HawkbitAuthenticationRequestInterceptor
@@ -92,6 +93,7 @@ class ClientBuilder {
         return builder
                 .baseUrl(baseUrl!!)
                 .addConverterFactory(GsonConverterFactory.create())
+                .addCallAdapterFactory(CoroutineCallAdapterFactory())
                 .callbackExecutor(Executors.newSingleThreadExecutor())
                 .client(okHttpBuilder!!.build())
                 .build()

@@ -9,14 +9,15 @@
  */
 package com.kynetics.updatefactory.ddiapiclient.api
 
+import com.kynetics.updatefactory.ddiapiclient.model.DdiArtifact
 import com.kynetics.updatefactory.ddiapiclient.model.request.DdiActionFeedback
 import com.kynetics.updatefactory.ddiapiclient.model.request.DdiConfigData
-import com.kynetics.updatefactory.ddiapiclient.model.DdiArtifact
 import com.kynetics.updatefactory.ddiapiclient.model.response.DdiCancel
 import com.kynetics.updatefactory.ddiapiclient.model.response.DdiControllerBase
 import com.kynetics.updatefactory.ddiapiclient.model.response.DdiDeploymentBase
+import kotlinx.coroutines.Deferred
 import okhttp3.ResponseBody
-import retrofit2.Call
+import retrofit2.Response
 import retrofit2.http.*
 
 /**
@@ -41,7 +42,7 @@ interface DdiRestApi {
     @GET(DdiRestConstants.BASE_V1_REQUEST_MAPPING + "/{controllerId}/softwaremodules/{softwareModuleId}/artifacts")
     fun getSoftwareModulesArtifacts(@Path("tenant") tenant: String,
                                     @Path("controllerId") controllerId: String,
-                                    @Path("softwareModuleId") softwareModuleId: Long?): Call<List<DdiArtifact>>
+                                    @Path("softwareModuleId") softwareModuleId: Long?): Deferred<List<DdiArtifact>>
 
     /**
      * Root resource for an individual [Target].
@@ -54,8 +55,8 @@ interface DdiRestApi {
      */
     @Headers("Accept: application/hal+json")
     @GET(DdiRestConstants.BASE_V1_REQUEST_MAPPING + "/{controllerId}")
-    fun getControllerBase(@Path("tenant") tenant: String,
-                          @Path("controllerId") controllerId: String): Call<DdiControllerBase>
+    fun getControllerActions(@Path("tenant") tenant: String,
+                             @Path("controllerId") controllerId: String): Deferred<DdiControllerBase>
 
     /**
      * Handles GET [DdiArtifact] download request.
@@ -64,7 +65,7 @@ interface DdiRestApi {
      */
     @Streaming
     @GET
-    fun downloadArtifact(@Url url: String): Call<ResponseBody>
+    fun downloadArtifact(@Url url: String): Deferred<ResponseBody>
 
     /**
      * Resource for software module.
@@ -93,11 +94,11 @@ interface DdiRestApi {
     @Headers("Accept: application/hal+json")
     @GET(DdiRestConstants.BASE_V1_REQUEST_MAPPING + "/{controllerId}/" + DdiRestConstants.DEPLOYMENT_BASE_ACTION
             + "/{actionId}")
-    fun getControllerBasedeploymentAction(@Path("tenant") tenant: String,
-                                          @Path("controllerId") controllerId: String,
-                                          @Path("actionId") actionId: Long?,
-                                          @Query(value = "c") resource: Int,
-                                          @Query(value = "actionHistory") actionHistoryMessageCount: Int?): Call<DdiDeploymentBase>
+    fun getDeploymentActionDetails(@Path("tenant") tenant: String,
+                                   @Path("controllerId") controllerId: String,
+                                   @Path("actionId") actionId: Long,
+                                   @Query(value = "c") resource: Int?,
+                                   @Query(value = "actionHistory") actionHistoryMessageCount: Int?): Deferred<DdiDeploymentBase>
 
     /**
      * This is the feedback channel for the [DdiDeploymentBase] action.
@@ -116,10 +117,10 @@ interface DdiRestApi {
     @Headers("Content-Type: application/json")
     @POST(DdiRestConstants.BASE_V1_REQUEST_MAPPING + "/{controllerId}/" + DdiRestConstants.DEPLOYMENT_BASE_ACTION + "/{actionId}/"
             + DdiRestConstants.FEEDBACK)
-    fun postBasedeploymentActionFeedback(@Path("tenant") tenant: String,
-                                         @Path("controllerId") controllerId: String,
-                                         @Path("actionId") actionId: Long?,
-                                         @Body feedback: DdiActionFeedback): Call<Void>
+    fun postDeploymentActionFeedback(@Path("tenant") tenant: String,
+                                     @Path("controllerId") controllerId: String,
+                                     @Path("actionId") actionId: Long?,
+                                     @Body feedback: DdiActionFeedback): Deferred<Void>
 
     /**
      * This is the feedback channel for the config data action.
@@ -138,7 +139,7 @@ interface DdiRestApi {
             + DdiRestConstants.CONFIG_DATA_ACTION)
     fun putConfigData(@Path("tenant") tenant: String,
                       @Path("controllerId") controllerId: String,
-                      @Body configData: DdiConfigData): Call<Void>
+                      @Body configData: DdiConfigData): Deferred<Void>
 
     /**
      * RequestMethod.GET method for the [DdiCancel] action.
@@ -155,9 +156,9 @@ interface DdiRestApi {
     @Headers("Accept: application/hal+json")
     @GET(value = DdiRestConstants.BASE_V1_REQUEST_MAPPING + "/{controllerId}/" + DdiRestConstants.CANCEL_ACTION
             + "/{actionId}")
-    fun getControllerCancelAction(@Path("tenant") tenant: String,
-                                  @Path("controllerId") controllerId: String,
-                                  @Path("actionId") actionId: Long?): Call<DdiCancel>
+    fun getCancelActionDetails(@Path("tenant") tenant: String,
+                               @Path("controllerId") controllerId: String,
+                               @Path("actionId") actionId: Long): Deferred<DdiCancel>
 
     /**
      * RequestMethod.POST method receiving the [DdiActionFeedback] from
@@ -181,5 +182,5 @@ interface DdiRestApi {
     fun postCancelActionFeedback(@Path("tenant") tenant: String,
                                  @Path("controllerId") controllerId: String,
                                  @Path("actionId") actionId: Long?,
-                                 @Body feedback: DdiActionFeedback): Call<Void>
+                                 @Body feedback: DdiActionFeedback): Deferred<Void>
 }

@@ -56,7 +56,7 @@ class DdiRestConstants private constructor() {
         /**
          * Default value specifying that no action history to be sent as part of
          * response to deploymentBase
-         * [DdiRestApi.getControllerBasedeploymentAction].
+         * [DdiRestApi.getDeploymentActionDetails].
          */
         const val NO_ACTION_HISTORY = 0
 

@@ -10,16 +10,68 @@
 
 plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.3.21'
-    id 'java'
-    id 'maven'
 }
-apply from: "${project.rootDir.path}/gradle/dependencies.gradle"
+
+repositories {
+    mavenCentral()
+}
+
+final def deps = gradle.settings.app_dependencies
+final def tdeps = gradle.settings.test_dependencies
 
 group 'com.kynetics.updatefactory'
 version '0.4.3'
 
-sourceCompatibility = 1.8
+subprojects {
+    apply plugin: 'org.jetbrains.kotlin.jvm'
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        implementation deps.kotlin_stdlib
+        implementation deps.kotlin_x
+        //runtime deps.kotlin_compiler
+    }
+}
 
-repositories {
-    mavenCentral()
+project(':ddiapi-client') {
+    final def subprj = ':ddiapi-client:ddiapi-client-api'
+    dependencies {
+        implementation project(subprj)
+        implementation deps.retrofit_converter
+    }
+    allprojects {
+        dependencies {
+            implementation deps.okhttp
+            implementation deps.retrofit
+            implementation deps.retrofit_coroutines
+        }
+    }
+    project(subprj) {
+        dependencies {
+            implementation deps.gson
+            testCompile tdeps.testng
+        }
+        test {
+            useTestNG()
+        }
+
+    }
+}
+
+project(':core') {
+    dependencies {
+        implementation project(':ddiapi-client')
+        implementation project(':ddiapi-client:ddiapi-client-api')
+        implementation deps.retrofit
+    }
+}
+
+task listConfigurations <<{
+    allprojects.each { p ->
+        println(p.name)
+        p.configurations.each { c ->
+            println("\t${c.name}: ${c.description}")
+        }
+    }
 }
