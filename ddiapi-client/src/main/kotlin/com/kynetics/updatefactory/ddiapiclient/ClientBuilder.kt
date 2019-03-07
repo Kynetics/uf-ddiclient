@@ -15,7 +15,7 @@ import com.kynetics.updatefactory.ddiapiclient.api.DdiRestApi
 import com.kynetics.updatefactory.ddiapiclient.security.Authentication
 import com.kynetics.updatefactory.ddiapiclient.security.HawkbitAuthenticationRequestInterceptor
 import com.kynetics.updatefactory.ddiapiclient.security.UpdateFactoryAuthenticationRequestInterceptor
-import com.kynetics.updatefactory.ddiapiclient.security.UpdateFactoryAuthenticationRequestInterceptor.OnTargetTokenFound
+import com.kynetics.updatefactory.ddiapiclient.api.OnTargetTokenFound
 import okhttp3.OkHttpClient
 import retrofit2.converter.gson.GsonConverterFactory
 
@@ -23,35 +23,46 @@ import java.util.HashSet
 import java.util.concurrent.Executors
 
 import com.kynetics.updatefactory.ddiapiclient.ServerType.HAWKBIT
+import com.kynetics.updatefactory.ddiapiclient.api.DdiClient
+import com.kynetics.updatefactory.ddiapiclient.api.IDdiClient
 import com.kynetics.updatefactory.ddiapiclient.security.Authentication.AuthenticationType.GATEWAY_TOKEN_AUTHENTICATION
 import com.kynetics.updatefactory.ddiapiclient.security.Authentication.AuthenticationType.TARGET_TOKEN_AUTHENTICATION
 import com.kynetics.updatefactory.ddiapiclient.security.Authentication.Companion.newInstance
-import com.kynetics.updatefactory.ddiapiclient.validation.Assert.Companion.NotNull
-import com.kynetics.updatefactory.ddiapiclient.validation.Assert.Companion.ValidateUrl
+import com.kynetics.updatefactory.ddiapiclient.validation.Assert.Companion.notEmpty
+import com.kynetics.updatefactory.ddiapiclient.validation.Assert.Companion.notNull
+import com.kynetics.updatefactory.ddiapiclient.validation.Assert.Companion.validateUrl
 import retrofit2.Retrofit.Builder
 
 /**
  * @author Daniele Sergio
  */
 class ClientBuilder {
-    private val builder: Builder
+
+    private val builder = Builder()
+    private val httpBuilder = OkHttpClient.Builder()
+    private val authentications = HashSet<Authentication>()
+
     private var serverType = HAWKBIT
     private var baseUrl: String? = null
-    private val authentications = HashSet<Authentication>()
-    private var okHttpBuilder: OkHttpClient.Builder? = null
     private var onTargetTokenFound: OnTargetTokenFound? = null
-
-    init {
-        this.builder = Builder()
-    }
+    private var tenant: String = "TEST"
+    private var controllerId: String? = null
 
     fun withBaseUrl(baseUrl: String): ClientBuilder {
+        notEmpty(baseUrl, "baseUrl")
         this.baseUrl = baseUrl
         return this
     }
 
-    fun withHttpBuilder(okHttpBuilder: OkHttpClient.Builder): ClientBuilder {
-        this.okHttpBuilder = okHttpBuilder
+    fun withTetnat(tenant: String): ClientBuilder {
+        notEmpty(tenant, "tenant")
+        this.tenant = tenant
+        return this
+    }
+
+    fun withControllerId(controllerId: String): ClientBuilder {
+        notEmpty(controllerId, "controllerId")
+        this.controllerId = controllerId
         return this
     }
 
@@ -65,39 +76,35 @@ class ClientBuilder {
         return this
     }
 
-    fun withGatewayToken(token: String?): ClientBuilder {
-        if (token == null || token.isEmpty()) {
-            return this
-        }
+    fun withGatewayToken(token: String): ClientBuilder {
+        notEmpty(token, "gatewayToken")
         authentications.add(newInstance(GATEWAY_TOKEN_AUTHENTICATION, token))
         return this
     }
 
-    fun withTargetToken(token: String?): ClientBuilder {
-        if (token == null || token.isEmpty()) {
-            return this
-        }
+    fun withTargetToken(token: String): ClientBuilder {
+        notEmpty(token, "targetToken")
         authentications.add(newInstance(TARGET_TOKEN_AUTHENTICATION, token))
         return this
     }
 
-    fun build(): DdiRestApi {
-        ValidateUrl(baseUrl, "baseUrl")
-        NotNull(okHttpBuilder, "okHttpBuilder")
-        NotNull(serverType, "serverType")
-        okHttpBuilder!!.interceptors().add(0, if (serverType === HAWKBIT)
+    fun build(): IDdiClient {
+        validateUrl(baseUrl, "baseUrl")
+        notNull(serverType, "serverType")
+        notNull(controllerId, "controllerId")
+        httpBuilder.interceptors().add(0, if (serverType === HAWKBIT)
             HawkbitAuthenticationRequestInterceptor(authentications)
         else
             UpdateFactoryAuthenticationRequestInterceptor(authentications, onTargetTokenFound))
-
-        return builder
+        val ddiRestApi = builder
                 .baseUrl(baseUrl!!)
                 .addConverterFactory(GsonConverterFactory.create())
                 .addCallAdapterFactory(CoroutineCallAdapterFactory())
                 .callbackExecutor(Executors.newSingleThreadExecutor())
-                .client(okHttpBuilder!!.build())
+                .client(httpBuilder.build())
                 .build()
                 .create(DdiRestApi::class.java)
+        return DdiClient(ddiRestApi, tenant, controllerId!!)
     }
 
 }

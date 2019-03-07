@@ -9,15 +9,9 @@
  */
 package com.kynetics.updatefactory.ddiapiclient.api
 
-import com.kynetics.updatefactory.ddiapiclient.model.DdiArtifact
-import com.kynetics.updatefactory.ddiapiclient.model.request.DdiActionFeedback
-import com.kynetics.updatefactory.ddiapiclient.model.request.DdiConfigData
-import com.kynetics.updatefactory.ddiapiclient.model.response.DdiCancel
-import com.kynetics.updatefactory.ddiapiclient.model.response.DdiControllerBase
-import com.kynetics.updatefactory.ddiapiclient.model.response.DdiDeploymentBase
+import com.kynetics.updatefactory.ddiapiclient.api.model.*
 import kotlinx.coroutines.Deferred
 import okhttp3.ResponseBody
-import retrofit2.Response
 import retrofit2.http.*
 
 /**
@@ -184,3 +178,4 @@ interface DdiRestApi {
                                  @Path("actionId") actionId: Long?,
                                  @Body feedback: DdiActionFeedback): Deferred<Void>
 }
+

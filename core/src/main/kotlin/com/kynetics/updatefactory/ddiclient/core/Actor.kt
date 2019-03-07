@@ -1,6 +1,7 @@
 package com.kynetics.updatefactory.ddiclient.core
 
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.channels.ActorScope
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
@@ -8,9 +9,10 @@ import kotlin.coroutines.CoroutineContext
 
 typealias Receive<T> = suspend (T) -> Unit
 
-abstract class Actor<T>(scope: ActorScope<T>): ActorScope<T> by scope {
+@UseExperimental(ObsoleteCoroutinesApi::class)
+abstract class Actor<T> constructor(scope: ActorScope<T>): ActorScope<T> by scope {
 
-    private var _receive: Receive<T> = { t -> ; }
+    private var _receive: Receive<T> = { ; }
 
     fun become(receive: Receive<T>) {
         _receive = receive
@@ -25,4 +27,9 @@ abstract class Actor<T>(scope: ActorScope<T>): ActorScope<T> by scope {
             for (msg in channel) instance._receive(msg)
         }
     }
+
+    protected fun unhandled(msg: Any) {
+        println("received unexpected message $msg")
+    }
+
 }

@@ -8,7 +8,7 @@
  *
  */
 
-package com.kynetics.updatefactory.ddiapiclient.model
+package com.kynetics.updatefactory.ddiapiclient.api.model
 
 import com.google.gson.annotations.SerializedName
 import java.net.MalformedURLException
@@ -24,9 +24,10 @@ open class ResourceSupport(@SerializedName("_links") private val links : Map<Str
 }
 data class LinkEntry(val href: String) {
 
+    //TODO USE A REGEX!
     val actionId: Long?
         get() {
-            var url: URL?
+            val url: URL?
             try {
                 url = URL(href)
             } catch (e: MalformedURLException) {
@@ -49,7 +50,7 @@ data class DdiDeployment(val download: HandlingType, val update: HandlingType, v
     /**
      * The handling type for the update action.
      */
-    enum class HandlingType private constructor(val handlingTypeName: String) {
+    enum class HandlingType constructor(val handlingTypeName: String) {
 
         /**
          * Not necessary for the command.

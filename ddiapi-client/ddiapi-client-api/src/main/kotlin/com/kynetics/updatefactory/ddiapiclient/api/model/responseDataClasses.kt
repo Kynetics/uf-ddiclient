@@ -8,14 +8,19 @@
  *
  */
 
-package com.kynetics.updatefactory.ddiapiclient.model.response
+package com.kynetics.updatefactory.ddiapiclient.api.model
 
 import com.google.gson.annotations.SerializedName
-import com.kynetics.updatefactory.ddiapiclient.model.*
 
 data class DdiCancel(val id: String, val cancelAction: DdiCancelActionToStop)
 
-data class DdiControllerBase(val config: DdiConfig) : ResourceSupport()
+data class DdiControllerBase(val config: DdiConfig) : ResourceSupport() {
+    val requireDeploynet = getLink("deploymentBase") != null
+    val requireCancel = getLink("cancelAction") != null
+    val requireConfigData = getLink("configData") != null
+    val actionId = getLink("deploymentBase")?.actionId
+
+}
 
 data class DdiDeploymentBase(@SerializedName("id") private val deplyomentId: String,
                              @SerializedName("deployment") val deployment: DdiDeployment,

@@ -24,19 +24,19 @@ class Assert private constructor() {
 
     companion object {
 
-        fun NotEmpty(item: String?, itemName: String) {
+        fun notEmpty(item: String?, itemName: String) {
             if (item == null || item.isEmpty()) {
                 throw IllegalStateException(String.format("%s could not be null or empty", itemName))
             }
         }
 
-        fun NotNull(item: Any?, itemName: String) {
+        fun notNull(item: Any?, itemName: String) {
             if (item == null) {
                 throw IllegalStateException(String.format("%s could not be null", itemName))
             }
         }
 
-        fun ValidateUrl(url: String?, itemName: String) {
+        fun validateUrl(url: String?, itemName: String) {
             try {
                 val test = URL(url)
                 test.toURI()

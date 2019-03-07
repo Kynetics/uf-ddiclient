@@ -63,9 +63,14 @@ project(':core') {
     dependencies {
         implementation project(':ddiapi-client')
         implementation project(':ddiapi-client:ddiapi-client-api')
-        implementation deps.retrofit
+        //implementation deps.retrofit
     }
+    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+        kotlinOptions.freeCompilerArgs += ["-Xuse-experimental=kotlin.Experimental"]
+    }
+
 }
+
 
 task listConfigurations <<{
     allprojects.each { p ->

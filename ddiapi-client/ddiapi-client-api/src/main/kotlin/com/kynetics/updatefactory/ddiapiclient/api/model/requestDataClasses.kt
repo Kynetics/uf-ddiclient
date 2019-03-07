@@ -8,9 +8,7 @@
  *
  */
 
-package com.kynetics.updatefactory.ddiapiclient.model.request
-
-import com.kynetics.updatefactory.ddiapiclient.model.DdiStatus
+package com.kynetics.updatefactory.ddiapiclient.api.model
 
 data class DdiActionFeedback(val id: Long, val time: String, val status: DdiStatus)
 

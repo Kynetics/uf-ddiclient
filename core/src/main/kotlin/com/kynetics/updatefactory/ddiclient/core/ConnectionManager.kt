@@ -1,55 +1,84 @@
 package com.kynetics.updatefactory.ddiclient.core
 
-import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message
+import com.kynetics.updatefactory.ddiapiclient.api.IDdiClient
+import com.kynetics.updatefactory.ddiapiclient.api.model.DdiCancel
+import com.kynetics.updatefactory.ddiapiclient.api.model.DdiDeploymentBase
+import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message.*
+import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message.In.*
+import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message.Out.*
+import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message.Out.Err.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.channels.ActorScope
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.time.delay
 import java.time.Duration
 import kotlin.coroutines.CoroutineContext
 
-class ConnectionManager @ObsoleteCoroutinesApi
-private constructor(scope: ActorScope<Message>, private val client: DdiClient): Actor<Message>(scope) {
+typealias Receiver = Channel<Any>
 
-    private fun stoppedReceive(state: State):Receive<Message> =  { msg:Message ->
+class ConnectionManager
+@UseExperimental(ObsoleteCoroutinesApi::class)
+private constructor(scope: ActorScope<In>, private val client: IDdiClient): Actor<In>(scope) {
+
+    private fun stoppedReceive(state: State):Receive<In> =  { msg:In ->
         when(msg) {
 
-            is Message.Start -> become(runningReceive(startPing(state)))
+            is Start -> become(runningReceive(startPing(state)))
 
-            is Message.SetPing -> become(stoppedReceive(state.copy(clientPingInterval = msg.duration)))
+            is SetPing -> become(stoppedReceive(state.copy(clientPingInterval = msg.duration)))
 
-            is Message.Stop -> {}
+            is Register -> become(stoppedReceive(state.withReceiver(msg.listener)))
+
+            is Unregister -> become(stoppedReceive(state.withoutReceiver(msg.listener)))
+
+            is Stop -> {}
 
             else -> unhandled(msg)
 
         }
     }
 
-    private fun runningReceive(state: State):Receive<Message> = { msg: Message ->
+    private fun runningReceive(state: State):Receive<In> = { msg: In ->
         when(msg) {
 
-            is Message.Stop -> become(stoppedReceive(stopPing(state)))
+            is Stop -> become(stoppedReceive(stopPing(state)))
 
 
-            is Message.SetPing -> if(msg.duration != state.clientPingInterval) {
+            is SetPing -> if(msg.duration != state.clientPingInterval) {
                     become(runningReceive(startPing(state.copy(clientPingInterval = msg.duration))))
                 }
 
-            is Message.Ping -> {
+            is Ping -> {
                 try {
                     val res = client.getControllerActions()
-                    println(res)
+                    if(res.requireConfigData){
+                        this.send(ConfigDataRequired, state)
+                    }
+                    if(res.requireDeploynet) {
+                        val res2 = client.getDeploymentActionDetails(res.actionId!!)
+                        this.send(DeploymentInfo(res2), state)
+                    }
+                    if(res.requireCancel) {
+                        val res2 = client.getCancelActionDetails(res.actionId!!)
+                        this.send(DeploymentCancelInfo(res2), state)
+                    }
+
                     val newState = state.withServerSleep(res.config.polling.sleep).withoutBackoff()
                     if(newState != state) become(runningReceive(startPing(newState)))
                 } catch (t: Throwable) {
-                    println(t)
+                    this.send(ErrMsg(t.message?:"Unknown Exception"), state)
                     become(runningReceive(startPing(state.nextBackoff())))
                 }
             }
 
-            is Message.Start -> {}
+            is Register -> become(runningReceive(state.withReceiver(msg.listener)))
+
+            is Unregister -> become(runningReceive(state.withoutReceiver(msg.listener)))
+
+            is Start -> {}
 
         }
     }
@@ -59,9 +88,9 @@ private constructor(scope: ActorScope<Message>, private val client: DdiClient): 
             while(true) {
                 if(state.hasBackoff) {
                     delay(state.pingInterval)
-                    channel.send(Message.Ping)
+                    channel.send(Ping)
                 } else {
-                    channel.send(Message.Ping)
+                    channel.send(Ping)
                     delay(state.pingInterval)
                 }
             }
@@ -74,8 +103,8 @@ private constructor(scope: ActorScope<Message>, private val client: DdiClient): 
         } else { state
     }
 
-    private fun unhandled(msg: Message) {
-        println("received unexpected message $msg")
+    private suspend fun send(msg: Out, state: State) {
+        state.receivers.forEach { it.send(msg) }
     }
 
     init {
@@ -83,16 +112,17 @@ private constructor(scope: ActorScope<Message>, private val client: DdiClient): 
     }
 
     companion object {
-        @ObsoleteCoroutinesApi
-        fun of(context: CoroutineContext, client: DdiClient): SendChannel<Message> = Actor.actorOf(context) {
+        fun of(context: CoroutineContext, client: IDdiClient): SendChannel<In> = Actor.actorOf(context) {
             ConnectionManager(it,client)
         }
 
-        data class State(
+        private data class State(
                 val serverPingInterval:Duration = Duration.ofSeconds(1),
                 val clientPingInterval:Duration? = null,
                 val backoffPingInterval:Duration? = null,
-                val timer: Job? = null) {
+                val timer: Job? = null,
+                val receivers: Set<Receiver> = emptySet()
+        ) {
             val pingInterval = when {
                         backoffPingInterval != null -> backoffPingInterval
                         clientPingInterval != null -> clientPingInterval
@@ -115,13 +145,36 @@ private constructor(scope: ActorScope<Message>, private val client: DdiClient): 
             }
 
             val hasBackoff = this.backoffPingInterval != null
+
+
+
+            fun withReceiver(receiver: Receiver) = this.copy(receivers = receivers+receiver)
+
+            fun withoutReceiver(receiver: Receiver) = this.copy(receivers = receivers-receiver)
         }
 
         sealed class Message {
-            object Start : Message()
-            object Stop : Message()
-            object Ping : Message()
-            data class SetPing(val duration: Duration?) : Message()
+
+            sealed class In: Message(){
+                object Start : In()
+                object Stop : In()
+                object Ping : In()
+                data class Register(val listener: Receiver): In()
+                data class Unregister(val listener: Receiver): In()
+                data class SetPing(val duration: Duration?) : In()
+            }
+
+            open class Out: Message(){
+                object ConfigDataRequired: Out()
+                data class DeploymentInfo(val info: DdiDeploymentBase): Out()
+                data class DeploymentCancelInfo(val info: DdiCancel): Out()
+
+                sealed class Err: Out() {
+                    data class ErrMsg(val message:String): Err()
+                }
+
+            }
+
         }
     }
 

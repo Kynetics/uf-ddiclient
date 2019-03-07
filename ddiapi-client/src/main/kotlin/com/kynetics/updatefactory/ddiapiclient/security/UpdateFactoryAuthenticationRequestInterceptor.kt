@@ -13,6 +13,7 @@ package com.kynetics.updatefactory.ddiapiclient.security
 import com.kynetics.updatefactory.ddiapiclient.api.DdiRestConstants.Companion.CONFIG_DATA_ACTION
 import com.kynetics.updatefactory.ddiapiclient.api.DdiRestConstants.Companion.TARGET_TOKEN_HEADER_NAME
 import com.kynetics.updatefactory.ddiapiclient.api.DdiRestConstants.Companion.TARGET_TOKEN_REQUEST_HEADER_NAME
+import com.kynetics.updatefactory.ddiapiclient.api.OnTargetTokenFound
 import okhttp3.Interceptor
 import okhttp3.Response
 
@@ -28,13 +29,9 @@ import com.kynetics.updatefactory.ddiapiclient.security.Authentication.Companion
 class UpdateFactoryAuthenticationRequestInterceptor(private val authentications: MutableSet<Authentication>, onTargetTokenFound: OnTargetTokenFound?) : Interceptor {
     private val onTargetTokenFound: OnTargetTokenFound
 
-    interface OnTargetTokenFound {
-        fun onFound(targetToken: String)
-    }
-
     init {
         Objects.requireNonNull<Set<Authentication>>(authentications)
-        this.onTargetTokenFound = onTargetTokenFound ?: object :OnTargetTokenFound{
+        this.onTargetTokenFound = onTargetTokenFound ?: object : OnTargetTokenFound {
             override fun onFound(targetToken: String) {
             }
         }

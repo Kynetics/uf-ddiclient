@@ -8,15 +8,9 @@
  *
  */
 
-package com.kynetics.updatefactory.ddiapiclient.model
+package com.kynetics.updatefactory.ddiapiclient.api.model
 
 import com.google.gson.Gson
-import com.kynetics.updatefactory.ddiapiclient.model.request.DdiActionFeedback
-import com.kynetics.updatefactory.ddiapiclient.model.request.DdiConfigData
-import com.kynetics.updatefactory.ddiapiclient.model.response.DdiCancel
-import com.kynetics.updatefactory.ddiapiclient.model.response.DdiControllerBase
-import com.kynetics.updatefactory.ddiapiclient.model.response.DdiDeploymentBase
-import com.kynetics.updatefactory.ddiapiclient.model.response.Error
 import org.testng.Assert.assertEquals
 import org.testng.annotations.DataProvider
 import org.testng.annotations.Test
@@ -25,7 +19,7 @@ import org.testng.annotations.Test
 class SerializationTest{
 
 
-    val gson = Gson()
+    private val gson = Gson()
 
 
     @DataProvider(name = "Serialization")
@@ -53,7 +47,7 @@ class SerializationTest{
 
         val error = Error("errorCode", "exceptionClass", 1, "message", listOf("details"))
 
-        return arrayOf<Any>(ddiActionFeedback,
+        return arrayOf(ddiActionFeedback,
                 ddiConfigData,
                 ddiCancel,
                 ddiControllerBase,
