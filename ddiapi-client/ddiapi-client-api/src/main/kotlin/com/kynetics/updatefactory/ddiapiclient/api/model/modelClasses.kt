@@ -19,10 +19,24 @@ enum class LinkType(@Expose(deserialize = false, serialize = false)val linkName:
 
     @SerializedName("deploymentBase")
     DEPLOYMENT("deploymentBase"),
+
     @SerializedName("cancelAction")
     CANCEL("cancelAction"),
+
     @SerializedName("configData")
-    CONFIG_DATA("configData");
+    CONFIG_DATA("configData"),
+
+    @SerializedName("download")
+    DOWNLOAD("download"),
+
+    @SerializedName("download-http")
+    DOWNLOAD_HTTP("download-http"),
+
+    @SerializedName("md5sum")
+    MD5_SUM("md5sum"),
+
+    @SerializedName("md5sum-http")
+    MD5_SUM_HTTP("md5sum-http");
 
     fun getActionId(linkEntry: LinkEntry?):Long?{
         val regex = """.*$linkName/(\d+)""".toRegex()
@@ -66,7 +80,7 @@ data class DdiDeployment(val download: HandlingType, val update: HandlingType, v
 
 }
 data class DdiChunk(val part: String, val version: String, val name: String, val artifacts: List<DdiArtifact>)
-data class DdiArtifact(val fileName:String, val hashes: DdiArtifactHash, val size: Long, @SerializedName("_links") val links : Resource = emptyMap())
+data class DdiArtifact(@SerializedName("filename") val fileName:String, val hashes: DdiArtifactHash, val size: Long, @SerializedName("_links") val links : Resource = emptyMap())
 data class DdiArtifactHash(val sha1:String? = null, val md5:String? = null)
 
 data class DdiCancelActionToStop(val stopId: String)

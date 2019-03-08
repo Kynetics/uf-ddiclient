@@ -11,23 +11,21 @@
 package com.kynetics.updatefactory.ddiapiclient.api.model
 
 import com.google.gson.annotations.SerializedName
-import java.util.HashMap
 
 data class DdiCancel(val id: String, val cancelAction: DdiCancelActionToStop)
 
 data class DdiControllerBase(val config: DdiConfig,
                              @SerializedName("_links") val links : Resource = emptyMap()) {
-    fun requireDeploynet() = links[LinkType.DEPLOYMENT] != null
+    fun requireDeployment() = links[LinkType.DEPLOYMENT] != null
     fun requireCancel() = links[LinkType.CANCEL] != null
     fun requireConfigData() = links[LinkType.CONFIG_DATA] != null
-    val actionId = LinkType.DEPLOYMENT.getActionId(links[LinkType.DEPLOYMENT])
+    fun actionId() = LinkType.DEPLOYMENT.getActionId(links[LinkType.DEPLOYMENT])!!
 
 }
 
-data class DdiDeploymentBase(@SerializedName("id") private val deplyomentId: String,
+data class DdiDeploymentBase(@SerializedName("id") val deplyomentId: String,
                              @SerializedName("deployment") val deployment: DdiDeployment,
-                             @SerializedName("actionHistory")val actionHistory: DdiActionHistory? = null,
-                             @SerializedName("_links") val links : Resource = emptyMap())
+                             @SerializedName("actionHistory")val actionHistory: DdiActionHistory? = null)
 
 data class Error (@SerializedName(value = "errorCode", alternate = ["status"]) val errorCode: String? = null,
                   @SerializedName(value = "exceptionClass", alternate = ["exception"]) val exceptionClass: String? = null,

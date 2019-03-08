@@ -59,19 +59,21 @@ private constructor(scope: ActorScope<In>, private val client: IDdiClient): Acto
                     if(res.requireConfigData()){
                         this.send(ConfigDataRequired, state)
                     }
-                    if(res.requireDeploynet()) {
-                        val res2 = client.getDeploymentActionDetails(res.actionId!!)
+                    if(res.requireDeployment()) {
+                        val res2 = client.getDeploymentActionDetails(res.actionId())
                         this.send(DeploymentInfo(res2), state)
                     }
                     if(res.requireCancel()) {
-                        val res2 = client.getCancelActionDetails(res.actionId!!)
+                        val res2 = client.getCancelActionDetails(res.actionId())
                         this.send(DeploymentCancelInfo(res2), state)
                     }
 
                     val newState = state.withServerSleep(res.config.polling.sleep).withoutBackoff()
                     if(newState != state) become(runningReceive(startPing(newState)))
                 } catch (t: Throwable) {
-                    this.send(ErrMsg(t.message?:"Unknown Exception"), state)
+                    this.send(ErrMsg(
+                            "exception: ${t.javaClass}"+ if(t.message != null) " message: ${t.message}" else ""
+                    ), state)
                     become(runningReceive(startPing(state.nextBackoff())))
                 }
             }
