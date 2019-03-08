@@ -10,41 +10,32 @@
 
 package com.kynetics.updatefactory.ddiapiclient.api.model
 
+import com.google.gson.annotations.Expose
 import com.google.gson.annotations.SerializedName
-import java.net.MalformedURLException
-import java.net.URL
 import java.util.*
 
-open class ResourceSupport(private val links : Map<String, LinkEntry> = HashMap()){
+typealias Resource = Map<LinkType, LinkEntry>
+enum class LinkType(@Expose(deserialize = false, serialize = false)val linkName: String){
 
-    fun getLink(key: String): LinkEntry? {
-        return links[key]
+    @SerializedName("deploymentBase")
+    DEPLOYMENT("deploymentBase"),
+    @SerializedName("cancelAction")
+    CANCEL("cancelAction"),
+    @SerializedName("configData")
+    CONFIG_DATA("configData");
+
+    fun getActionId(linkEntry: LinkEntry?):Long?{
+        val regex = """.*$linkName/(\d+)""".toRegex()
+        return regex.find(linkEntry?.href ?: "")
+                ?.destructured
+                ?.component1()
+                ?.toLong()
     }
 
 }
 
-data class LinkEntry(val href: String) {
 
-    //TODO USE A REGEX!
-    val actionId: Long?
-        get() {
-            val url: URL?
-            try {
-                url = URL(href)
-            } catch (e: MalformedURLException) {
-                e.printStackTrace()
-                return null
-            }
-
-            val path = url.path.split("/".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-            var actionId: Long? = null
-            if (path.size > 6) {
-                actionId = java.lang.Long.valueOf(path[6])
-            }
-
-            return actionId
-        }
-}
+data class LinkEntry(val href: String)
 
 data class DdiDeployment(val download: HandlingType, val update: HandlingType, val chunks: List<DdiChunk>){
 
@@ -75,7 +66,7 @@ data class DdiDeployment(val download: HandlingType, val update: HandlingType, v
 
 }
 data class DdiChunk(val part: String, val version: String, val name: String, val artifacts: List<DdiArtifact>)
-data class DdiArtifact(val fileName:String, val hashes: DdiArtifactHash, val size: Long) : ResourceSupport()
+data class DdiArtifact(val fileName:String, val hashes: DdiArtifactHash, val size: Long, @SerializedName("_links") val links : Resource = emptyMap())
 data class DdiArtifactHash(val sha1:String? = null, val md5:String? = null)
 
 data class DdiCancelActionToStop(val stopId: String)

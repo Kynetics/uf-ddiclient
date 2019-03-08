@@ -15,17 +15,19 @@ import java.util.HashMap
 
 data class DdiCancel(val id: String, val cancelAction: DdiCancelActionToStop)
 
-data class DdiControllerBase(val config: DdiConfig, @SerializedName("_links") val links : Map<String, LinkEntry>) : ResourceSupport(links) {
-    val requireDeploynet = getLink("deploymentBase") != null
-    val requireCancel = getLink("cancelAction") != null
-    fun requireConfigData() = links["configData"] != null
-    val actionId = getLink("deploymentBase")?.actionId
+data class DdiControllerBase(val config: DdiConfig,
+                             @SerializedName("_links") val links : Resource = emptyMap()) {
+    fun requireDeploynet() = links[LinkType.DEPLOYMENT] != null
+    fun requireCancel() = links[LinkType.CANCEL] != null
+    fun requireConfigData() = links[LinkType.CONFIG_DATA] != null
+    val actionId = LinkType.DEPLOYMENT.getActionId(links[LinkType.DEPLOYMENT])
 
 }
 
 data class DdiDeploymentBase(@SerializedName("id") private val deplyomentId: String,
                              @SerializedName("deployment") val deployment: DdiDeployment,
-                             @SerializedName("actionHistory")val actionHistory: DdiActionHistory? = null) : ResourceSupport()
+                             @SerializedName("actionHistory")val actionHistory: DdiActionHistory? = null,
+                             @SerializedName("_links") val links : Resource = emptyMap())
 
 data class Error (@SerializedName(value = "errorCode", alternate = ["status"]) val errorCode: String? = null,
                   @SerializedName(value = "exceptionClass", alternate = ["exception"]) val exceptionClass: String? = null,

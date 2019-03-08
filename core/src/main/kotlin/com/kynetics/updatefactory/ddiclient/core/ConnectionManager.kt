@@ -59,11 +59,11 @@ private constructor(scope: ActorScope<In>, private val client: IDdiClient): Acto
                     if(res.requireConfigData()){
                         this.send(ConfigDataRequired, state)
                     }
-                    if(res.requireDeploynet) {
+                    if(res.requireDeploynet()) {
                         val res2 = client.getDeploymentActionDetails(res.actionId!!)
                         this.send(DeploymentInfo(res2), state)
                     }
-                    if(res.requireCancel) {
+                    if(res.requireCancel()) {
                         val res2 = client.getCancelActionDetails(res.actionId!!)
                         this.send(DeploymentCancelInfo(res2), state)
                     }
