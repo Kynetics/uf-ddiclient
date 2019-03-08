@@ -7,22 +7,19 @@
  *  http://www.eclipse.org/legal/epl-v10.html
  *
  */
+package com.kynetics.updatefactory.ddiclient.api.model.response;
 
-plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.3.21'
-    id 'java'
-    id 'maven'
-}
+/**
+ * {@link DdiControllerBase} resource content.
+ *
+ * @author Daniele Sergio
+ */
+public class DdiControllerBase extends ResourceSupport {
 
-group 'com.kynetics.updatefactory'
-version '0.4.3'
+    private DdiConfig config;
 
-sourceCompatibility = 1.8
+    public DdiConfig getConfig() {
+        return config;
+    }
 
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
 }

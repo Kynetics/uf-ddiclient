@@ -7,22 +7,18 @@
  *  http://www.eclipse.org/legal/epl-v10.html
  *
  */
+package com.kynetics.updatefactory.ddiclient.api.model.response;
 
-plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.3.21'
-    id 'java'
-    id 'maven'
-}
+/**
+ *
+ * @author Daniele Sergio
+ */
+public class DdiConfig {
 
-group 'com.kynetics.updatefactory'
-version '0.4.3'
+    private DdiPolling polling;
 
-sourceCompatibility = 1.8
+    public DdiPolling getPolling() {
+        return polling;
+    }
 
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
 }

@@ -8,21 +8,11 @@
  *
  */
 
-plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.3.21'
-    id 'java'
-    id 'maven'
-}
+package com.kynetics.redux.api
 
-group 'com.kynetics.updatefactory'
-version '0.4.3'
-
-sourceCompatibility = 1.8
-
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+/**
+ * @author Daniele Sergio
+ */
+interface Reducer<S: State<*>,in A: Action<*>>{
+    fun reduce(state:S, action:A):S
 }

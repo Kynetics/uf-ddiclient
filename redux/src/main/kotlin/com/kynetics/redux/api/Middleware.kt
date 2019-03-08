@@ -8,21 +8,12 @@
  *
  */
 
-plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.3.21'
-    id 'java'
-    id 'maven'
+package com.kynetics.redux.api
+
+/**
+ * @author Daniele Sergio
+ */
+interface Middleware<S: State<*>, A1: Action<*>, R1, A2: Action<*>, R2>{
+    fun apply(middlewareApi: MiddlewareApi<S, A1, R1>):  (DispatcherType<A1, R1>) -> DispatcherType<A2, R2>
 }
 
-group 'com.kynetics.updatefactory'
-version '0.4.3'
-
-sourceCompatibility = 1.8
-
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
-}

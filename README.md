@@ -1,6 +1,8 @@
-# UF-DDICLIET #
+# UF-DDICLIENT #
 
 UF-DDICLIENT is a java library that help the creation of a client to [UpdateFactory](https://www.kynetics.com/iot-platform-update-factory) or [Hawkbit](https://eclipse.org/hawkbit/) servers.
+
+build: ![build status status](https://travis-ci.org/Kynetics/uf-ddiclient.svg?branch=master)
 
 ## Install
 
@@ -16,21 +18,31 @@ Create a class that implements the Observer interface:
                 ...
             }
         }
-    }
+     }
 
 Create the Service, add the observer and start the service:
 
-    UFService ufService = UFService.builder()
-                    .withUrl(url)
-                    .withPassword(password)
-                    .withRetryDelayOnCommunicationError(delay)
-                    .withUsername(username)
-                    .withTenant(tenant)
-                    .withControllerId(controllerId)
-                    .withInitialState(initialState)
-                    .build();
-            ufService.addObserver(new ObserverState());
-            ufService.start();
+    DdiRestApi api = new ClientBuilder()
+                .withBaseUrl("https://personal.updatefactory.io")
+                .withGatewayToken("[gatewayToken]")
+                .withHttpBuilder(new OkHttpClient.Builder())
+                .withOnTargetTokenFound(System.out::println)
+                .withServerType(ServerType.UPDATE_FACTORY)
+                .build();
+
+    Map<String,String> map = new HashMap<>();
+    map.put("test","tes");
+
+    ufService = UFService.builder()
+                .withClient(api)
+                .withControllerId("controllerId")
+                .withTargetData(()->map)
+                .withTenant("test")
+                .build();
+
+    ufService.addObserver(new ObserverState());
+
+    ufService.start();
 
 ## Third-Party Libraries
 * [Retrofit](http://square.github.io/retrofit/) library
@@ -41,5 +53,5 @@ Create the Service, add the observer and start the service:
 See also the list of [contributors](https://github.com/Kynetics/uf-ddiclient/graphs/contributors) who participated in this project.
 
 ## License
-Copyright © 2017, [Kynetics LLC](https://www.kynetics.com).
+Copyright © 2017-2018, [Kynetics LLC](https://www.kynetics.com).
 Released under the [EPLv1 License](http://www.eclipse.org/legal/epl-v10.html).
