@@ -61,6 +61,7 @@ project(':ddiapi-client') {
 
 project(':core') {
     dependencies {
+        implementation project(':core:core-api')
         implementation project(':ddiapi-client')
         implementation project(':ddiapi-client:ddiapi-client-api')
         //implementation deps.retrofit

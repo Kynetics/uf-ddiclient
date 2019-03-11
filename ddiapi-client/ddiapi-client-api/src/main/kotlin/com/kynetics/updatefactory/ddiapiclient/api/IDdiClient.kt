@@ -1,19 +1,23 @@
 package com.kynetics.updatefactory.ddiapiclient.api
 
-import com.kynetics.updatefactory.ddiapiclient.api.model.DdiActionFeedback
-import com.kynetics.updatefactory.ddiapiclient.api.model.DdiCancel
-import com.kynetics.updatefactory.ddiapiclient.api.model.DdiControllerBase
-import com.kynetics.updatefactory.ddiapiclient.api.model.DdiDeploymentBase
+import com.kynetics.updatefactory.ddiapiclient.api.model.*
+import java.io.InputStream
 
 interface IDdiClient {
 
-    suspend fun getControllerActions(): DdiControllerBase
+    suspend fun getControllerActions(): CtrlBaseResp
 
-    suspend fun getDeploymentActionDetails(actionId: Long, historyCount: Int = -1): DdiDeploymentBase
+    suspend fun getDeploymentActionDetails(actionId: String, historyCount: Int = -1): DeplBaseResp
 
-    suspend fun getCancelActionDetails(actionId: Long): DdiCancel
+    suspend fun getCancelActionDetails(actionId: String): CnclActResp
 
-    suspend fun postDeploymentActionFeedback(actionId: Long, feedback: DdiActionFeedback): Void
+    suspend fun getSoftwareModulesArtifacts(softwareModuleId: String): List<ArtfctResp>
 
-    suspend fun postCancelActionFeedback(actionId: Long, feedback: DdiActionFeedback): Void
+    suspend fun postDeploymentActionFeedback(actionId: String, feedback: DeplFdbkReq): Unit
+
+    suspend fun postCancelActionFeedback(actionId: String, feedback: CnclFdbkReq): Unit
+
+    suspend fun putConfigData(data: CfgDataReq): Unit
+
+    suspend fun downloadArtifact(url: String): InputStream
 }

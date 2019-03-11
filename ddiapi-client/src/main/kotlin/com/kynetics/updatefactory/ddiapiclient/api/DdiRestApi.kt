@@ -12,6 +12,7 @@ package com.kynetics.updatefactory.ddiapiclient.api
 import com.kynetics.updatefactory.ddiapiclient.api.model.*
 import kotlinx.coroutines.Deferred
 import okhttp3.ResponseBody
+import retrofit2.Response
 import retrofit2.http.*
 
 /**
@@ -36,7 +37,7 @@ interface DdiRestApi {
     @GET(DdiRestConstants.BASE_V1_REQUEST_MAPPING + "/{controllerId}/softwaremodules/{softwareModuleId}/artifacts")
     fun getSoftwareModulesArtifacts(@Path("tenant") tenant: String,
                                     @Path("controllerId") controllerId: String,
-                                    @Path("softwareModuleId") softwareModuleId: Long?): Deferred<List<DdiArtifact>>
+                                    @Path("softwareModuleId") softwareModuleId: String): Deferred<List<ArtfctResp>>
 
     /**
      * Root resource for an individual [Target].
@@ -50,7 +51,7 @@ interface DdiRestApi {
     @Headers("Accept: application/hal+json")
     @GET(DdiRestConstants.BASE_V1_REQUEST_MAPPING + "/{controllerId}")
     fun getControllerActions(@Path("tenant") tenant: String,
-                             @Path("controllerId") controllerId: String): Deferred<DdiControllerBase>
+                             @Path("controllerId") controllerId: String): Deferred<CtrlBaseResp>
 
     /**
      * Handles GET [DdiArtifact] download request.
@@ -90,9 +91,9 @@ interface DdiRestApi {
             + "/{actionId}")
     fun getDeploymentActionDetails(@Path("tenant") tenant: String,
                                    @Path("controllerId") controllerId: String,
-                                   @Path("actionId") actionId: Long,
+                                   @Path("actionId") actionId: String,
                                    @Query(value = "c") resource: Int?,
-                                   @Query(value = "actionHistory") actionHistoryMessageCount: Int?): Deferred<DdiDeploymentBase>
+                                   @Query(value = "actionHistory") actionHistoryMessageCount: Int?): Deferred<DeplBaseResp>
 
     /**
      * This is the feedback channel for the [DdiDeploymentBase] action.
@@ -113,8 +114,8 @@ interface DdiRestApi {
             + DdiRestConstants.FEEDBACK)
     fun postDeploymentActionFeedback(@Path("tenant") tenant: String,
                                      @Path("controllerId") controllerId: String,
-                                     @Path("actionId") actionId: Long?,
-                                     @Body feedback: DdiActionFeedback): Deferred<Void>
+                                     @Path("actionId") actionId: String?,
+                                     @Body feedback: DeplFdbkReq): Deferred<Unit>
 
     /**
      * This is the feedback channel for the config data action.
@@ -133,7 +134,7 @@ interface DdiRestApi {
             + DdiRestConstants.CONFIG_DATA_ACTION)
     fun putConfigData(@Path("tenant") tenant: String,
                       @Path("controllerId") controllerId: String,
-                      @Body configData: DdiConfigData): Deferred<Void>
+                      @Body configData: CfgDataReq): Deferred<Unit>
 
     /**
      * RequestMethod.GET method for the [DdiCancel] action.
@@ -152,7 +153,7 @@ interface DdiRestApi {
             + "/{actionId}")
     fun getCancelActionDetails(@Path("tenant") tenant: String,
                                @Path("controllerId") controllerId: String,
-                               @Path("actionId") actionId: Long): Deferred<DdiCancel>
+                               @Path("actionId") actionId: String): Deferred<CnclActResp>
 
     /**
      * RequestMethod.POST method receiving the [DdiActionFeedback] from
@@ -175,7 +176,7 @@ interface DdiRestApi {
             + DdiRestConstants.FEEDBACK)
     fun postCancelActionFeedback(@Path("tenant") tenant: String,
                                  @Path("controllerId") controllerId: String,
-                                 @Path("actionId") actionId: Long?,
-                                 @Body feedback: DdiActionFeedback): Deferred<Void>
+                                 @Path("actionId") actionId: String?,
+                                 @Body feedback: CnclFdbkReq): Deferred<Unit>
 }
 

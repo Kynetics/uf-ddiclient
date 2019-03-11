@@ -1,58 +1,60 @@
 package com.kynetics.updatefactory.ddiclient.core
 
 import com.kynetics.updatefactory.ddiapiclient.api.IDdiClient
-import com.kynetics.updatefactory.ddiapiclient.api.model.DdiCancel
-import com.kynetics.updatefactory.ddiapiclient.api.model.DdiDeploymentBase
-import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message.*
+import com.kynetics.updatefactory.ddiapiclient.api.model.*
 import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message.In.*
+import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message.Out
 import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message.Out.*
-import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message.Out.Err.*
+import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message.Out.Err.ErrMsg
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.channels.ActorScope
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.time.delay
 import java.time.Duration
+import java.time.Instant
 import kotlin.coroutines.CoroutineContext
 
 typealias Receiver = Channel<Any>
 
 class ConnectionManager
 @UseExperimental(ObsoleteCoroutinesApi::class)
-private constructor(scope: ActorScope<In>, private val client: IDdiClient): Actor<In>(scope) {
+private constructor(scope: ActorScope<Any>, private val client: IDdiClient): Actor(scope) {
 
-    private fun stoppedReceive(state: State):Receive<In> =  { msg:In ->
+    private fun stoppedReceive(state: State):Receive =  { msg ->
         when(msg) {
 
             is Start -> become(runningReceive(startPing(state)))
 
-            is SetPing -> become(stoppedReceive(state.copy(clientPingInterval = msg.duration)))
+            is Stop -> {}
 
             is Register -> become(stoppedReceive(state.withReceiver(msg.listener)))
 
             is Unregister -> become(stoppedReceive(state.withoutReceiver(msg.listener)))
 
-            is Stop -> {}
+            is SetPing -> become(stoppedReceive(state.copy(clientPingInterval = msg.duration, lastPing = Instant.EPOCH)))
 
             else -> unhandled(msg)
-
         }
     }
 
-    private fun runningReceive(state: State):Receive<In> = { msg: In ->
+    private fun runningReceive(state: State):Receive = { msg ->
         when(msg) {
+
+            is Start -> {}
 
             is Stop -> become(stoppedReceive(stopPing(state)))
 
+            is Register -> become(runningReceive(state.withReceiver(msg.listener)))
 
-            is SetPing -> if(msg.duration != state.clientPingInterval) {
-                    become(runningReceive(startPing(state.copy(clientPingInterval = msg.duration))))
-                }
+            is Unregister -> become(runningReceive(state.withoutReceiver(msg.listener)))
+
+            is SetPing -> become(runningReceive(startPing(state.copy(clientPingInterval = msg.duration,  lastPing = Instant.EPOCH))))
 
             is Ping -> {
-
+                println("in ping")
+                val s = state.copy(lastPing = Instant.now())
                 try {
                     val res = client.getControllerActions()
                     //println(res)
@@ -60,46 +62,43 @@ private constructor(scope: ActorScope<In>, private val client: IDdiClient): Acto
                         this.send(ConfigDataRequired, state)
                     }
                     if(res.requireDeployment()) {
-                        val res2 = client.getDeploymentActionDetails(res.actionId())
+                        val res2 = client.getDeploymentActionDetails(res.deploymentActionId())
                         this.send(DeploymentInfo(res2), state)
                     }
                     if(res.requireCancel()) {
-                        val res2 = client.getCancelActionDetails(res.actionId())
+                        val res2 = client.getCancelActionDetails(res.cancelActionId())
                         this.send(DeploymentCancelInfo(res2), state)
                     }
 
-                    val newState = state.withServerSleep(res.config.polling.sleep).withoutBackoff()
-                    if(newState != state) become(runningReceive(startPing(newState)))
+                    val newState = s.withServerSleep(res.config.polling.sleep).withoutBackoff()
+                    become(runningReceive(startPing(newState)))
                 } catch (t: Throwable) {
                     this.send(ErrMsg(
                             "exception: ${t.javaClass}"+ if(t.message != null) " message: ${t.message}" else ""
                     ), state)
-                    become(runningReceive(startPing(state.nextBackoff())))
+                    println(t)
+                    become(runningReceive(startPing(s.nextBackoff())))
                 }
             }
 
-            is Register -> become(runningReceive(state.withReceiver(msg.listener)))
-
-            is Unregister -> become(runningReceive(state.withoutReceiver(msg.listener)))
-
-            is Start -> {}
+            is DeploymentFeedback -> {
+                client.postDeploymentActionFeedback(msg.feedback.id, msg.feedback)
+            }
 
         }
     }
 
-    private fun startPing(state:State):State = stopPing(state).copy(timer =
-        launch {
-            while(true) {
-                if(state.hasBackoff) {
-                    delay(state.pingInterval)
-                    channel.send(Ping)
-                } else {
-                    channel.send(Ping)
-                    delay(state.pingInterval)
-                }
-            }
+    private fun startPing(state:State):State {
+        val now = Instant.now()
+        val elapsed = Duration.between(state.lastPing, now)
+        val optSleepTime = state.pingInterval.minus(elapsed)
+        val sleepTime = if(optSleepTime.isNegative) Duration.ZERO else optSleepTime
+        val timer = launch {
+            delay(sleepTime)
+            channel.send(Ping)
         }
-    )
+        return stopPing(state).copy(timer = timer)
+    }
 
     private fun stopPing(state:State):State = if(state.timer!=null) {
             state.timer.cancel()
@@ -116,14 +115,15 @@ private constructor(scope: ActorScope<In>, private val client: IDdiClient): Acto
     }
 
     companion object {
-        fun of(context: CoroutineContext, client: IDdiClient): SendChannel<In> = Actor.actorOf(context) {
+        fun of(context: CoroutineContext, client: IDdiClient) = Actor.actorOf(context) {
             ConnectionManager(it,client)
         }
 
         private data class State(
-                val serverPingInterval:Duration = Duration.ofSeconds(1),
+                val serverPingInterval:Duration = Duration.ofSeconds(0),
                 val clientPingInterval:Duration? = null,
                 val backoffPingInterval:Duration? = null,
+                val lastPing:Instant? = Instant.EPOCH,
                 val timer: Job? = null,
                 val receivers: Set<Receiver> = emptySet()
         ) {
@@ -147,11 +147,6 @@ private constructor(scope: ActorScope<In>, private val client: IDdiClient): Acto
                 return if(newServerPingInterval != serverPingInterval) this.copy(serverPingInterval=newServerPingInterval)
                 else this
             }
-
-            val hasBackoff = this.backoffPingInterval != null
-
-
-
             fun withReceiver(receiver: Receiver) = this.copy(receivers = receivers+receiver)
 
             fun withoutReceiver(receiver: Receiver) = this.copy(receivers = receivers-receiver)
@@ -166,12 +161,14 @@ private constructor(scope: ActorScope<In>, private val client: IDdiClient): Acto
                 data class Register(val listener: Receiver): In()
                 data class Unregister(val listener: Receiver): In()
                 data class SetPing(val duration: Duration?) : In()
+                data class DeploymentFeedback(val feedback: DeplFdbkReq)
+                data class ConfigDataFeedback(val cfgDataReq: CfgDataReq)
             }
 
             open class Out: Message(){
                 object ConfigDataRequired: Out()
-                data class DeploymentInfo(val info: DdiDeploymentBase): Out()
-                data class DeploymentCancelInfo(val info: DdiCancel): Out()
+                data class DeploymentInfo(val info: DeplBaseResp): Out()
+                data class DeploymentCancelInfo(val info: CnclActResp): Out()
 
                 sealed class Err: Out() {
                     data class ErrMsg(val message:String): Err()

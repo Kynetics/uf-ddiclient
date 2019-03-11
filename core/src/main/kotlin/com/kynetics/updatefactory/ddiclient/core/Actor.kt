@@ -7,22 +7,24 @@ import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
 import kotlin.coroutines.CoroutineContext
 
-typealias Receive<T> = suspend (T) -> Unit
+typealias Receive = suspend (Any) -> Unit
+
+typealias ActorRef = SendChannel<Any>
 
 @UseExperimental(ObsoleteCoroutinesApi::class)
-abstract class Actor<T> constructor(scope: ActorScope<T>): ActorScope<T> by scope {
+abstract class Actor constructor(scope: ActorScope<Any>): ActorScope<Any> by scope {
 
-    private var _receive: Receive<T> = { ; }
+    private var _receive: Receive = { ; }
 
-    fun become(receive: Receive<T>) {
+    fun become(receive: Receive) {
         _receive = receive
     }
 
     companion object {
-        fun <T> actorOf(
+        fun actorOf(
                 context: CoroutineContext,
-                init: (ActorScope<T>) -> Actor<T>
-        ): SendChannel<T> = GlobalScope.actor(context) {
+                init: (ActorScope<Any>) -> Actor
+        ): ActorRef = GlobalScope.actor(context) {
             val instance = init(this@actor)
             for (msg in channel) instance._receive(msg)
         }
