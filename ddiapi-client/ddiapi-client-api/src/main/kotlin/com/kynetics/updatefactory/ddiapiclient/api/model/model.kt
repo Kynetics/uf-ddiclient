@@ -197,7 +197,7 @@ data class DeplBaseResp(
         }
     }
     data class Hist(
-            val status: Sts,
+            val status: Sts?,
             val messages: List<String>){
         enum class Sts{
             CANCELED,

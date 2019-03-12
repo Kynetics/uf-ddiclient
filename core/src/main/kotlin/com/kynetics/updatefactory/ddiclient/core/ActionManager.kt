@@ -13,8 +13,9 @@ import kotlinx.coroutines.channels.ActorScope
 import kotlinx.coroutines.launch
 import kotlin.coroutines.CoroutineContext
 
+@ObsoleteCoroutinesApi
 class ActionManager @UseExperimental(ObsoleteCoroutinesApi::class)
-private constructor(scope: ActorScope<Any>,
+private constructor(val scope: ActorScope<Any>,
                     private val connectionManager: ActorRef,
                     private val registry: UpdaterRegistry,
                     private val configDataProvider: ConfigDataProvider,
@@ -39,10 +40,11 @@ private constructor(scope: ActorScope<Any>,
                     println("HANGED DEPLOYMENT ID ???")
                 } else {
                     val deploymentManager = DeploymentManager.of(
-                            GlobalScope.coroutineContext,
+                            scope.coroutineContext,
                             this.channel,
                             connectionManager,
                             registry,
+                            configDataProvider,
                             ddiClient)
                     become(defaultReceive(state.copy(deployment = Deplyment(msg.info.id,deploymentManager))))
                     deploymentManager.send(msg)
