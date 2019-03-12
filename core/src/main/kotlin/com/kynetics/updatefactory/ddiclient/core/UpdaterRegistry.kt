@@ -1,30 +1,32 @@
 package com.kynetics.updatefactory.ddiclient.core
 
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplBaseResp
-import com.kynetics.updatefactory.ddiclient.core.api.ArtifactConsumer
+import com.kynetics.updatefactory.ddiclient.core.api.Updater
 
-class UpdaterRegistry {
+class UpdaterRegistry(vararg val updaters: Updater) {
 
-    fun allRequiredArtifactsFor(chunks: Set<DeplBaseResp.Depl.Cnk>):Set<ArtifactConsumer.Hashes> =
-            ArtifactConsumer.DEFAULT_INSTACE.selectArtifacts(chunks.map { convert(it) }.toSet())
+    fun allRequiredArtifactsFor(chunks: Set<DeplBaseResp.Depl.Cnk>):Set<Updater.Hashes> =
+            updaters.flatMap { u ->
+                u.requiredSoftwareModulesAndPriority(chunks.map { convert(it) }.toSet())
+                        .swModules.flatMap { it.hashes } }.toSet()
 
-    private fun convert(cnk:DeplBaseResp.Depl.Cnk):ArtifactConsumer.SwModule =
-            ArtifactConsumer.SwModule(
+    private fun convert(cnk:DeplBaseResp.Depl.Cnk):Updater.SwModule =
+            Updater.SwModule(
                     cnk.metadata?.map { convert(it) }?.toSet(),
                     cnk.part,
                     cnk.name,
                     cnk.version,
                     cnk.artifacts.map { convert(it) }.toSet())
 
-    private fun convert(mtdt: DeplBaseResp.Depl.Cnk.Mtdt): ArtifactConsumer.SwModule.Metadata =
-            ArtifactConsumer.SwModule.Metadata(
+    private fun convert(mtdt: DeplBaseResp.Depl.Cnk.Mtdt): Updater.SwModule.Metadata =
+            Updater.SwModule.Metadata(
                     mtdt.key,
                     mtdt.value)
 
-    private fun convert(artfct: DeplBaseResp.Depl.Cnk.Artfct): ArtifactConsumer.SwModule.Artifact =
-            ArtifactConsumer.SwModule.Artifact(
+    private fun convert(artfct: DeplBaseResp.Depl.Cnk.Artfct): Updater.SwModule.Artifact =
+            Updater.SwModule.Artifact(
                     artfct.filename,
-                    ArtifactConsumer.Hashes(
+                    Updater.Hashes(
                             artfct.hashes.sha1,
                             artfct.hashes.md5),
                     artfct.size)

@@ -65,7 +65,7 @@ data class CfgDataReq(
         val id: String,
         val time: String,
         val status: Sts,
-        val data: Set<Mtdt>,
+        val data: Map<String,String>?,
         val mode: Mod){
     data class Sts(
             val execution: Exc,
@@ -86,25 +86,22 @@ data class CfgDataReq(
                 none}
         }
     }
-    data class Mtdt(
-            val key: String,
-            val value: String)
     enum class Mod{
         merge,
         replace,
         remove }
 
     companion object {
-        fun of(map: Map<String, String>, mod: Mod) = CfgDataReq(
+        fun of(map: Map<String, String>?=null, mod: Mod) = CfgDataReq(
                 "",
-                Instant.now().toString(),
+                "20140511T121314",//Instant.now().toString(),
                 Sts(
                         Sts.Exc.closed,
                         Sts.Rslt(
                                 Sts.Rslt.Fnsh.success),
                                 emptyList()
                         ),
-                    map.map { e -> Mtdt(e.key, e.value) }.toSet(),
+                    map,
                     mod
                 )
     }

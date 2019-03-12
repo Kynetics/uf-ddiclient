@@ -73,8 +73,9 @@ private constructor(scope: ActorScope<Any>, private val client: IDdiClient): Act
                     val newState = s.withServerSleep(res.config.polling.sleep).withoutBackoff()
                     become(runningReceive(startPing(newState)))
                 } catch (t: Throwable) {
-                    this.send(ErrMsg(
-                            "exception: ${t.javaClass}"+ if(t.message != null) " message: ${t.message}" else ""
+                    fun loopMsg(t:Throwable):String = t.message + if(t.cause!=null) " ${loopMsg(t.cause!!)}" else ""
+                     this.send(ErrMsg(
+                            "exception: ${t.javaClass} message: ${loopMsg(t)}"
                     ), state)
                     println(t)
                     become(runningReceive(startPing(s.nextBackoff())))
@@ -82,9 +83,26 @@ private constructor(scope: ActorScope<Any>, private val client: IDdiClient): Act
             }
 
             is DeploymentFeedback -> {
-                client.postDeploymentActionFeedback(msg.feedback.id, msg.feedback)
+                try {
+                    client.postDeploymentActionFeedback(msg.feedback.id, msg.feedback)
+                } catch (t: Throwable) {
+                    this.send(ErrMsg("exception: ${t.javaClass}"+ if(t.message != null) " message: ${t.message}" else ""), state)
+                    println(t)
+                }
             }
 
+            is ConfigDataFeedback -> {
+                try {
+                    client.putConfigData(msg.cfgDataReq)
+                } catch (t: Throwable) {
+                    this.send(ErrMsg("exception: ${t.javaClass}"+ if(t.message != null) " message: ${t.message}" else ""), state)
+                    println(t)
+                }
+            }
+
+            else -> {
+                unhandled(msg)
+            }
         }
     }
 

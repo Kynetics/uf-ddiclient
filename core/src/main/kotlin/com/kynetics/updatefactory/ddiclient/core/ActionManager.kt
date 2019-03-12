@@ -24,7 +24,12 @@ private constructor(scope: ActorScope<Any>,
         when(msg) {
 
             is ConfigDataRequired -> {
-               connectionManager.send(CfgDataReq.of(configDataProvider.configData(), CfgDataReq.Mod.merge))
+                val map = configDataProvider.configData()+("key" to "")
+
+                if(!map.isEmpty()){
+                    val cdr = CfgDataReq.of(map, CfgDataReq.Mod.merge)
+                    connectionManager.send(In.ConfigDataFeedback(cdr))
+                }
             }
 
             is DeploymentInfo -> {

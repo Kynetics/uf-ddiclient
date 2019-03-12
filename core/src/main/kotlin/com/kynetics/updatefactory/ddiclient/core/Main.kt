@@ -3,7 +3,9 @@ package com.kynetics.updatefactory.ddiclient.core
 import com.kynetics.updatefactory.ddiapiclient.ClientBuilder
 import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message.In.Start
 import com.kynetics.updatefactory.ddiclient.core.api.ConfigDataProvider
+import com.kynetics.updatefactory.ddiclient.core.api.TestUpdater
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.newCoroutineContext
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.time.delay
 import java.time.Duration
@@ -17,9 +19,14 @@ fun main() = runBlocking {
             .withTetnat("Default")
 //            .withGatewayToken("sada")
             .build()
-
+    val updater = TestUpdater(".")
+    val registry = UpdaterRegistry(updater)
     val cm = ConnectionManager.of(GlobalScope.coroutineContext, ddiClient)
-    val am = ActionManager.of(GlobalScope.coroutineContext, cm, UpdaterRegistry(), ConfigDataProvider.DEFAULT_INSTACE,  ddiClient)
+    val am = ActionManager.of(GlobalScope.newCoroutineContext(GlobalScope.coroutineContext),
+            cm,
+            registry,
+            updater,
+            ddiClient)
     println("start")
     cm.send(Start)
     delay(Duration.ofSeconds(6))

@@ -24,7 +24,7 @@ abstract class Actor constructor(scope: ActorScope<Any>): ActorScope<Any> by sco
         fun actorOf(
                 context: CoroutineContext,
                 init: (ActorScope<Any>) -> Actor
-        ): ActorRef = GlobalScope.actor(context) {
+        ): ActorRef = GlobalScope.actor(context, capacity = 10) {
             val instance = init(this@actor)
             for (msg in channel) instance._receive(msg)
         }

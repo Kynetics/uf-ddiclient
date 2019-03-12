@@ -1,11 +1,11 @@
 package com.kynetics.updatefactory.ddiclient.core.api
 
-interface ConfigDataProvider {
-    fun configData():Map<String, String> = DEFAULT_INSTACE.configData()
+import java.nio.file.Path
 
-    companion object {
-        val DEFAULT_INSTACE = object : ConfigDataProvider {
-            override fun configData(): Map<String, String> = emptyMap()
-        }
-    }
+interface ConfigDataProvider {
+
+    fun directoryPathForArtifacts(actionId:String): Path
+
+    fun configData():Map<String, String> = emptyMap()
+
 }
