@@ -71,7 +71,7 @@ private constructor(scope: ActorScope<Any>,
             val fileCount = startDownload(dbr)
             if(fileCount > 0) {
                 feedback(dbr.id, proceeding,Prgrs(fileCount, 0), none,
-                        "Start downloading fileCount files")
+                        "Start downloading $fileCount files")
             }
         }
     }
