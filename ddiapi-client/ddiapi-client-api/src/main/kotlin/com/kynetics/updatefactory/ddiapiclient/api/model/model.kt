@@ -1,7 +1,6 @@
 package com.kynetics.updatefactory.ddiapiclient.api.model
 
 import com.google.gson.annotations.SerializedName
-import java.time.Instant
 
 /*======================================================================================================================
  *==== REQUESTS ========================================================================================================

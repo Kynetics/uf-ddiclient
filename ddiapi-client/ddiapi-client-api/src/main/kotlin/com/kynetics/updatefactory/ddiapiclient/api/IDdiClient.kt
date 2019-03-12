@@ -13,11 +13,11 @@ interface IDdiClient {
 
     suspend fun getSoftwareModulesArtifacts(softwareModuleId: String): List<ArtfctResp>
 
-    suspend fun postDeploymentActionFeedback(actionId: String, feedback: DeplFdbkReq): Unit
+    suspend fun postDeploymentActionFeedback(actionId: String, feedback: DeplFdbkReq)
 
-    suspend fun postCancelActionFeedback(actionId: String, feedback: CnclFdbkReq): Unit
+    suspend fun postCancelActionFeedback(actionId: String, feedback: CnclFdbkReq)
 
-    suspend fun putConfigData(data: CfgDataReq): Unit
+    suspend fun putConfigData(data: CfgDataReq)
 
     suspend fun downloadArtifact(url: String): InputStream
 }

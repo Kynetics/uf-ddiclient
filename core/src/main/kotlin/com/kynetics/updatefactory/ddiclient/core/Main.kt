@@ -2,14 +2,13 @@ package com.kynetics.updatefactory.ddiclient.core
 
 import com.kynetics.updatefactory.ddiapiclient.ClientBuilder
 import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message.In.Start
-import com.kynetics.updatefactory.ddiclient.core.api.ConfigDataProvider
 import com.kynetics.updatefactory.ddiclient.core.api.TestUpdater
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.newCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.time.delay
-import java.time.Duration
+import org.joda.time.Duration
 
+suspend fun delay(duration:Duration)=delay(duration.millis)
 
 fun main() = runBlocking {
     val ddiClient =     ClientBuilder()
@@ -22,26 +21,26 @@ fun main() = runBlocking {
     val updater = TestUpdater(".")
     val registry = UpdaterRegistry(updater)
     val cm = ConnectionManager.of(GlobalScope.coroutineContext, ddiClient)
-    val am = ActionManager.of(GlobalScope.newCoroutineContext(GlobalScope.coroutineContext),
+    ActionManager.of(GlobalScope.coroutineContext,
             cm,
             registry,
             updater,
             ddiClient)
     println("start")
     cm.send(Start)
-    delay(Duration.ofSeconds(6))
+    delay(Duration.standardSeconds(6))
     println("set ping 3s")
-    cm.send(ConnectionManager.Companion.Message.In.SetPing(Duration.ofSeconds(3)))
-    delay(Duration.ofSeconds(30))
+    cm.send(ConnectionManager.Companion.Message.In.SetPing(Duration.standardSeconds(3)))
+    delay(Duration.standardSeconds(30))
     println("unset ping")
     cm.send(ConnectionManager.Companion.Message.In.SetPing(null))
-    delay(Duration.ofMinutes(6))
+    delay(Duration.standardMinutes(6))
     println("set ping 3s")
-    cm.send(ConnectionManager.Companion.Message.In.SetPing(Duration.ofSeconds(3)))
-    delay(Duration.ofSeconds(30))
+    cm.send(ConnectionManager.Companion.Message.In.SetPing(Duration.standardSeconds(3)))
+    delay(Duration.standardSeconds(30))
     println("stop")
     cm.send(ConnectionManager.Companion.Message.In.Stop)
-    delay(Duration.ofSeconds(10))
+    delay(Duration.standardSeconds(10))
     println("exit")
     //cm.close()
 }

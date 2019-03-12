@@ -1,7 +1,10 @@
 package com.kynetics.updatefactory.ddiclient.core
 
 import com.kynetics.updatefactory.ddiapiclient.api.IDdiClient
-import com.kynetics.updatefactory.ddiapiclient.api.model.*
+import com.kynetics.updatefactory.ddiapiclient.api.model.CfgDataReq
+import com.kynetics.updatefactory.ddiapiclient.api.model.CnclActResp
+import com.kynetics.updatefactory.ddiapiclient.api.model.DeplBaseResp
+import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq
 import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message.In.*
 import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message.Out
 import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message.Out.*
@@ -11,9 +14,8 @@ import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.channels.ActorScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.time.delay
-import java.time.Duration
-import java.time.Instant
+import org.joda.time.Duration
+import org.joda.time.Instant
 import kotlin.coroutines.CoroutineContext
 
 typealias Receiver = Channel<Any>
@@ -108,9 +110,8 @@ private constructor(scope: ActorScope<Any>, private val client: IDdiClient): Act
 
     private fun startPing(state:State):State {
         val now = Instant.now()
-        val elapsed = Duration.between(state.lastPing, now)
-        val optSleepTime = state.pingInterval.minus(elapsed)
-        val sleepTime = if(optSleepTime.isNegative) Duration.ZERO else optSleepTime
+        val elapsed = Duration(state.lastPing, now)
+        val sleepTime = state.pingInterval.minus(elapsed)
         val timer = launch {
             delay(sleepTime)
             channel.send(Ping)
@@ -138,7 +139,7 @@ private constructor(scope: ActorScope<Any>, private val client: IDdiClient): Act
         }
 
         private data class State(
-                val serverPingInterval:Duration = Duration.ofSeconds(0),
+                val serverPingInterval:Duration = Duration.standardSeconds(0),
                 val clientPingInterval:Duration? = null,
                 val backoffPingInterval:Duration? = null,
                 val lastPing:Instant? = Instant.EPOCH,
@@ -151,15 +152,17 @@ private constructor(scope: ActorScope<Any>, private val client: IDdiClient): Act
                         else -> serverPingInterval
                     }
             fun nextBackoff() = if(backoffPingInterval == null)
-                this.copy(backoffPingInterval = Duration.ofSeconds(1))
-                else this.copy(backoffPingInterval = minOf(backoffPingInterval.multipliedBy(2), Duration.ofMinutes(1)))
+                this.copy(backoffPingInterval = Duration.standardSeconds(1))
+                else this.copy(backoffPingInterval = minOf(backoffPingInterval.multipliedBy(2), Duration.standardMinutes(1)))
 
             fun withoutBackoff() = if(backoffPingInterval != null) this.copy(backoffPingInterval = null) else this
 
             fun withServerSleep(sleep:String):State {
                 fun sleepStr2duration(str:String): Duration {
                     val fields = str.split(':').map { Integer.parseInt(it).toLong()}.toTypedArray()
-                    return Duration.ofHours(fields[0]).plusMinutes(fields[1]).plusSeconds(fields[2])
+                    return Duration.standardHours  (fields[0])  .plus(
+                           Duration.standardMinutes(fields[1])) .plus(
+                           Duration.standardSeconds(fields[2]))
                 }
                 val newServerPingInterval = sleepStr2duration(sleep)
                 return if(newServerPingInterval != serverPingInterval) this.copy(serverPingInterval=newServerPingInterval)

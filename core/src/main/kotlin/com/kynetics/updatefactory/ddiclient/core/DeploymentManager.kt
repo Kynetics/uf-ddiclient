@@ -1,30 +1,23 @@
 package com.kynetics.updatefactory.ddiclient.core
 
-import com.kynetics.updatefactory.ddiapiclient.api.DdiClient
 import com.kynetics.updatefactory.ddiapiclient.api.IDdiClient
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplBaseResp
-import com.kynetics.updatefactory.ddiapiclient.api.model.DeplBaseResp.Depl
-import com.kynetics.updatefactory.ddiapiclient.api.model.DeplBaseResp.Depl.Appl.*
+import com.kynetics.updatefactory.ddiapiclient.api.model.DeplBaseResp.Depl.Appl.attempt
+import com.kynetics.updatefactory.ddiapiclient.api.model.DeplBaseResp.Depl.Appl.forced
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq.Sts
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq.Sts.Exc
-import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq.Sts.Exc.*
+import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq.Sts.Exc.proceeding
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq.Sts.Rslt
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq.Sts.Rslt.Fnsh
-import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq.Sts.Rslt.Fnsh.*
+import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq.Sts.Rslt.Fnsh.none
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq.Sts.Rslt.Prgrs
+import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message.In.DeploymentFeedback
 import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message.Out.DeploymentInfo
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.channels.ActorScope
-import kotlin.coroutines.CoroutineContext
-import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message.In.DeploymentFeedback
-import kotlinx.coroutines.async
-import kotlinx.coroutines.selects.select
-import java.io.FileOutputStream
-import java.nio.file.Files
-import java.nio.file.Paths
 import java.time.Instant
-import java.util.concurrent.atomic.AtomicInteger
+import kotlin.coroutines.CoroutineContext
 
 class DeploymentManager
 @UseExperimental(ObsoleteCoroutinesApi::class)

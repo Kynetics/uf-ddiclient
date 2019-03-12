@@ -66,6 +66,9 @@ project(':core') {
         implementation project(':ddiapi-client:ddiapi-client-api')
         //implementation deps.retrofit
     }
+    dependencies {
+        implementation deps.joda
+    }
     tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
         kotlinOptions.freeCompilerArgs += ["-Xuse-experimental=kotlin.Experimental"]
     }
@@ -73,11 +76,11 @@ project(':core') {
 }
 
 
-task listConfigurations <<{
-    allprojects.each { p ->
-        println(p.name)
-        p.configurations.each { c ->
-            println("\t${c.name}: ${c.description}")
-        }
-    }
-}
+//task listConfigurations <<{
+//    allprojects.each { p ->
+//        println(p.name)
+//        p.configurations.each { c ->
+//            println("\t${c.name}: ${c.description}")
+//        }
+//    }
+//}

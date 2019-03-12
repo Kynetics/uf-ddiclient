@@ -16,11 +16,6 @@ package com.kynetics.updatefactory.ddiapiclient.api
  */
 class DdiRestConstants private constructor() {
 
-
-    init {
-        throw AssertionError()
-    }
-
     companion object {
 
         /**

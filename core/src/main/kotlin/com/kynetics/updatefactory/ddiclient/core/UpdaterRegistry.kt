@@ -3,7 +3,7 @@ package com.kynetics.updatefactory.ddiclient.core
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplBaseResp
 import com.kynetics.updatefactory.ddiclient.core.api.Updater
 
-class UpdaterRegistry(vararg val updaters: Updater) {
+class UpdaterRegistry(private vararg val updaters: Updater) {
 
     fun allRequiredArtifactsFor(chunks: Set<DeplBaseResp.Depl.Cnk>):Set<Updater.Hashes> =
             updaters.flatMap { u ->
