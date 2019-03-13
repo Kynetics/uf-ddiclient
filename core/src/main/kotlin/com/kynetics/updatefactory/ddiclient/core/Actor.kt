@@ -27,6 +27,7 @@ abstract class Actor constructor(scope: ActorScope<Any>): ActorScope<Any> by sco
         ): ActorRef = GlobalScope.actor(context, capacity = 10) {
             val instance = init(this@actor)
             for (msg in channel) instance._receive(msg)
+            println("Actor terminated.")
         }
     }
 

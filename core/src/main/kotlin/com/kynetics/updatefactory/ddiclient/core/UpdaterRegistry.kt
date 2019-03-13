@@ -10,6 +10,9 @@ class UpdaterRegistry(private vararg val updaters: Updater) {
                 u.requiredSoftwareModulesAndPriority(chunks.map { convert(it) }.toSet())
                         .swModules.flatMap { it.hashes } }.toSet()
 
+//    fun allRequiredSwModuleFor(chunks: Set<DeplBaseResp.Depl.Cnk>): Set<Updater.SwModsApplication> =
+//            updaters.map { u -> u.requiredSoftwareModulesAndPriority(chunks.map { convert(it) }.toSet())}.
+
     private fun convert(cnk:DeplBaseResp.Depl.Cnk):Updater.SwModule =
             Updater.SwModule(
                     cnk.metadata?.map { convert(it) }?.toSet(),

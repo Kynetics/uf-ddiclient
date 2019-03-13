@@ -43,7 +43,7 @@ private constructor(scope: ActorScope<Any>,
             }
 
             is TrialExhausted -> {
-                state.listener!!.send(Error(channel, fileToDownload.md5, "trials exhausted due to errors: ${state.errors}"))
+                state.listener!!.send(Error(channel, fileToDownload.md5, "trials exhausted due to errors: ${state.errors.joinToString("\n", "\n")}"))
                 become(finished(state.copy(result = Result.ERROR)))
             }
 
