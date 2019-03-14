@@ -11,6 +11,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.channels.ActorScope
 import kotlinx.coroutines.launch
+import org.slf4j.LoggerFactory
 import kotlin.coroutines.CoroutineContext
 
 @ObsoleteCoroutinesApi
@@ -37,7 +38,9 @@ private constructor(val scope: ActorScope<Any>,
                 if(state.inDeployment && state.deploymentId!! == msg.info.id){
                     state.deploymentManager!!.send(msg)
                 } else if(state.inDeployment) {
-                    println("HANGED DEPLOYMENT ID ???")
+                    if(LOG.isInfoEnabled){
+                        LOG.info("HANGED DEPLOYMENT ID ???")
+                    }
                 } else {
                     val deploymentManager = DeploymentManager.of(
                             scope.coroutineContext,
@@ -52,11 +55,15 @@ private constructor(val scope: ActorScope<Any>,
             }
 
             is DeploymentCancelInfo -> {
-                println(msg)
+                if(LOG.isInfoEnabled){
+                    LOG.info(msg.toString())
+                }
             }
 
             is ErrMsg -> {
-                println(msg)
+                if(LOG.isInfoEnabled){
+                    LOG.info("HANGED DEPLOYMENT ID ???")
+                }
             }
 
             else -> unhandled(msg)
@@ -78,6 +85,8 @@ private constructor(val scope: ActorScope<Any>,
             ActionManager(it, connectionManager, registry, configDataProvider, ddiClient)
         }
 
+        private val LOG = LoggerFactory.getLogger(ActionManager::class.java)
+
         data class State(val deployment: Deplyment? = null) {
             data class Deplyment(val id:String, val manager: ActorRef)
             val inDeployment = deployment != null
@@ -85,4 +94,5 @@ private constructor(val scope: ActorScope<Any>,
             val deploymentManager = deployment?.manager
         }
     }
+
 }

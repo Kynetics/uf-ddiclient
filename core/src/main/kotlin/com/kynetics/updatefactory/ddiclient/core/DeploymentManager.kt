@@ -28,6 +28,7 @@ import com.kynetics.updatefactory.ddiclient.core.DeploymentManager.Companion.Sta
 import com.kynetics.updatefactory.ddiclient.core.DeploymentManager.Companion.Message.*
 import com.kynetics.updatefactory.ddiclient.core.DeploymentManager.Companion.State.Download.State.Status
 import com.kynetics.updatefactory.ddiclient.core.api.Updater
+import org.slf4j.LoggerFactory
 import java.io.File
 
 @ObsoleteCoroutinesApi
@@ -65,15 +66,15 @@ private constructor(val scope: ActorScope<Any>,
         when(msg) {
             is DeploymentInfo -> {
                 if(areEqualsApartHistoryMessages(msg.info, state.deplBaseResp)){
-                    println("Skip unchanged deployment info")
+                    LOG.info("Skip unchanged deployment info")
                 } else {
-                    println("to do, implement this flow")
+                    LOG.warn("to do, implement this flow")
                 }
             }
 
             is Success -> processMessage(state, msg.md5, SUCCESS, "successfully downloaded file with md5 ${msg.md5}")
 
-            is Info -> println(msg)
+            is Info -> LOG.info(msg.toString())
 
             is Error -> processMessage(state, msg.md5, ERROR, "failed downloading file with md5 ${msg.md5} due to ${msg.message}", msg.message)
 
@@ -94,14 +95,14 @@ private constructor(val scope: ActorScope<Any>,
 
             is DeploymentInfo -> {
                 if(areEqualsApartHistoryMessages(msg.info, state.deplBaseResp)){
-                    println("Skip unchanged deployment info")
+                    LOG.info("Skip unchanged deployment info")
                 } else {
-                    println("to do, implement this flow")
+                    LOG.warn("to do, implement this flow")
                 }
             }
 
             is START_UPDATING -> {
-                println("START UPDATING!!!")
+                LOG.info("START UPDATING!!!")
                 registry.allUpdatersWithSwModulesOrderedForPriority(state.deplBaseResp.deployment.chunks)
                         .forEach{
                             it.updater.apply(it.softwareModules.map { swModule ->
@@ -216,6 +217,8 @@ private constructor(val scope: ActorScope<Any>,
         sealed class Message {
             object START_UPDATING: Message()
         }
+
+        private val LOG = LoggerFactory.getLogger(DeploymentManager::class.java)
 
     }
 }

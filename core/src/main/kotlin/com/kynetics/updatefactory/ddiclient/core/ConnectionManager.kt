@@ -16,6 +16,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import org.joda.time.Duration
 import org.joda.time.Instant
+import org.slf4j.LoggerFactory
 import kotlin.coroutines.CoroutineContext
 
 typealias Receiver = Channel<Any>
@@ -55,7 +56,7 @@ private constructor(scope: ActorScope<Any>, private val client: IDdiClient): Act
             is SetPing -> become(runningReceive(startPing(state.copy(clientPingInterval = msg.duration,  lastPing = Instant.EPOCH))))
 
             is Ping -> {
-                println("in ping")
+                LOG.info("in ping")
                 val s = state.copy(lastPing = Instant.now())
                 try {
                     val res = client.getControllerActions()
@@ -79,7 +80,7 @@ private constructor(scope: ActorScope<Any>, private val client: IDdiClient): Act
                      this.send(ErrMsg(
                             "exception: ${t.javaClass} message: ${loopMsg(t)}"
                     ), state)
-                    println(t)
+                    LOG.debug(t.message, t)
                     become(runningReceive(startPing(s.nextBackoff())))
                 }
             }
@@ -89,7 +90,7 @@ private constructor(scope: ActorScope<Any>, private val client: IDdiClient): Act
                     client.postDeploymentActionFeedback(msg.feedback.id, msg.feedback)
                 } catch (t: Throwable) {
                     this.send(ErrMsg("exception: ${t.javaClass}"+ if(t.message != null) " message: ${t.message}" else ""), state)
-                    println(t)
+                    LOG.debug(t.message, t)
                 }
             }
 
@@ -98,7 +99,7 @@ private constructor(scope: ActorScope<Any>, private val client: IDdiClient): Act
                     client.putConfigData(msg.cfgDataReq)
                 } catch (t: Throwable) {
                     this.send(ErrMsg("exception: ${t.javaClass}"+ if(t.message != null) " message: ${t.message}" else ""), state)
-                    println(t)
+                    LOG.debug(t.message, t)
                 }
             }
 
@@ -198,6 +199,9 @@ private constructor(scope: ActorScope<Any>, private val client: IDdiClient): Act
             }
 
         }
+
+        private val LOG = LoggerFactory.getLogger(ConnectionManager::class.java)
+
     }
 
 }

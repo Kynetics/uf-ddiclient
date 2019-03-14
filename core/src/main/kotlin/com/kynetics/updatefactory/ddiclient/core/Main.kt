@@ -8,6 +8,7 @@ import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.joda.time.Duration
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.security.DigestInputStream
 import java.security.MessageDigest
@@ -44,6 +45,7 @@ fun File.md5():String{
 
 @ObsoleteCoroutinesApi
 fun main() = runBlocking {
+    val log = LoggerFactory.getLogger("Main")
     val ddiClient =     ClientBuilder()
             .withBaseUrl("http://localhost:8081")
             .withControllerId("target3")
@@ -59,21 +61,21 @@ fun main() = runBlocking {
             registry,
             updater,
             ddiClient)
-    println("start")
+    log.debug("start")
     cm.send(Start)
     delay(Duration.standardSeconds(6))
-    println("set ping 3s")
+    log.debug("set ping 3s")
     cm.send(ConnectionManager.Companion.Message.In.SetPing(Duration.standardSeconds(3)))
     delay(Duration.standardSeconds(30))
-    println("unset ping")
+    log.debug("unset ping")
     cm.send(ConnectionManager.Companion.Message.In.SetPing(null))
     delay(Duration.standardMinutes(6))
-    println("set ping 3s")
+    log.debug("set ping 3s")
     cm.send(ConnectionManager.Companion.Message.In.SetPing(Duration.standardSeconds(3)))
     delay(Duration.standardSeconds(30))
-    println("stop")
+    log.debug("stop")
     cm.send(ConnectionManager.Companion.Message.In.Stop)
     delay(Duration.standardSeconds(10))
-    println("exit")
+    log.debug("exit")
     //cm.close()
 }
