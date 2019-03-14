@@ -23,11 +23,13 @@ abstract class Actor constructor(scope: ActorScope<Any>): ActorScope<Any> by sco
     companion object {
         fun actorOf(
                 context: CoroutineContext,
+                parent: ActorRef?,
                 init: (ActorScope<Any>) -> Actor
         ): ActorRef = GlobalScope.actor(context, capacity = 10) {
             val instance = init(this@actor)
+            println("Actor ${this@actor.javaClass.simpleName} created.")
             for (msg in channel) instance._receive(msg)
-            println("Actor terminated.")
+            println("Actor ${this@actor.javaClass.simpleName} terminated.")
         }
     }
 

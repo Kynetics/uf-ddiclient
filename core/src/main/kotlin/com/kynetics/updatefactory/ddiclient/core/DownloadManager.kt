@@ -1,6 +1,6 @@
 package com.kynetics.updatefactory.ddiclient.core
 
-import com.kynetics.updatefactory.ddiapiclient.api.IDdiClient
+import com.kynetics.updatefactory.ddiapiclient.api.DdiClient
 import com.kynetics.updatefactory.ddiclient.core.DownloadManager.Companion.Message.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.ObsoleteCoroutinesApi
@@ -13,8 +13,9 @@ class DownloadManager
 @UseExperimental(ObsoleteCoroutinesApi::class)
 private constructor(scope: ActorScope<Any>,
                     private val fileToDownload: FileToDownload,
-                    private val attempts: Int,
-                    private val client: IDdiClient): Actor(scope) {
+                    attempts: Int): Actor(scope) {
+
+    private val client: DdiClient = UpdateFactoryClientDefaultImpl.context!!.ddiClient
 
     private fun beforeStart(state:State): Receive = { msg ->
         when(msg) {
@@ -120,10 +121,10 @@ private constructor(scope: ActorScope<Any>,
     companion object {
         const val DOWNLOADING_EXTENSION = "downloading"
         fun of(context: CoroutineContext,
+               parent: ActorRef,
                attempts: Int,
-               fileToDownload: FileToDownload,
-               client: IDdiClient) = Actor.actorOf(context) {
-            DownloadManager(it,fileToDownload,attempts,client)
+               fileToDownload: FileToDownload) = Actor.actorOf(context, parent) {
+            DownloadManager(it,fileToDownload,attempts)
         }
 
         data class FileToDownload(val md5: String,

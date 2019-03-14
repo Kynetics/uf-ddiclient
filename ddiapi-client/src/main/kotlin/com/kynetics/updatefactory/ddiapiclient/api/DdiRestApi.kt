@@ -12,7 +12,6 @@ package com.kynetics.updatefactory.ddiapiclient.api
 import com.kynetics.updatefactory.ddiapiclient.api.model.*
 import kotlinx.coroutines.Deferred
 import okhttp3.ResponseBody
-import retrofit2.Response
 import retrofit2.http.*
 
 /**
@@ -178,5 +177,6 @@ interface DdiRestApi {
                                  @Path("controllerId") controllerId: String,
                                  @Path("actionId") actionId: String?,
                                  @Body feedback: CnclFdbkReq): Deferred<Unit>
+
 }
 

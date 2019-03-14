@@ -3,7 +3,7 @@ package com.kynetics.updatefactory.ddiapiclient.api
 import com.kynetics.updatefactory.ddiapiclient.api.model.*
 import java.io.InputStream
 
-interface IDdiClient {
+interface DdiClient {
 
     suspend fun getControllerActions(): CtrlBaseResp
 

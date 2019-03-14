@@ -13,7 +13,7 @@ package com.kynetics.updatefactory.ddiapiclient.security
 import com.kynetics.updatefactory.ddiapiclient.api.DdiRestConstants.Companion.CONFIG_DATA_ACTION
 import com.kynetics.updatefactory.ddiapiclient.api.DdiRestConstants.Companion.TARGET_TOKEN_HEADER_NAME
 import com.kynetics.updatefactory.ddiapiclient.api.DdiRestConstants.Companion.TARGET_TOKEN_REQUEST_HEADER_NAME
-import com.kynetics.updatefactory.ddiapiclient.api.OnTargetTokenFound
+
 import okhttp3.Interceptor
 import okhttp3.Response
 
@@ -22,18 +22,19 @@ import java.util.Objects
 
 import com.kynetics.updatefactory.ddiapiclient.security.Authentication.AuthenticationType.TARGET_TOKEN_AUTHENTICATION
 import com.kynetics.updatefactory.ddiapiclient.security.Authentication.Companion.newInstance
+import com.kynetics.updatefactory.ddiclient.core.api.TargetTokenFoundListener
 
 /**
  * @author Daniele Sergio
  */
-class UpdateFactoryAuthenticationRequestInterceptor(private val authentications: MutableSet<Authentication>, onTargetTokenFound: OnTargetTokenFound?) : Interceptor {
+class UpdateFactoryAuthenticationRequestInterceptor(private val authentications: MutableSet<Authentication>, targetTokenFoundListener: TargetTokenFoundListener?) : Interceptor {
 
     //TODO why not declared in cunstructor?
-    private val onTargetTokenFound: OnTargetTokenFound
+    private val targetTokenFoundListener: TargetTokenFoundListener
 
     init {
         Objects.requireNonNull<Set<Authentication>>(authentications)
-        this.onTargetTokenFound = onTargetTokenFound ?: object : OnTargetTokenFound {
+        this.targetTokenFoundListener = targetTokenFoundListener ?: object : TargetTokenFoundListener {
             override fun onFound(targetToken: String) {
             }
         }
@@ -66,7 +67,7 @@ class UpdateFactoryAuthenticationRequestInterceptor(private val authentications:
 
         if (isConfigDataRequest && targetToken != null) {
             authentications.add(newInstance(TARGET_TOKEN_AUTHENTICATION, targetToken))
-            onTargetTokenFound.onFound(targetToken)
+            targetTokenFoundListener.onFound(targetToken)
             authentications.remove(targetTokenAuth)
         }
 

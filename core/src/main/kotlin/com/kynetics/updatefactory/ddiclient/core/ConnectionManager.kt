@@ -1,6 +1,6 @@
 package com.kynetics.updatefactory.ddiclient.core
 
-import com.kynetics.updatefactory.ddiapiclient.api.IDdiClient
+import com.kynetics.updatefactory.ddiapiclient.api.DdiClient
 import com.kynetics.updatefactory.ddiapiclient.api.model.CfgDataReq
 import com.kynetics.updatefactory.ddiapiclient.api.model.CnclActResp
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplBaseResp
@@ -22,7 +22,9 @@ typealias Receiver = Channel<Any>
 
 class ConnectionManager
 @UseExperimental(ObsoleteCoroutinesApi::class)
-private constructor(scope: ActorScope<Any>, private val client: IDdiClient): Actor(scope) {
+private constructor(scope: ActorScope<Any>): Actor(scope) {
+
+    private val client:DdiClient = UpdateFactoryClientDefaultImpl.context!!.ddiClient
 
     private fun stoppedReceive(state: State):Receive =  { msg ->
         when(msg) {
@@ -134,8 +136,8 @@ private constructor(scope: ActorScope<Any>, private val client: IDdiClient): Act
     }
 
     companion object {
-        fun of(context: CoroutineContext, client: IDdiClient) = Actor.actorOf(context) {
-            ConnectionManager(it,client)
+        fun of(context: CoroutineContext, parent: ActorRef) = Actor.actorOf(context, parent) {
+            ConnectionManager(it)
         }
 
         private data class State(

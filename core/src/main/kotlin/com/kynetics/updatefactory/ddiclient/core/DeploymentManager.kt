@@ -1,6 +1,5 @@
 package com.kynetics.updatefactory.ddiclient.core
 
-import com.kynetics.updatefactory.ddiapiclient.api.IDdiClient
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplBaseResp
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplBaseResp.Depl.Appl.attempt
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplBaseResp.Depl.Appl.forced
@@ -16,31 +15,32 @@ import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq.Sts.Rslt.Fn
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq.Sts.Rslt.Prgrs
 import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message.In.DeploymentFeedback
 import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message.Out.DeploymentInfo
+import com.kynetics.updatefactory.ddiclient.core.DeploymentManager.Companion.Message.START_UPDATING
+import com.kynetics.updatefactory.ddiclient.core.DeploymentManager.Companion.State.Download
+import com.kynetics.updatefactory.ddiclient.core.DeploymentManager.Companion.State.Download.State.Status
+import com.kynetics.updatefactory.ddiclient.core.DeploymentManager.Companion.State.Download.State.Status.*
+import com.kynetics.updatefactory.ddiclient.core.DownloadManager.Companion.FileToDownload
+import com.kynetics.updatefactory.ddiclient.core.DownloadManager.Companion.Message.*
+import com.kynetics.updatefactory.ddiclient.core.api.DirectoryForArtifactsProvider
+import com.kynetics.updatefactory.ddiclient.core.api.Updater
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.channels.ActorScope
+import java.io.File
 import java.time.Instant
 import kotlin.coroutines.CoroutineContext
-import com.kynetics.updatefactory.ddiclient.core.DownloadManager.Companion.FileToDownload
-import com.kynetics.updatefactory.ddiclient.core.api.ConfigDataProvider
-import com.kynetics.updatefactory.ddiclient.core.DownloadManager.Companion.Message.*
-import com.kynetics.updatefactory.ddiclient.core.DeploymentManager.Companion.State.Download
-import com.kynetics.updatefactory.ddiclient.core.DeploymentManager.Companion.State.Download.State.Status.*
-import com.kynetics.updatefactory.ddiclient.core.DeploymentManager.Companion.Message.*
-import com.kynetics.updatefactory.ddiclient.core.DeploymentManager.Companion.State.Download.State.Status
-import com.kynetics.updatefactory.ddiclient.core.api.Updater
-import java.io.File
 
 @ObsoleteCoroutinesApi
 class DeploymentManager
 @UseExperimental(ObsoleteCoroutinesApi::class)
-private constructor(val scope: ActorScope<Any>,
-                    private val actionManager: ActorRef,
-                    private val connectionManager: ActorRef,
-                    private val registry: UpdaterRegistry,
-                    private val cdp: ConfigDataProvider,
-                    private val ddiClient: IDdiClient): Actor(scope) {
+private constructor(private val scope: ActorScope<Any>,
+                    private val parent: ActorRef,
+                    private val connectionManager: ActorRef): Actor(scope) {
 
-    private fun beforeStartReceive(): Receive = { msg ->
+    private val registry: UpdaterRegistry = UpdateFactoryClientDefaultImpl.context!!.registry
+    private val cdp: DirectoryForArtifactsProvider = UpdateFactoryClientDefaultImpl.context!!.directoryForArtifactsProvider
+
+    private fun beforeStartReceive(): Receive = {
+        msg ->
         when(msg) {
 
             is DeploymentInfo -> {
@@ -85,7 +85,7 @@ private constructor(val scope: ActorScope<Any>,
 
     private fun pathCalculator(id: String):(artifact: Updater.SwModule.Artifact) -> String {
         return { artifact ->
-            File(cdp.directoryPathForArtifacts(id).toFile(), artifact.hashes.md5).absolutePath
+            File(cdp.directoryForArtifacts(id), artifact.hashes.md5).absolutePath
         }
     }
 
@@ -132,19 +132,23 @@ private constructor(val scope: ActorScope<Any>,
         val progress = Prgrs(
                 downloads.size,
                 downloads.count { it.state.status == SUCCESS })
-        if (downloads.any { it.state.status == RUNNING }) {
-            feedback(state.deplBaseResp.id, proceeding, progress, none, message)
-            become(downloadingReceive(newState))
-        } else if (downloads.any { it.state.status == ERROR }) {
-            val messages = newState.downloads.filter { it.value.state.status == ERROR }.map { e ->
-                "the download of the file with md5 ${e.key} failed due to error(s): ${e.value.state.messages.joinToString(prefix = "\n", separator = "\n")}"
+        when {
+            downloads.any { it.state.status == RUNNING } -> {
+                feedback(state.deplBaseResp.id, proceeding, progress, none, message)
+                become(downloadingReceive(newState))
             }
-            feedback(state.deplBaseResp.id, closed, progress, failure, "successfully downloaded file with md5 ${md5}", *messages.toTypedArray())
-            newState.downloads.values.forEach{it.downloader.close()}
-            become(downloadingReceive(newState.copy(downloads = emptyMap())))
-        } else {
-            become(updatingReceive(newState))
-            channel.send(START_UPDATING)
+            downloads.any { it.state.status == ERROR } -> {
+                val messages = newState.downloads.filter { it.value.state.status == ERROR }.map { e ->
+                    "the download of the file with md5 ${e.key} failed due to error(s): ${e.value.state.messages.joinToString(prefix = "\n", separator = "\n")}"
+                }
+                feedback(state.deplBaseResp.id, closed, progress, failure, "successfully downloaded file with md5 $md5", *messages.toTypedArray())
+                newState.downloads.values.forEach{it.downloader.close()}
+                become(downloadingReceive(newState.copy(downloads = emptyMap())))
+            }
+            else -> {
+                become(updatingReceive(newState))
+                channel.send(START_UPDATING)
+            }
         }
     }
 
@@ -170,14 +174,14 @@ private constructor(val scope: ActorScope<Any>,
     }
 
     private fun createDownloadsMenagers(dbr: DeplBaseResp, md5s: Set<String>): Map<String, Download> {
-        val wd = cdp.directoryPathForArtifacts(dbr.id).toFile()
+        val wd = cdp.directoryForArtifacts(dbr.id)
         if (!wd.exists()) {
             wd.mkdir()
         }
         return dbr.deployment.chunks.flatMap { it.artifacts }.filter { md5s.contains(it.hashes.md5) }.map { at ->
             val md5 = at.hashes.md5
             val ftd = FileToDownload(md5, at._links.download_http.href, wd)
-            val dm = DownloadManager.of(scope.coroutineContext, 3, ftd, ddiClient)
+            val dm = DownloadManager.of(scope.coroutineContext, this.channel, 3, ftd)
             Pair(md5, Download(dm))
         }.toMap()
     }
@@ -195,12 +199,9 @@ private constructor(val scope: ActorScope<Any>,
 
     companion object {
         fun of(context: CoroutineContext,
-               actionManager: ActorRef,
-               connectionManager: ActorRef,
-               registry: UpdaterRegistry,
-               cdp: ConfigDataProvider,
-               ddiClient: IDdiClient) = Actor.actorOf(context){
-            DeploymentManager(it, actionManager, connectionManager, registry, cdp, ddiClient)
+               parent: ActorRef,
+               connectionManager: ActorRef) = Actor.actorOf(context, parent){
+            DeploymentManager(it, parent, connectionManager)
         }
 
         data class State(

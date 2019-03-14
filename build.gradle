@@ -38,6 +38,7 @@ project(':ddiapi-client') {
     final def subprj = ':ddiapi-client:ddiapi-client-api'
     dependencies {
         implementation project(subprj)
+        implementation project(':core:core-api')
         implementation deps.retrofit_converter
     }
     allprojects {
