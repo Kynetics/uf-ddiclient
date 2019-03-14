@@ -45,6 +45,7 @@ fun File.md5():String{
 
 @ObsoleteCoroutinesApi
 fun main() = runBlocking {
+    System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "TRACE")
     val log = LoggerFactory.getLogger("Main")
     val ddiClient =     ClientBuilder()
             .withBaseUrl("http://localhost:8081")

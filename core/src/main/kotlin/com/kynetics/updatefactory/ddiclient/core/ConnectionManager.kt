@@ -80,7 +80,7 @@ private constructor(scope: ActorScope<Any>, private val client: IDdiClient): Act
                      this.send(ErrMsg(
                             "exception: ${t.javaClass} message: ${loopMsg(t)}"
                     ), state)
-                    LOG.debug(t.message, t)
+                    LOG.warn(t.message, t)
                     become(runningReceive(startPing(s.nextBackoff())))
                 }
             }
@@ -90,7 +90,7 @@ private constructor(scope: ActorScope<Any>, private val client: IDdiClient): Act
                     client.postDeploymentActionFeedback(msg.feedback.id, msg.feedback)
                 } catch (t: Throwable) {
                     this.send(ErrMsg("exception: ${t.javaClass}"+ if(t.message != null) " message: ${t.message}" else ""), state)
-                    LOG.debug(t.message, t)
+                    LOG.warn(t.message, t)
                 }
             }
 
@@ -99,7 +99,7 @@ private constructor(scope: ActorScope<Any>, private val client: IDdiClient): Act
                     client.putConfigData(msg.cfgDataReq)
                 } catch (t: Throwable) {
                     this.send(ErrMsg("exception: ${t.javaClass}"+ if(t.message != null) " message: ${t.message}" else ""), state)
-                    LOG.debug(t.message, t)
+                    LOG.warn(t.message, t)
                 }
             }
 

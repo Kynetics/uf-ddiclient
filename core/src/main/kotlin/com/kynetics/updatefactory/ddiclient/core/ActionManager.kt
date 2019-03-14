@@ -31,6 +31,8 @@ private constructor(val scope: ActorScope<Any>,
                 if(!map.isEmpty()){
                     val cdr = CfgDataReq.of(map, CfgDataReq.Mod.merge)
                     connectionManager.send(In.ConfigDataFeedback(cdr))
+                } else {
+                    LOG.info("Config dara required ignored because of map is empty")
                 }
             }
 
@@ -38,9 +40,7 @@ private constructor(val scope: ActorScope<Any>,
                 if(state.inDeployment && state.deploymentId!! == msg.info.id){
                     state.deploymentManager!!.send(msg)
                 } else if(state.inDeployment) {
-                    if(LOG.isInfoEnabled){
-                        LOG.info("HANGED DEPLOYMENT ID ???")
-                    }
+                    LOG.info("HANGED DEPLOYMENT ID ???")
                 } else {
                     val deploymentManager = DeploymentManager.of(
                             scope.coroutineContext,
@@ -55,15 +55,11 @@ private constructor(val scope: ActorScope<Any>,
             }
 
             is DeploymentCancelInfo -> {
-                if(LOG.isInfoEnabled){
-                    LOG.info(msg.toString())
-                }
+                LOG.warn("Not yet implemented")
             }
 
             is ErrMsg -> {
-                if(LOG.isInfoEnabled){
-                    LOG.info("HANGED DEPLOYMENT ID ???")
-                }
+                LOG.warn("Not yet implemented")
             }
 
             else -> unhandled(msg)
