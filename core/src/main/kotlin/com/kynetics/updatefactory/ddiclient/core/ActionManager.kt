@@ -9,6 +9,7 @@ import com.kynetics.updatefactory.ddiclient.core.api.ConfigDataProvider
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.channels.ActorScope
 import kotlinx.coroutines.launch
+import org.slf4j.LoggerFactory
 import kotlin.coroutines.CoroutineContext
 
 @ObsoleteCoroutinesApi
@@ -27,6 +28,8 @@ private constructor(val scope: ActorScope<Any>,
                 if(!map.isEmpty()){
                     val cdr = CfgDataReq.of(map, CfgDataReq.Mod.merge)
                     connectionManager.send(In.ConfigDataFeedback(cdr))
+                } else {
+                    LOG.info("Config dara required ignored because of map is empty")
                 }
             }
 
@@ -34,7 +37,7 @@ private constructor(val scope: ActorScope<Any>,
                 if(state.inDeployment && state.deploymentId!! == msg.info.id){
                     state.deploymentManager!!.send(msg)
                 } else if(state.inDeployment) {
-                    println("HANGED DEPLOYMENT ID ???")
+                    LOG.info("HANGED DEPLOYMENT ID ???")
                 } else {
                     val deploymentManager = DeploymentManager.of(
                             scope.coroutineContext,
@@ -46,11 +49,11 @@ private constructor(val scope: ActorScope<Any>,
             }
 
             is DeploymentCancelInfo -> {
-                println(msg)
+                LOG.warn("Not yet implemented")
             }
 
             is ErrMsg -> {
-                println(msg)
+                LOG.warn("Not yet implemented")
             }
 
             else -> unhandled(msg)
@@ -70,6 +73,8 @@ private constructor(val scope: ActorScope<Any>,
             ActionManager(it, connectionManager)
         }
 
+        private val LOG = LoggerFactory.getLogger(ActionManager::class.java)
+
         data class State(val deployment: Deplyment? = null) {
             data class Deplyment(val id:String, val manager: ActorRef)
             val inDeployment = deployment != null
@@ -77,4 +82,5 @@ private constructor(val scope: ActorScope<Any>,
             val deploymentManager = deployment?.manager
         }
     }
+
 }

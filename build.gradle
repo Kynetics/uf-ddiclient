@@ -46,6 +46,8 @@ project(':ddiapi-client') {
             implementation deps.okhttp
             implementation deps.retrofit
             implementation deps.retrofit_coroutines
+            implementation deps.slf4j_api
+
         }
     }
     project(subprj) {
@@ -65,6 +67,9 @@ project(':core') {
         implementation project(':core:core-api')
         implementation project(':ddiapi-client')
         implementation project(':ddiapi-client:ddiapi-client-api')
+        implementation deps.slf4j_api
+        implementation deps.slf4j_simple
+
         //implementation deps.retrofit
     }
     dependencies {
