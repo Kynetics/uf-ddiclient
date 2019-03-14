@@ -27,6 +27,8 @@ import com.kynetics.updatefactory.ddiapiclient.security.Authentication.Companion
  * @author Daniele Sergio
  */
 class UpdateFactoryAuthenticationRequestInterceptor(private val authentications: MutableSet<Authentication>, onTargetTokenFound: OnTargetTokenFound?) : Interceptor {
+
+    //TODO why not declared in cunstructor?
     private val onTargetTokenFound: OnTargetTokenFound
 
     init {

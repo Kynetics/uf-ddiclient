@@ -32,6 +32,16 @@ fun File.md5():String{
     return sb.toString().toLowerCase()
 }
 
+//TODO add logging ! --> D
+//TODO add exception handling ! --> A
+//TODO add actor hierarchy ! --> A
+//TODO add singletons ! --> D
+//TODO add updater confirmation check for download and installaion ! --> D
+//TODO add check forced from updater ! --> A
+//TODO apply returns with messages ! --> D
+//TODO add event notification
+//TODO add actorSelection ! --> A
+
 @ObsoleteCoroutinesApi
 fun main() = runBlocking {
     val ddiClient =     ClientBuilder()

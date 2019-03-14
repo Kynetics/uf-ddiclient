@@ -36,6 +36,7 @@ import retrofit2.Retrofit.Builder
 /**
  * @author Daniele Sergio
  */
+//TODO better check invaraints! i.e onTargetTokenFound != null ==> servertype == UPDATE SERVER
 class ClientBuilder {
 
     private val builder = Builder()
