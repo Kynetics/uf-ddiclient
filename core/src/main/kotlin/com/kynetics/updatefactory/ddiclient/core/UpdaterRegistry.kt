@@ -10,8 +10,26 @@ class UpdaterRegistry(private vararg val updaters: Updater) {
                 u.requiredSoftwareModulesAndPriority(chunks.map { convert(it) }.toSet())
                         .swModules.flatMap { it.hashes } }.toSet()
 
-//    fun allRequiredSwModuleFor(chunks: Set<DeplBaseResp.Depl.Cnk>): Set<Updater.SwModsApplication> =
-//            updaters.map { u -> u.requiredSoftwareModulesAndPriority(chunks.map { convert(it) }.toSet())}.
+    fun allUpdatersWithSwModulesOrderedForPriority(chunks: Set<DeplBaseResp.Depl.Cnk>): Set<UpdaterWithSwModule> {
+
+        val swModules = chunks.map { convert(it) }.toSet()
+
+        return updaters.map { u ->
+            val appl = u.requiredSoftwareModulesAndPriority(swModules)
+            UpdaterWithSwModule(appl.priority, u, appl.swModules.map { swm ->
+                swModules.find {
+                    with(swm) {
+                        it.name == name &&
+                                it.type == type &&
+                                it.version == version
+                    }
+                }!!
+            }.toSet())
+        }.toSortedSet(Comparator { p1, p2 -> p1.priority.compareTo(p2.priority) })
+    }
+
+
+    data class UpdaterWithSwModule(val priority: Int, val updater: Updater, val softwareModules: Set<Updater.SwModule>)
 
     private fun convert(cnk:DeplBaseResp.Depl.Cnk):Updater.SwModule =
             Updater.SwModule(

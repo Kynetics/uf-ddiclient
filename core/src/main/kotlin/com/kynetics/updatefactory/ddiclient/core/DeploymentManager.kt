@@ -27,6 +27,8 @@ import com.kynetics.updatefactory.ddiclient.core.DeploymentManager.Companion.Sta
 import com.kynetics.updatefactory.ddiclient.core.DeploymentManager.Companion.State.Download.State.Status.*
 import com.kynetics.updatefactory.ddiclient.core.DeploymentManager.Companion.Message.*
 import com.kynetics.updatefactory.ddiclient.core.DeploymentManager.Companion.State.Download.State.Status
+import com.kynetics.updatefactory.ddiclient.core.api.Updater
+import java.io.File
 
 @ObsoleteCoroutinesApi
 class DeploymentManager
@@ -81,6 +83,12 @@ private constructor(val scope: ActorScope<Any>,
 
     }
 
+    private fun pathCalculator(id: String):(artifact: Updater.SwModule.Artifact) -> String {
+        return { artifact ->
+            File(cdp.directoryPathForArtifacts(id).toFile(), artifact.hashes.md5).absolutePath
+        }
+    }
+
     private fun updatingReceive(state: State): Receive = { msg ->
         when(msg) {
 
@@ -92,11 +100,28 @@ private constructor(val scope: ActorScope<Any>,
                 }
             }
 
-            is START_UPDATING -> println("START UPDATING!!!")
+            is START_UPDATING -> {
+                println("START UPDATING!!!")
+                registry.allUpdatersWithSwModulesOrderedForPriority(state.deplBaseResp.deployment.chunks)
+                        .forEach{
+                            it.updater.apply(it.softwareModules.map { swModule ->
+                                convert(swModule, pathCalculator(state.deplBaseResp.id)) }.toSet())
+                        }
+            }
 
             else -> unhandled(msg)
         }
     }
+
+    private fun convert (swModule: Updater.SwModule, pathCalculator: (Updater.SwModule.Artifact) -> String): Updater.SwModuleWithPath =
+            Updater.SwModuleWithPath(
+                    swModule.metadata?.map { Updater.SwModuleWithPath.Metadata(it.key, it.value) }?.toSet(),
+                    swModule.type,
+                    swModule.name,
+                    swModule.version,
+                    swModule.artifacts.map
+                    { Updater.SwModuleWithPath.Artifact(it.filename,it.hashes,it.size, pathCalculator(it))}.toSet()
+            )
 
     private suspend fun processMessage(state:State, md5:String, status: Status, message: String, errorMsg:String?=null) {
         val download = state.downloads.getValue(md5)
