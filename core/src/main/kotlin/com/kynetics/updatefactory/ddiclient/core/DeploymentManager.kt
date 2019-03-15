@@ -148,7 +148,7 @@ private constructor(private val scope: ActorScope<Any>,
             }
             else -> {
                 become(updatingReceive(newState))
-                channel.send(START_UPDATING)
+                parent.send(AuthorizationManager.Companion.Message.AskUpdateAuthorization)
             }
         }
     }
