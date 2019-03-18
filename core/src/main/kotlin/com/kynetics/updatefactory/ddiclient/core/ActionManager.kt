@@ -2,9 +2,9 @@ package com.kynetics.updatefactory.ddiclient.core
 
 import com.kynetics.updatefactory.ddiapiclient.api.model.CfgDataReq
 import com.kynetics.updatefactory.ddiclient.core.ActionManager.Companion.State.Deplyment
-import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message.In
-import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message.Out.*
-import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message.Out.Err.ErrMsg
+import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Message.In
+import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Message.Out.*
+import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Message.Out.Err.ErrMsg
 import com.kynetics.updatefactory.ddiclient.core.api.ConfigDataProvider
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.channels.ActorScope
@@ -69,7 +69,7 @@ private constructor(val scope: ActorScope<Any>,
     companion object {
         fun of(context: CoroutineContext,
                parent: ActorRef,
-               connectionManager: ActorRef) = Actor.actorOf(context, parent) {
+               connectionManager: ActorRef) = Actor.actorOf(context = context, parent = parent) {
             ActionManager(it, connectionManager)
         }
 

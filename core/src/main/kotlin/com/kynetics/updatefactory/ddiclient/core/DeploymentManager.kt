@@ -13,8 +13,8 @@ import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq.Sts.Rslt.Fn
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq.Sts.Rslt.Fnsh.failure
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq.Sts.Rslt.Fnsh.none
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq.Sts.Rslt.Prgrs
-import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message.In.DeploymentFeedback
-import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message.Out.DeploymentInfo
+import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Message.In.DeploymentFeedback
+import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Message.Out.DeploymentInfo
 import com.kynetics.updatefactory.ddiclient.core.DeploymentManager.Companion.Message.START_UPDATING
 import com.kynetics.updatefactory.ddiclient.core.DeploymentManager.Companion.State.Download
 import com.kynetics.updatefactory.ddiclient.core.DeploymentManager.Companion.State.Download.State.Status
@@ -201,7 +201,7 @@ private constructor(private val scope: ActorScope<Any>,
     companion object {
         fun of(context: CoroutineContext,
                parent: ActorRef,
-               connectionManager: ActorRef) = Actor.actorOf(context, parent){
+               connectionManager: ActorRef) = Actor.actorOf(context = context, parent = parent){
             DeploymentManager(it, parent, connectionManager)
         }
 

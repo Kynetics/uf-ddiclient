@@ -123,7 +123,7 @@ private constructor(scope: ActorScope<Any>,
         fun of(context: CoroutineContext,
                parent: ActorRef,
                attempts: Int,
-               fileToDownload: FileToDownload) = Actor.actorOf(context, parent) {
+               fileToDownload: FileToDownload) = Actor.actorOf(context=context, parent = parent) {
             DownloadManager(it,fileToDownload,attempts)
         }
 

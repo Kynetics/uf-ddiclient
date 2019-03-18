@@ -2,7 +2,9 @@ package com.kynetics.updatefactory.ddiclient.core
 
 import com.kynetics.updatefactory.ddiapiclient.api.DdiClient
 import com.kynetics.updatefactory.ddiapiclient.api.DdiClientDefaultImpl
+import com.kynetics.updatefactory.ddiclient.core.actors.AbstractActor
 import com.kynetics.updatefactory.ddiclient.core.actors.RootActor
+import com.kynetics.updatefactory.ddiclient.core.actors.UFClientContext
 import com.kynetics.updatefactory.ddiclient.core.api.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.runBlocking
@@ -19,7 +21,12 @@ class UpdateFactoryClientDefaultImpl: UpdateFactoryClient {
                 UpdaterRegistry(*updaters),
                 configDataProvider,
                 directoryForArtifactsProvider)
-        rootActor = RootActor.of(GlobalScope.coroutineContext)
+        rootActor = AbstractActor.actorOf("rootActor", UFClientContext(
+               context!!.ddiClient,
+                context!!.registry,
+                context!!.configDataProvider,
+                context!!.directoryForArtifactsProvider
+        )){ RootActor.of(it)}
     }
 
     override fun startAsync() {

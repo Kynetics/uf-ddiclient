@@ -5,27 +5,29 @@ import com.kynetics.updatefactory.ddiapiclient.api.model.CfgDataReq
 import com.kynetics.updatefactory.ddiapiclient.api.model.CnclActResp
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplBaseResp
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq
-import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message.In.*
-import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message.Out
-import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message.Out.*
-import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Companion.Message.Out.Err.ErrMsg
+import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Message.In.*
+import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Message.Out
+import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Message.Out.*
+import com.kynetics.updatefactory.ddiclient.core.ConnectionManager.Message.Out.Err.ErrMsg
+import com.kynetics.updatefactory.ddiclient.core.actors.AbstractActor
+import com.kynetics.updatefactory.ddiclient.core.actors.ActorScope
+import com.kynetics.updatefactory.ddiclient.core.actors.UFClientContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.ObsoleteCoroutinesApi
-import kotlinx.coroutines.channels.ActorScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import org.joda.time.Duration
 import org.joda.time.Instant
 import org.slf4j.LoggerFactory
-import kotlin.coroutines.CoroutineContext
 
 typealias Receiver = Channel<Any>
 
 class ConnectionManager
 @UseExperimental(ObsoleteCoroutinesApi::class)
-private constructor(scope: ActorScope<Any>): Actor(scope) {
+private constructor(scope: ActorScope): AbstractActor(scope) {
 
-    private val client:DdiClient = UpdateFactoryClientDefaultImpl.context!!.ddiClient
+    private val client:DdiClient = coroutineContext[UFClientContext]!!.ddiClient
+            //UpdateFactoryClientDefaultImpl.context!!.ddiClient
 
     private fun stoppedReceive(state: State):Receive =  { msg ->
         when(msg) {
@@ -136,75 +138,73 @@ private constructor(scope: ActorScope<Any>): Actor(scope) {
         become(stoppedReceive(State()))
     }
 
-    companion object {
-        fun of(context: CoroutineContext, parent: ActorRef) = Actor.actorOf(context, parent) {
-            ConnectionManager(it)
+    private data class State(
+            val serverPingInterval:Duration = Duration.standardSeconds(0),
+            val clientPingInterval:Duration? = null,
+            val backoffPingInterval:Duration? = null,
+            val lastPing:Instant? = Instant.EPOCH,
+            val timer: Job? = null,
+            val receivers: Set<Receiver> = emptySet()
+    ) {
+        val pingInterval = when {
+            backoffPingInterval != null -> backoffPingInterval
+            clientPingInterval != null -> clientPingInterval
+            else -> serverPingInterval
+        }
+        fun nextBackoff() = if(backoffPingInterval == null)
+            this.copy(backoffPingInterval = Duration.standardSeconds(1))
+        else this.copy(backoffPingInterval = minOf(backoffPingInterval.multipliedBy(2), Duration.standardMinutes(1)))
+
+        fun withoutBackoff() = if(backoffPingInterval != null) this.copy(backoffPingInterval = null) else this
+
+        fun withServerSleep(sleep:String):State {
+            fun sleepStr2duration(str:String): Duration {
+                val fields = str.split(':').map { Integer.parseInt(it).toLong()}.toTypedArray()
+                return Duration.standardHours  (fields[0])  .plus(
+                        Duration.standardMinutes(fields[1])) .plus(
+                        Duration.standardSeconds(fields[2]))
+            }
+            val newServerPingInterval = sleepStr2duration(sleep)
+            return if(newServerPingInterval != serverPingInterval) this.copy(serverPingInterval=newServerPingInterval)
+            else this
+        }
+        fun withReceiver(receiver: Receiver) = this.copy(receivers = receivers+receiver)
+
+        fun withoutReceiver(receiver: Receiver) = this.copy(receivers = receivers-receiver)
+    }
+
+    sealed class Message {
+
+        sealed class In: Message(){
+            object Start : In()
+            object Stop : In()
+            object Ping : In()
+            data class Register(val listener: Receiver): In()
+            data class Unregister(val listener: Receiver): In()
+            data class SetPing(val duration: Duration?) : In()
+            data class DeploymentFeedback(val feedback: DeplFdbkReq)
+            data class ConfigDataFeedback(val cfgDataReq: CfgDataReq)
         }
 
-        private data class State(
-                val serverPingInterval:Duration = Duration.standardSeconds(0),
-                val clientPingInterval:Duration? = null,
-                val backoffPingInterval:Duration? = null,
-                val lastPing:Instant? = Instant.EPOCH,
-                val timer: Job? = null,
-                val receivers: Set<Receiver> = emptySet()
-        ) {
-            val pingInterval = when {
-                        backoffPingInterval != null -> backoffPingInterval
-                        clientPingInterval != null -> clientPingInterval
-                        else -> serverPingInterval
-                    }
-            fun nextBackoff() = if(backoffPingInterval == null)
-                this.copy(backoffPingInterval = Duration.standardSeconds(1))
-                else this.copy(backoffPingInterval = minOf(backoffPingInterval.multipliedBy(2), Duration.standardMinutes(1)))
+        open class Out: Message(){
+            object ConfigDataRequired: Out()
+            data class DeploymentInfo(val info: DeplBaseResp): Out()
+            data class DeploymentCancelInfo(val info: CnclActResp): Out()
 
-            fun withoutBackoff() = if(backoffPingInterval != null) this.copy(backoffPingInterval = null) else this
-
-            fun withServerSleep(sleep:String):State {
-                fun sleepStr2duration(str:String): Duration {
-                    val fields = str.split(':').map { Integer.parseInt(it).toLong()}.toTypedArray()
-                    return Duration.standardHours  (fields[0])  .plus(
-                           Duration.standardMinutes(fields[1])) .plus(
-                           Duration.standardSeconds(fields[2]))
-                }
-                val newServerPingInterval = sleepStr2duration(sleep)
-                return if(newServerPingInterval != serverPingInterval) this.copy(serverPingInterval=newServerPingInterval)
-                else this
-            }
-            fun withReceiver(receiver: Receiver) = this.copy(receivers = receivers+receiver)
-
-            fun withoutReceiver(receiver: Receiver) = this.copy(receivers = receivers-receiver)
-        }
-
-        sealed class Message {
-
-            sealed class In: Message(){
-                object Start : In()
-                object Stop : In()
-                object Ping : In()
-                data class Register(val listener: Receiver): In()
-                data class Unregister(val listener: Receiver): In()
-                data class SetPing(val duration: Duration?) : In()
-                data class DeploymentFeedback(val feedback: DeplFdbkReq)
-                data class ConfigDataFeedback(val cfgDataReq: CfgDataReq)
-            }
-
-            open class Out: Message(){
-                object ConfigDataRequired: Out()
-                data class DeploymentInfo(val info: DeplBaseResp): Out()
-                data class DeploymentCancelInfo(val info: CnclActResp): Out()
-
-                sealed class Err: Out() {
-                    data class ErrMsg(val message:String): Err()
-                }
-
+            sealed class Err: Out() {
+                data class ErrMsg(val message:String): Err()
             }
 
         }
-
-        private val LOG = LoggerFactory.getLogger(ConnectionManager::class.java)
 
     }
+
+    companion object {
+        fun of(scope: ActorScope) = ConnectionManager(scope)
+        private val LOG = LoggerFactory.getLogger(ConnectionManager::class.java)
+    }
+
+
 
 }
 
