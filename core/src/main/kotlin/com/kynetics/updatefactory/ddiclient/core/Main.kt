@@ -1,9 +1,6 @@
 package com.kynetics.updatefactory.ddiclient.core
 
-import com.kynetics.updatefactory.ddiclient.core.api.ConfigDataProvider
-import com.kynetics.updatefactory.ddiclient.core.api.DirectoryForArtifactsProvider
-import com.kynetics.updatefactory.ddiclient.core.api.UpdateFactoryClientData
-import com.kynetics.updatefactory.ddiclient.core.api.Updater
+import com.kynetics.updatefactory.ddiclient.core.api.*
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -39,9 +36,11 @@ fun File.md5():String{
 //TODO add event notification
 @ObsoleteCoroutinesApi
 fun main() = runBlocking {
+    System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "TRACE")
+
     val clientData= UpdateFactoryClientData(
             "Default",
-            "target3",
+            "target4",
             "http://localhost:8081",
             UpdateFactoryClientData.ServerType.UPDATE_FACTORY,
             "66076ab945a127dd80b15e9011995109")
@@ -51,13 +50,17 @@ fun main() = runBlocking {
             clientData,
             object : DirectoryForArtifactsProvider { override fun directoryForArtifacts(actionId: String): File = File(".") },
             object : ConfigDataProvider{},
+            object : AuthorizationRequest{
+                override fun grantDownloadAuthorization(): Boolean = true
+                override fun grantUpdateAuthorization(): Boolean = true
+            },
             object : Updater { override fun apply(modules: Set<Updater.SwModuleWithPath>) { println("APPLY UPDATE $modules")}}
     )
     println("start")
     client.startAsync()
-    delay(Duration.standardSeconds(10))
-    println("force ping")
-    client.forcePing()
+    delay(Duration.standardMinutes(10))
+//    println("force ping")
+//    client.forcePing()
     delay(Duration.standardSeconds(10))
     println("exit")
     client.stop()

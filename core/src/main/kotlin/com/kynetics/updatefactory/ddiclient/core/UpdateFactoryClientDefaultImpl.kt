@@ -15,12 +15,14 @@ class UpdateFactoryClientDefaultImpl: UpdateFactoryClient {
             updateFactoryClientData: UpdateFactoryClientData,
             directoryForArtifactsProvider: DirectoryForArtifactsProvider,
             configDataProvider: ConfigDataProvider,
+            authorizationRequest: AuthorizationRequest,
             vararg updaters: Updater) {
         context = Context(
                 DdiClientDefaultImpl.of(updateFactoryClientData),
                 UpdaterRegistry(*updaters),
                 configDataProvider,
-                directoryForArtifactsProvider)
+                directoryForArtifactsProvider,
+                authorizationRequest)
         rootActor = AbstractActor.actorOf("rootActor", UFClientContext(
                context!!.ddiClient,
                 context!!.registry,
@@ -51,7 +53,8 @@ class UpdateFactoryClientDefaultImpl: UpdateFactoryClient {
             val ddiClient: DdiClient,
             val registry: UpdaterRegistry,
             val configDataProvider: ConfigDataProvider,
-            val directoryForArtifactsProvider: DirectoryForArtifactsProvider)
+            val directoryForArtifactsProvider: DirectoryForArtifactsProvider,
+            val authorizationRequest: AuthorizationRequest)
 
     companion object {
         var context: Context? = null

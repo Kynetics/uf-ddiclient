@@ -35,16 +35,18 @@ private constructor(val scope: ActorScope<Any>,
 
             is DeploymentInfo -> {
                 if(state.inDeployment && state.deploymentId!! == msg.info.id){
-                    state.deploymentManager!!.send(msg)
+                    state.authManager!!.send(msg)
                 } else if(state.inDeployment) {
                     LOG.info("HANGED DEPLOYMENT ID ???")
                 } else {
-                    val deploymentManager = DeploymentManager.of(
+                    val authorizationManager = AuthorizationManager.of(
                             scope.coroutineContext,
                             this.channel,
-                            connectionManager)
-                    become(defaultReceive(state.copy(deployment = Deplyment(msg.info.id,deploymentManager))))
-                    deploymentManager.send(msg)
+                            connectionManager
+                    )
+
+                    become(defaultReceive(state.copy(deployment = Deplyment(msg.info.id,authorizationManager))))
+                    authorizationManager.send(msg)
                 }
             }
 
@@ -79,7 +81,7 @@ private constructor(val scope: ActorScope<Any>,
             data class Deplyment(val id:String, val manager: ActorRef)
             val inDeployment = deployment != null
             val deploymentId = deployment?.id
-            val deploymentManager = deployment?.manager
+            val authManager = deployment?.manager
         }
     }
 
