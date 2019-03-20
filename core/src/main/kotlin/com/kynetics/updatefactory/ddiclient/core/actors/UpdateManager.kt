@@ -24,33 +24,32 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 LOG.info("START UPDATING!!!")
                 val updaters = registry.allUpdatersWithSwModulesOrderedForPriority(msg.info.deployment.chunks)
                 //TODO make it recursive
-                var failed=false
-                updaters.forEachIndexed loop@{ indx, it ->
-                    val success = it.updater.apply(it.softwareModules.map { swModule ->
-                        convert(swModule, pathCalculator(msg.info.id)) }.toSet(), object: Updater.Messanger{
-                        override fun sendMessageToServer(msgStr: String) {
-                            runBlocking {
-                                sendFeedback(msg.info.id,
-                                        DeplFdbkReq.Sts.Exc.proceeding,
-                                        DeplFdbkReq.Sts.Rslt.Prgrs(updaters.size, indx),
-                                        DeplFdbkReq.Sts.Rslt.Fnsh.none,
-                                        msgStr)
-                            }
-                        }
-                    })
-                    if(!success) {
-                        LOG.warn("update $indx failed!")
-                        parent!!.send(DeploymentManager.Companion.Message.UpdateFailed)
-                        sendFeedback(msg.info.id,
-                                DeplFdbkReq.Sts.Exc.closed,
-                                DeplFdbkReq.Sts.Rslt.Prgrs(updaters.size, indx),
-                                DeplFdbkReq.Sts.Rslt.Fnsh.failure,
-                                "Update failed")
-                        failed = true
-                        return@loop
-                    }
-                }
-                if(!failed){
+                val lastSuccessUpdaterPairedWithIndex = updaters
+                        .mapIndexed{index, u -> index to u }
+                        .takeWhile { (index, it) ->
+                            it.updater.apply(it.softwareModules.map { swModule ->
+                                convert(swModule, pathCalculator(msg.info.id)) }.toSet(), object: Updater.Messanger{
+                                override fun sendMessageToServer(msgStr: String) {
+                                    runBlocking {
+                                        sendFeedback(msg.info.id,
+                                                DeplFdbkReq.Sts.Exc.proceeding,
+                                                DeplFdbkReq.Sts.Rslt.Prgrs(updaters.size, index),
+                                                DeplFdbkReq.Sts.Rslt.Fnsh.none,
+                                                msgStr)
+                                    }
+                                }
+                            })
+                        }.last()
+
+                if(lastSuccessUpdaterPairedWithIndex.first != updaters.size - 1){
+                    LOG.warn("update ${lastSuccessUpdaterPairedWithIndex.first} failed!")
+                    parent!!.send(DeploymentManager.Companion.Message.UpdateFailed)
+                    sendFeedback(msg.info.id,
+                            DeplFdbkReq.Sts.Exc.closed,
+                            DeplFdbkReq.Sts.Rslt.Prgrs(updaters.size, lastSuccessUpdaterPairedWithIndex.first),
+                            DeplFdbkReq.Sts.Rslt.Fnsh.failure,
+                            "Update failed")
+                } else {
                     parent!!.send(DeploymentManager.Companion.Message.UpdateFinished)
                     sendFeedback(msg.info.id,
                             DeplFdbkReq.Sts.Exc.closed,
@@ -66,13 +65,14 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
     }
 
     private suspend fun sendFeedback(id: String,
-                             execution: DeplFdbkReq.Sts.Exc,
-                             progress: DeplFdbkReq.Sts.Rslt.Prgrs,
-                             finished: DeplFdbkReq.Sts.Rslt.Fnsh,
-                             vararg messages: String){
+                                     execution: DeplFdbkReq.Sts.Exc,
+                                     progress: DeplFdbkReq.Sts.Rslt.Prgrs,
+                                     finished: DeplFdbkReq.Sts.Rslt.Fnsh,
+                                     vararg messages: String){
         val request = DeplFdbkReq.newInstance(id,execution, progress, finished, *messages)
         connectionManager.send(DeploymentFeedback(request))
     }
+
     private fun pathCalculator(id: String):(artifact: Updater.SwModule.Artifact) -> String {
         return { artifact ->
             File(dfap.directoryForArtifacts(id), artifact.hashes.md5).absolutePath
