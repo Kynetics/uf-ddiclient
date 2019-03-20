@@ -30,36 +30,33 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                         convert(swModule, pathCalculator(msg.info.id)) }.toSet(), object: Updater.Messanger{
                         override fun sendMessageToServer(msgStr: String) {
                             runBlocking {
-                                connectionManager.send(DeploymentFeedback(DeplFdbkReq(msg.info.id , Instant.now().toString(),DeplFdbkReq.Sts(
-                                    DeplFdbkReq.Sts.Exc.proceeding,
-                                    DeplFdbkReq.Sts.Rslt(
-                                            DeplFdbkReq.Sts.Rslt.Fnsh.none,
-                                            DeplFdbkReq.Sts.Rslt.Prgrs(updaters.size, indx)),
-                                    listOf(msgStr)))))
+                                sendFeedback(msg.info.id,
+                                        DeplFdbkReq.Sts.Exc.proceeding,
+                                        DeplFdbkReq.Sts.Rslt.Prgrs(updaters.size, indx),
+                                        DeplFdbkReq.Sts.Rslt.Fnsh.none,
+                                        msgStr)
                             }
                         }
                     })
                     if(!success) {
-                        LOG.warn("update ${indx} failed!")
+                        LOG.warn("update $indx failed!")
                         parent!!.send(DeploymentManager.Companion.Message.UpdateFailed)
-                        connectionManager.send(DeploymentFeedback((DeplFdbkReq(msg.info.id , Instant.now().toString(),DeplFdbkReq.Sts(
+                        sendFeedback(msg.info.id,
                                 DeplFdbkReq.Sts.Exc.closed,
-                                DeplFdbkReq.Sts.Rslt(
-                                        DeplFdbkReq.Sts.Rslt.Fnsh.failure,
-                                        DeplFdbkReq.Sts.Rslt.Prgrs(updaters.size, indx)),
-                                listOf("Update failed"))))))
+                                DeplFdbkReq.Sts.Rslt.Prgrs(updaters.size, indx),
+                                DeplFdbkReq.Sts.Rslt.Fnsh.failure,
+                                "Update failed")
                         failed = true
                         return@loop
                     }
                 }
                 if(!failed){
                     parent!!.send(DeploymentManager.Companion.Message.UpdateFinished)
-                    connectionManager.send(DeploymentFeedback(DeplFdbkReq(msg.info.id , Instant.now().toString(),DeplFdbkReq.Sts(
+                    sendFeedback(msg.info.id,
                             DeplFdbkReq.Sts.Exc.closed,
-                            DeplFdbkReq.Sts.Rslt(
-                                    DeplFdbkReq.Sts.Rslt.Fnsh.success,
-                                    DeplFdbkReq.Sts.Rslt.Prgrs(updaters.size, updaters.size)),
-                            listOf("Update finished")))))
+                            DeplFdbkReq.Sts.Rslt.Prgrs(updaters.size, updaters.size),
+                            DeplFdbkReq.Sts.Rslt.Fnsh.success,
+                            "Update finished")
                 }
             }
 
@@ -68,6 +65,14 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
 
     }
 
+    private suspend fun sendFeedback(id: String,
+                             execution: DeplFdbkReq.Sts.Exc,
+                             progress: DeplFdbkReq.Sts.Rslt.Prgrs,
+                             finished: DeplFdbkReq.Sts.Rslt.Fnsh,
+                             vararg messages: String){
+        val request = DeplFdbkReq.newInstance(id,execution, progress, finished, *messages)
+        connectionManager.send(DeploymentFeedback(request))
+    }
     private fun pathCalculator(id: String):(artifact: Updater.SwModule.Artifact) -> String {
         return { artifact ->
             File(dfap.directoryForArtifacts(id), artifact.hashes.md5).absolutePath

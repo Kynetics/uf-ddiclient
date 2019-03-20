@@ -1,6 +1,7 @@
 package com.kynetics.updatefactory.ddiapiclient.api.model
 
 import com.google.gson.annotations.SerializedName
+import java.time.Instant
 
 /*======================================================================================================================
  *==== REQUESTS ========================================================================================================
@@ -56,6 +57,22 @@ data class DeplFdbkReq(
             data class Prgrs(
                     val of: Int,
                     val cnt: Int)
+        }
+    }
+
+    companion object {
+        fun newInstance(id: String,
+                        execution: Sts.Exc,
+                        progress: Sts.Rslt.Prgrs,
+                        finished: Sts.Rslt.Fnsh,
+                        vararg messages: String):DeplFdbkReq {
+            return DeplFdbkReq(id, Instant.now().toString(),Sts(
+                    execution,
+                    Sts.Rslt(
+                            finished,
+                            progress),
+                    messages.toList()
+            ))
         }
     }
 }

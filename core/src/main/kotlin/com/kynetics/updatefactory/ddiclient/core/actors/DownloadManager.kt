@@ -96,15 +96,8 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
         }
     }
 
-    //TODO add a ancillary constructor method to DeplFdbkReq
     private suspend fun feedback(id: String, execution: Exc, progress: Prgrs, finished: Fnsh, vararg messages: String) {
-        val deplFdbkReq = DeplFdbkReq(id, Instant.now().toString(),Sts(
-            execution,
-            Rslt(
-                finished,
-                progress),
-            messages.toList()
-        ))
+        val deplFdbkReq = DeplFdbkReq.newInstance(id, execution, progress, finished, *messages)
         connectionManager.send(DeploymentFeedback(deplFdbkReq))
     }
 
