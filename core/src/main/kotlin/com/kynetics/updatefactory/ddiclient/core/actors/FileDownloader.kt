@@ -1,30 +1,29 @@
-package com.kynetics.updatefactory.ddiclient.core
+package com.kynetics.updatefactory.ddiclient.core.actors
 
 import com.kynetics.updatefactory.ddiapiclient.api.DdiClient
-import com.kynetics.updatefactory.ddiclient.core.DownloadManager.Companion.Message.*
-import kotlinx.coroutines.Job
+import com.kynetics.updatefactory.ddiclient.core.actors.FileDownloader.Companion.Message.*
+import com.kynetics.updatefactory.ddiclient.core.md5
 import kotlinx.coroutines.ObsoleteCoroutinesApi
-import kotlinx.coroutines.channels.ActorScope
 import kotlinx.coroutines.launch
 import java.io.File
-import kotlin.coroutines.CoroutineContext
 
-class DownloadManager
 @UseExperimental(ObsoleteCoroutinesApi::class)
-private constructor(scope: ActorScope<Any>,
+class FileDownloader
+private constructor(scope: ActorScope,
                     private val fileToDownload: FileToDownload,
-                    attempts: Int): Actor(scope) {
+                    attempts: Int): AbstractActor(scope) {
 
-    private val client: DdiClient = UpdateFactoryClientDefaultImpl.context!!.ddiClient
+    private val client: DdiClient = coroutineContext[UFClientContext]!!.ddiClient
 
-    private fun beforeStart(state:State): Receive = { msg ->
+    private fun beforeStart(state: State): Receive = { msg ->
         when(msg) {
 
-            is Message.Start ->{
-                become(downloading(tryDownload(state).copy(listener = msg.listener)))
+            is Start ->{
+                become(downloading(state))
+                tryDownload(state)
             }
 
-            is Message.Stop  -> become(finished(state.copy(result = Result.ABORT)))
+            is Stop  -> this.cancel()
 
             else             -> unhandled(msg)
 
@@ -32,33 +31,28 @@ private constructor(scope: ActorScope<Any>,
 
     }
 
-    private fun downloading(state:State): Receive = { msg ->
+    private fun downloading(state: State): Receive = { msg ->
 
         when(msg) {
 
-            is FileDownloaded -> become(downloading(checkMd5OfDownloadedFile(state)))
+            is FileDownloaded -> checkMd5OfDownloadedFile()
 
             is FileChecked -> {
-                state.listener!!.send(Success(channel, fileToDownload.md5))
-                become(finished(state.copy(result = Result.SUCCESS)))
+                parent!!.send(Success(channel, fileToDownload.md5))
             }
 
             is TrialExhausted -> {
-                state.listener!!.send(Error(channel, fileToDownload.md5, "trials exhausted due to errors: ${state.errors.joinToString("\n", "\n")}"))
-                become(finished(state.copy(result = Result.ERROR)))
+                parent!!.send(Error(channel, fileToDownload.md5, "trials exhausted due to errors: ${state.errors.joinToString("\n", "\n")}"))
             }
 
             is RetryDownload     -> {
-                state.listener!!.send(Info(channel, fileToDownload.md5, "retry download due to: ${msg.cause}"))
+                parent!!.send(Info(channel, fileToDownload.md5, "retry download due to: ${msg.cause}"))
                 val newState = state.copy(remainingAttempts = state.remainingAttempts-1, errors = state.errors+msg.cause)
                 become(downloading(newState))
                 tryDownload(newState)
             }
 
-            is Message.Stop      -> {
-                state.pendingJob?.cancel()
-                become(finished(state.copy(result = Result.ABORT)))
-            }
+            is Message.Stop      -> this.cancel()
 
             else                 -> unhandled(msg)
 
@@ -66,14 +60,11 @@ private constructor(scope: ActorScope<Any>,
 
     }
 
-    private fun finished(state:State): Receive = { msg -> unhandled(msg) }
-
-    private suspend fun tryDownload(state:State): State =
+    private suspend fun tryDownload(state: State){
         if(state.remainingAttempts <= 0) {
             channel.send(TrialExhausted)
-            state
         } else {
-            val job = launch {
+            launch {
                 try {
                     download()
                     channel.send(FileDownloaded)
@@ -81,8 +72,8 @@ private constructor(scope: ActorScope<Any>,
                     channel.send(RetryDownload("exception: ${t.javaClass.simpleName}. message: ${t.message}"))
                 }
             }
-            state.copy(pendingJob = job)
         }
+    }
 
     private suspend fun download() {
         val file = fileToDownload.destination
@@ -94,8 +85,8 @@ private constructor(scope: ActorScope<Any>,
         }
     }
 
-    private suspend fun checkMd5OfDownloadedFile(state:State): State {
-        val job = launch {
+    private suspend fun checkMd5OfDownloadedFile() {
+        launch {
             val file = fileToDownload.destination
             when {
 
@@ -104,14 +95,11 @@ private constructor(scope: ActorScope<Any>,
                     channel.send(FileChecked)
                 }
 
-                file.delete() -> channel.send(Message.RetryDownload("unable verify md5 sum of downloaded file"))
+                file.delete() -> channel.send(Companion.Message.RetryDownload("unable verify md5 sum of downloaded file"))
 
                 else -> throw IllegalStateException("UNABLE DELETE FILE $file")
             }
-
         }
-
-        return state.copy(pendingJob = job)
     }
 
     init {
@@ -120,12 +108,9 @@ private constructor(scope: ActorScope<Any>,
 
     companion object {
         const val DOWNLOADING_EXTENSION = "downloading"
-        fun of(context: CoroutineContext,
-               parent: ActorRef,
+        fun of(scope: ActorScope,
                attempts: Int,
-               fileToDownload: FileToDownload) = Actor.actorOf(context=context, parent = parent) {
-            DownloadManager(it,fileToDownload,attempts)
-        }
+               fileToDownload: FileToDownload) = FileDownloader(scope, fileToDownload, attempts)
 
         data class FileToDownload(val md5: String,
                                   val url: String,
@@ -136,14 +121,11 @@ private constructor(scope: ActorScope<Any>,
 
         private data class State(
                 val remainingAttempts:Int,
-                val pendingJob: Job? = null,
-                val result:Result = Result.PENDING,
-                val listener: ActorRef?=null,
                 val errors: List<String> = emptyList())
 
         sealed class Message {
 
-            data class Start(val listener: ActorRef): Message()
+            object Start: Message()
             object Stop : Message()
 
             object FileDownloaded: Message()
@@ -155,10 +137,5 @@ private constructor(scope: ActorScope<Any>,
             data class Info(val sender:ActorRef, val md5: String, val message:String): Message()
             data class Error(val sender:ActorRef, val md5: String, val message:String): Message()
         }
-
-        enum class Result{
-            ABORT, SUCCESS, ERROR, PENDING
-        }
     }
-
 }

@@ -29,18 +29,18 @@ fun File.md5():String{
     return sb.toString().toLowerCase()
 }
 
-//TODO add logging ! --> D
 //TODO add exception handling ! --> A
 //TODO add updater confirmation check for download and installaion ! --> D
 //TODO apply returns with messages ! --> D
 //TODO add event notification
+//TODO manage ETAG & co. --> A
 @ObsoleteCoroutinesApi
 fun main() = runBlocking {
     System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "TRACE")
 
     val clientData= UpdateFactoryClientData(
             "Default",
-            "target4",
+            "target3",
             "http://localhost:8081",
             UpdateFactoryClientData.ServerType.UPDATE_FACTORY,
             "66076ab945a127dd80b15e9011995109")
@@ -48,21 +48,31 @@ fun main() = runBlocking {
     val client = UpdateFactoryClientDefaultImpl()
     client.init(
             clientData,
-            object : DirectoryForArtifactsProvider { override fun directoryForArtifacts(actionId: String): File = File(".") },
+            object : DirectoryForArtifactsProvider { override fun directoryForArtifacts(actionId: String): File = File("./$actionId") },
             object : ConfigDataProvider{},
-            object : AuthorizationRequest{
-                override fun grantDownloadAuthorization(): Boolean = true
-                override fun grantUpdateAuthorization(): Boolean = true
+            object : DeploymentPermitProvider{
+                override fun downloadAllowed(): Boolean = true
+                override fun updateAllowed(): Boolean = true
             },
-            object : Updater { override fun apply(modules: Set<Updater.SwModuleWithPath>) { println("APPLY UPDATE $modules")}}
+            object : Updater { override fun apply(modules: Set<Updater.SwModuleWithPath>, messanger: Updater.Messanger):Boolean {
+                println("APPLY UPDATE $modules")
+                messanger.sendMessageToServer("Applying the update...")
+                Thread.sleep(1000)
+                messanger.sendMessageToServer("Update applied")
+                return true
+            } }
     )
     println("start")
     client.startAsync()
-    delay(Duration.standardMinutes(10))
-//    println("force ping")
-//    client.forcePing()
-    delay(Duration.standardSeconds(10))
+    delay(Duration.standardSeconds(5))
+    println("force ping")
+    repeat(3) {
+        client.forcePing()
+        delay(Duration.standardSeconds(3))
+    }
+    delay(Duration.standardSeconds(5))
     println("exit")
     client.stop()
-    delay(Duration.standardSeconds(1))
+    delay(Duration.standardSeconds(3))
+    System.exit(0)
 }

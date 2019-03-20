@@ -1,47 +1,42 @@
 package com.kynetics.updatefactory.ddiclient.core.actors
 
-import com.kynetics.updatefactory.ddiclient.core.ActionManager
-import com.kynetics.updatefactory.ddiclient.core.ConnectionManager
+import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.In.*
 import kotlinx.coroutines.ObsoleteCoroutinesApi
+import kotlin.coroutines.AbstractCoroutineContextElement
+import kotlin.coroutines.CoroutineContext
 
 @UseExperimental(ObsoleteCoroutinesApi::class)
 class RootActor
-@UseExperimental(ObsoleteCoroutinesApi::class)
 private constructor(scope: ActorScope): AbstractActor(scope) {
 
-    private fun mainReceive(state: State): Receive = { msg ->
+    private fun mainReceive(): Receive = { msg ->
         when(msg) {
-            is Message.Start ->
-                state.connectionManager.send(ConnectionManager.Message.In.Start)
+            is Start, Ping -> child("connectionManager")!!.send(msg)
 
-            is Message.Stop ->
-                state.connectionManager.send(ConnectionManager.Message.In.Stop)
-
-            is Message.ForcePing ->
-                state.connectionManager.send(ConnectionManager.Message.In.Ping)
+            is Stop -> {
+                child("actionManager")!!.close()
+                child("connectionManager")!!.send(msg)
+                child("connectionManager")!!.close()
+                channel.close()
+            }
 
             else -> unhandled(msg)
         }
     }
 
     init {
-        val cm = actorOf("connectionManager"){ConnectionManager.of(this)}
-        val am = ActionManager.of(scope.coroutineContext, this.channel, cm)
-        become(mainReceive(State(am, cm)))
+        val cmActor = actorOf("connectionManager"){ ConnectionManager.of(it)}
+        val ctxt = CMActor(cmActor)
+        actorOf("actionManager", ctxt){ ActionManager.of(it)}
+        become(mainReceive())
     }
-
 
     companion object {
         fun of(scope: ActorScope) = RootActor(scope)
-
-        data class State(
-                val actionManager:ActorRef,
-                val connectionManager: ActorRef)
-
-        sealed class Message{
-            object Start:Message()
-            object Stop:Message()
-            object ForcePing: Message()
-        }
     }
+}
+
+data class CMActor(val ref:ActorRef): AbstractCoroutineContextElement(CMActor){
+    companion object Key : CoroutineContext.Key<CMActor>
+    override fun toString(): String = "CMActor($ref)"
 }

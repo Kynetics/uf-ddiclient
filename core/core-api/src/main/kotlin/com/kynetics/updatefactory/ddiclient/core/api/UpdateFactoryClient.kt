@@ -6,7 +6,7 @@ interface UpdateFactoryClient {
             updateFactoryClientData: UpdateFactoryClientData,
             directoryForArtifactsProvider: DirectoryForArtifactsProvider,
             configDataProvider: ConfigDataProvider,
-            authorizationRequest: AuthorizationRequest,
+            deploymentPermitProvider: DeploymentPermitProvider,
             vararg updaters: Updater)
 
     fun startAsync()

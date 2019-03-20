@@ -46,7 +46,7 @@ class DdiClientDefaultImpl private constructor(private val ddiRestApi: DdiRestAp
 
 
     override suspend fun getDeploymentActionDetails(actionId: String, historyCount: Int): DeplBaseResp {
-        LOG.debug("getControllerActions($actionId, $historyCount)")
+        LOG.debug("getDeploymentActionDetails($actionId, $historyCount)")
         val response = ddiRestApi.getDeploymentActionDetails(tenant, controllerId, actionId, null, historyCount).await()
         if(LOG.isDebugEnabled){
             LOG.debug("$response")
@@ -56,7 +56,7 @@ class DdiClientDefaultImpl private constructor(private val ddiRestApi: DdiRestAp
 
 
     override suspend fun getCancelActionDetails(actionId: String): CnclActResp {
-        LOG.debug("getControllerActions($actionId)")
+        LOG.debug("getCancelActionDetails($actionId)")
         val response = ddiRestApi.getCancelActionDetails(tenant, controllerId, actionId).await()
         if(LOG.isDebugEnabled){
             LOG.debug("$response")
@@ -69,12 +69,7 @@ class DdiClientDefaultImpl private constructor(private val ddiRestApi: DdiRestAp
         if(LOG.isDebugEnabled){
             LOG.debug("postDeploymentActionFeedback($actionId, $feedback)")
         }
-        val response = ddiRestApi.postDeploymentActionFeedback(tenant, controllerId, actionId, feedback).await()
-        if(LOG.isDebugEnabled){
-            LOG.debug("$response")
-        }
-        return response
-
+        ddiRestApi.postDeploymentActionFeedback(tenant, controllerId, actionId, feedback).await()
     }
 
 
@@ -82,11 +77,7 @@ class DdiClientDefaultImpl private constructor(private val ddiRestApi: DdiRestAp
         if(LOG.isDebugEnabled){
             LOG.debug("postCancelActionFeedback($actionId, $feedback)")
         }
-        val response = ddiRestApi.postCancelActionFeedback(tenant, controllerId, actionId, feedback).await()
-        if(LOG.isDebugEnabled){
-            LOG.debug("$response")
-        }
-        return response
+        ddiRestApi.postCancelActionFeedback(tenant, controllerId, actionId, feedback).await()
     }
 
     override suspend fun downloadArtifact(url: String): InputStream {
@@ -95,7 +86,7 @@ class DdiClientDefaultImpl private constructor(private val ddiRestApi: DdiRestAp
     }
 
     companion object {
-        val LOG = LoggerFactory.getLogger(DdiClient::class.java)
+        val LOG = LoggerFactory.getLogger(DdiClient::class.java)!!
         fun of(updateFactoryClientData: UpdateFactoryClientData): DdiClientDefaultImpl {
             val httpBuilder = OkHttpClient.Builder()
             val authentications = HashSet<Authentication>()

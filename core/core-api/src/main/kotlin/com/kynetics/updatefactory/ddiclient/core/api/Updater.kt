@@ -2,6 +2,10 @@ package com.kynetics.updatefactory.ddiclient.core.api
 
 interface Updater {
 
+    interface Messanger{
+        fun sendMessageToServer(msg:String)
+    }
+
     fun requiredSoftwareModulesAndPriority(swModules: Set<SwModule>): SwModsApplication =
             SwModsApplication(0,
                     swModules.map {
@@ -12,7 +16,10 @@ interface Updater {
                                 it.artifacts.map { a->a.hashes }.toSet())
                     }.toSet())
 
-    fun apply(modules: Set<SwModuleWithPath>)
+    /**
+     * @return true if succesfully applied
+     */
+    fun apply(modules: Set<SwModuleWithPath>, messanger: Messanger):Boolean
 
     data class SwModule(
             val metadata: Set<Metadata>?,
