@@ -69,18 +69,79 @@ project(':core') {
         implementation project(':ddiapi-client:ddiapi-client-api')
         implementation deps.slf4j_api
         implementation deps.slf4j_simple
-
         //implementation deps.retrofit
+
+        implementation deps.gson
+        testCompile tdeps.testng
+        testCompile deps.okhttp
+        testCompile deps.retrofit
+        testCompile deps.retrofit_coroutines
+        testCompile deps.retrofit_converter
+
     }
     dependencies {
         implementation deps.joda
     }
+    
     tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
         kotlinOptions.freeCompilerArgs += ["-Xuse-experimental=kotlin.Experimental"]
     }
 
+    test {
+        useTestNG()
+
+        afterTest { desc, result ->
+            logger.quiet "Executing test ${desc.name} [${desc.className}] with result: ${result.resultType}"
+        }
+    }
+
+    task restartUfServer() {
+        group 'testing'
+        doLast {
+
+            exec {
+                workingDir '../docker/test/'
+                commandLine 'docker-compose', 'down'
+            }
+
+
+            "docker-compose up".execute(new String[0], new File(projectDir, "../docker/test") )
+
+        }
+
+    }
+
+    task waitingUFServer(){
+        group 'testing'
+
+        dependsOn 'restartUfServer'
+
+        doFirst {
+            def url = 'http://localhost:8081/health'
+            println "Waiting for ${url} ..."
+            while (!doHead(url)) {
+                sleep(5000)
+                println "Waiting for ${url} ..."
+            }
+            println "${url} is up!"
+        }
+
+    }
+
+    test.dependsOn waitingUFServer
+
 }
 
+
+boolean doHead(url) {
+    def connection = new URL(url).openConnection()
+    connection.requestMethod = 'HEAD'
+    try {
+        connection.responseCode == 200
+    } catch (IOException error) {
+        false
+    }
+}
 
 //task listConfigurations <<{
 //    allprojects.each { p ->
