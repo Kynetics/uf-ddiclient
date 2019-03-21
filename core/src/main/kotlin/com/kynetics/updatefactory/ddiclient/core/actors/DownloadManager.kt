@@ -88,6 +88,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 parent!!.send(DownloadFailed)
             }
             else -> {
+                feedback(state.deplBaseResp.id, proceeding, progress, none, message)
                 feedback(state.deplBaseResp.id, proceeding, progress, none, "successfully downloaded all files")
                 newState.downloads.values.forEach{it.downloader.close()}
                 parent!!.send(DownloadFinished)
