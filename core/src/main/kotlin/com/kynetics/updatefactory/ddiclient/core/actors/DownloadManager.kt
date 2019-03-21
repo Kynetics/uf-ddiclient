@@ -109,7 +109,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
     private fun createDownloadsMenagers(dbr: DeplBaseResp, md5s: Set<String>): Map<String, Download> {
         val wd = dfap.directoryForArtifacts(dbr.id)
         if (!wd.exists()) {
-            wd.mkdir()
+            wd.mkdirs()
         }
         return dbr.deployment.chunks.flatMap { it.artifacts }.filter { md5s.contains(it.hashes.md5) }.map { at ->
             val md5 = at.hashes.md5
