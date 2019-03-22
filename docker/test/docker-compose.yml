@@ -3,7 +3,7 @@ version: "3"
 services:
 
   update-server:
-    image: comkynetics/uf-update-server:0.3-SNAPSHOT
+    image: comkynetics/uf-update-server:0.3.1-SNAPSHOT
 
     environment:
     - JAVA_STD_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=n
@@ -19,7 +19,9 @@ services:
       "--spring.datasource.password=1234",
       "--security.user.name=test",
       "--security.user.password=test",
+      "--hawkbit.server.ui.demo.tenant=DEFAULT",
       "--hawkbit.server.ui.demo.password=test",
+      "--hawkbit.server.ui.demo.disclaimer=Test configuration",
       "--hawkbit.server.ui.demo.user=test",
       "--spring.http.multipart.max-file-size=3072MB",
       "--hawkbit.server.security.dos.maxArtifactSize=3073741824",
