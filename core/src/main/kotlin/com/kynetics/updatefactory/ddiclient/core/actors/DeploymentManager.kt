@@ -160,6 +160,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
             object DownloadFailed: Message()
             object UpdateFailed: Message()
             object UpdateFinished: Message()
+            object CancelRequest: Message()
         }
 
     }

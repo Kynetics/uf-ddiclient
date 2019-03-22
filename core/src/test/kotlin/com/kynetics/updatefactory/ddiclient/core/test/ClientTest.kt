@@ -56,7 +56,7 @@ class ClientTest{
 
     @DataProvider(name = "TargetDeployments")
     fun dataProvider(): Array<TargetDeployments> {
-        return arrayOf(targetDeploymentsForTarget2(), targetDeploymentsForTarget3())
+        return arrayOf(targetDeploymentsForTarget1(), targetDeploymentsForTarget2(), targetDeploymentsForTarget3())
 
     }
 
@@ -93,9 +93,9 @@ class ClientTest{
             client.startAsync()
 
             launch {
-                delay(4000) //todo replace with a client state listener
+                delay(8000) //todo replace with a client state listener
                 actionStatus = managementApi.getTargetActionStatusAsync(basic,deployment.targetId,it.actionId).await()
-                Assert.assertEquals(actionStatus, it.actionStatusOnFinish)
+                Assert.assertEquals(actionStatus.content, it.actionStatusOnFinish.content)
 
                 it.filesDownloadedPairedWithServerFile.forEach{
                     println(File(it.first).absolutePath)
@@ -109,7 +109,6 @@ class ClientTest{
         }
 
     }
-
 
     private fun targetDeploymentsForTarget2(): TargetDeployments {
         val contentEntriesOnFinish = ActionStatus(setOf(ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.finished, listOf("Update finished")),
@@ -175,6 +174,50 @@ class ClientTest{
                                 actionStatusOnFinish = contentEntriesOnFinish,
                                 filesDownloadedPairedWithServerFile = filesDownloadedPairedToServerFile
 
+                        )
+                )
+        )
+    }
+
+    private fun targetDeploymentsForTarget1(): TargetDeployments {
+        val contentEntriesOnFinish2 = ActionStatus(setOf(ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.finished, listOf("Update finished")),
+                ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.running, listOf("Update applied")),
+                ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.running, listOf("Applying the update...")),
+                ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.running, listOf("successfully downloaded all files")),
+                ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.running, listOf("successfully downloaded file with md5 ${md5OfFileNamed("test1")}")),
+                ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.download, listOf("Update Server: Target downloads /Default/controller/v1/target1/softwaremodules/1/artifacts/test_1")),
+                ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.running, listOf("Start downloading 1 files")),
+                ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.retrieved, listOf("Update Server: Target retrieved update action and should start now the download.")),
+                ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.running, listOf(null))))
+
+        val actionStatusOnStart1 = ActionStatus(setOf( /*ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.retrieved, listOf("Update Server: Target retrieved cancel action and should start now the cancelation.")),*/
+                ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.canceling, listOf("Update Server: cancel obsolete action due to new update")),
+                ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.running, listOf(null))))
+
+        val contentEntriesOnFinish1 = ActionStatus(setOf(ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.canceled, listOf("Update Server: Cancelation confirmed.", "Update Server: Cancellation completion is finished sucessfully.")),
+                ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.retrieved, listOf("Update Server: Target retrieved cancel action and should start now the cancelation.")),
+                ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.canceling, listOf("Update Server: cancel obsolete action due to new update")),
+                ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.running, listOf(null))))
+
+        val actionStatusOnStart2 = ActionStatus(setOf(ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.running, listOf(null))))
+
+        val filesDownloadedPairedToServerFile = setOf("$downloadRootDirPath/2/${md5OfFileNamed("test1")}" to locationOfFileNamed("test1"))
+
+        return TargetDeployments(
+                targetId = "target1",
+                targetToken = "4a28d893bb841def706073c789c0f3a7",
+                deploymentInfo = listOf(
+                        TargetDeployments.DeploymentInfo(
+                                actionId = 1,
+                                actionStatusOnStart = actionStatusOnStart1,
+                                actionStatusOnFinish = contentEntriesOnFinish1,
+                                filesDownloadedPairedWithServerFile = emptySet()
+                        ),
+                        TargetDeployments.DeploymentInfo(
+                                actionId = 2,
+                                actionStatusOnStart = actionStatusOnStart2,
+                                actionStatusOnFinish = contentEntriesOnFinish2,
+                                filesDownloadedPairedWithServerFile = filesDownloadedPairedToServerFile
                         )
                 )
         )

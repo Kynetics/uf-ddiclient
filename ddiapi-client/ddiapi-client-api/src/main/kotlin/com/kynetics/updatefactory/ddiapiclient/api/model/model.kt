@@ -30,6 +30,19 @@ data class CnclFdbkReq(
                 none}
         }
     }
+    companion object {
+        fun newInstance(id: String,
+                        execution: CnclFdbkReq.Sts.Exc,
+                        finished: CnclFdbkReq.Sts.Rslt.Fnsh,
+                        vararg messages: String):CnclFdbkReq {
+            return CnclFdbkReq(id, Instant.now().toString(), CnclFdbkReq.Sts(
+                    execution,
+                    CnclFdbkReq.Sts.Rslt(
+                            finished),
+                    messages.toList()
+            ))
+        }
+    }
 }
 
 data class DeplFdbkReq(
@@ -49,7 +62,7 @@ data class DeplFdbkReq(
             resumed}
         data class Rslt(
                 val finished: Fnsh,
-                val progress: Prgrs) {
+                val progress: Prgrs?) {
             enum class Fnsh {
                 success,
                 failure,
@@ -163,7 +176,7 @@ data class CtrlBaseResp(
     private fun xxxAid(pfx:String) =
             ".*$pfx/([a-zA-Z0-9_]+)"
             .toRegex()
-            .find(_links?.deploymentBase?.href ?: "")
+            .find(_links?.deploymentBase?.href ?: _links?.cancelAction?.href ?: "")
             ?.destructured
             ?.component1()!!
 }

@@ -1,10 +1,7 @@
 package com.kynetics.updatefactory.ddiclient.core.actors
 
 import com.kynetics.updatefactory.ddiapiclient.api.DdiClient
-import com.kynetics.updatefactory.ddiapiclient.api.model.CfgDataReq
-import com.kynetics.updatefactory.ddiapiclient.api.model.CnclActResp
-import com.kynetics.updatefactory.ddiapiclient.api.model.DeplBaseResp
-import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq
+import com.kynetics.updatefactory.ddiapiclient.api.model.*
 import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.In.*
 import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.Out
 import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.Out.*
@@ -58,16 +55,26 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 val s = state.copy(lastPing = Instant.now())
                 try {
                     val res = client.getControllerActions()
+
                     if(res.requireConfigData()){
                         this.send(ConfigDataRequired, state)
                     }
+
+                    var actionFound = false
+
                     if(res.requireDeployment()) {
                         val res2 = client.getDeploymentActionDetails(res.deploymentActionId(),0)
                         this.send(DeploymentInfo(res2), state)
+                        actionFound = true
                     }
                     if(res.requireCancel()) {
                         val res2 = client.getCancelActionDetails(res.cancelActionId())
                         this.send(DeploymentCancelInfo(res2), state)
+                        actionFound = true
+                    }
+
+                    if(!actionFound){
+                        this.send(NoAction, state)
                     }
 
                     val newState = s.withServerSleep(res.config.polling.sleep).withoutBackoff()
@@ -85,6 +92,15 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
             is DeploymentFeedback -> {
                 try {
                     client.postDeploymentActionFeedback(msg.feedback.id, msg.feedback)
+                } catch (t: Throwable) {
+                    this.send(ErrMsg("exception: ${t.javaClass}"+ if(t.message != null) " message: ${t.message}" else ""), state)
+                    LOG.warn(t.message, t)
+                }
+            }
+
+            is CancelFeedback -> {
+                try {
+                    client.postCancelActionFeedback(msg.feedback.id, msg.feedback)
                 } catch (t: Throwable) {
                     this.send(ErrMsg("exception: ${t.javaClass}"+ if(t.message != null) " message: ${t.message}" else ""), state)
                     LOG.warn(t.message, t)
@@ -179,6 +195,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 data class Unregister(val listener: ActorRef): In()
                 data class SetPing(val duration: Duration?) : In()
                 data class DeploymentFeedback(val feedback: DeplFdbkReq)
+                data class CancelFeedback(val feedback: CnclFdbkReq)
                 data class ConfigDataFeedback(val cfgDataReq: CfgDataReq)
             }
 
@@ -191,6 +208,8 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                     }
                 }
                 data class DeploymentCancelInfo(val info: CnclActResp): Out()
+
+                object NoAction: Out()
 
                 sealed class Err: Out() {
                     data class ErrMsg(val message:String): Err()
