@@ -1,10 +1,12 @@
 package com.kynetics.updatefactory.ddiclient.core.actors
 
+import com.kynetics.updatefactory.ddiapiclient.api.model.CnclFdbkReq
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplBaseResp
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplBaseResp.Depl.Appl
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplBaseResp.Depl.Appl.*
-import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.Out.DeploymentInfo
+import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.Out.*
 import com.kynetics.updatefactory.ddiclient.core.actors.DeploymentManager.Companion.Message.*
+import com.kynetics.updatefactory.ddiclient.core.actors.ActionManager.Companion.Message.*
 import com.kynetics.updatefactory.ddiclient.core.api.DeploymentPermitProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ObsoleteCoroutinesApi
@@ -62,6 +64,14 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 become(beginningReceive(state))
             }
 
+            is DeploymentCancelInfo -> {
+                stopUpdateAndNotify(msg)
+            }
+
+            msg is CancelForced -> {
+                stopUpdate()
+            }
+
             else -> unhandled(msg)
 
         }
@@ -89,6 +99,14 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 parent!!.send(msg)
             }
 
+            msg is DeploymentCancelInfo -> {
+                stopUpdateAndNotify(msg)
+            }
+
+            msg is CancelForced -> {
+                stopUpdate()
+            }
+
             else -> unhandled(msg)
         }
     }
@@ -112,6 +130,14 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 child("updateManager")!!.send(DeploymentInfo(state.deplBaseResp!!))
             }
 
+            is DeploymentCancelInfo -> {
+                stopUpdateAndNotify(msg)
+            }
+
+            is CancelForced -> {
+                stopUpdate()
+            }
+
             else -> unhandled(msg)
 
         }
@@ -131,8 +157,38 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 parent!!.send(msg)
             }
 
+            is DeploymentCancelInfo -> {
+                LOG.info("can't stop update")
+                connectionManager.send(ConnectionManager.Companion.Message.In.CancelFeedback(
+                        CnclFdbkReq.newInstance(msg.info.cancelAction.stopId,
+                                CnclFdbkReq.Sts.Exc.rejected,
+                                CnclFdbkReq.Sts.Rslt.Fnsh.success,
+                                "Update already started. Can't be stopped.")))
+            }
+
+            is CancelForced ->{
+                LOG.info("Force cancel ignored")
+            }
         }
     }
+
+
+    private suspend fun stopUpdateAndNotify(msg: DeploymentCancelInfo) {
+        connectionManager.send(ConnectionManager.Companion.Message.In.CancelFeedback(
+                CnclFdbkReq.newInstance(msg.info.cancelAction.stopId,
+                        CnclFdbkReq.Sts.Exc.closed,
+                        CnclFdbkReq.Sts.Rslt.Fnsh.success)))
+        stopUpdate()
+    }
+
+    private suspend fun stopUpdate() {
+        LOG.info("Stopping update")
+        child("downloadManager")!!.close()
+        child("updateManager")!!.close()
+        channel.close()
+        parent!!.send(UpdateStopped)
+    }
+
 
     private fun DeploymentInfo.downloadIs(level:Appl):Boolean {
         return this.info.deployment.download == level
@@ -160,7 +216,6 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
             object DownloadFailed: Message()
             object UpdateFailed: Message()
             object UpdateFinished: Message()
-            object CancelRequest: Message()
         }
 
     }

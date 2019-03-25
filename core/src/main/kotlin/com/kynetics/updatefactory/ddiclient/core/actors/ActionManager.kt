@@ -1,16 +1,13 @@
 package com.kynetics.updatefactory.ddiclient.core.actors
 
-import com.kynetics.updatefactory.ddiapiclient.api.model.CfgDataReq
-import com.kynetics.updatefactory.ddiapiclient.api.model.CnclFdbkReq
-import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq
+import com.kynetics.updatefactory.ddiapiclient.api.model.*
 import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.In
 import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.Out.*
 import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.Out.Err.ErrMsg
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.runBlocking
-import com.kynetics.updatefactory.ddiclient.core.actors.DeploymentManager.Companion.Message.DownloadFailed
+import com.kynetics.updatefactory.ddiclient.core.actors.ActionManager.Companion.Message.*
 import com.kynetics.updatefactory.ddiclient.core.actors.DeploymentManager.Companion.Message.*
-import kotlinx.coroutines.delay
 import org.joda.time.Duration
 
 //TODO set frequent ping during deployment
@@ -83,10 +80,17 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
 
             msg is DeploymentCancelInfo -> {
                 LOG.warn("DeploymentCancelInfo")
+                child("deploymentManager")!!.send(msg)
             }
 
             state.inDeployment && msg is NoAction ->{
-                LOG.warn("ForceCancel/RemoveTarget. Not yet implemented")
+                LOG.warn("CancelForced/RemoveTarget.")
+                child("deploymentManager")!!.send(CancelForced)
+            }
+
+            msg is UpdateStopped -> {
+                LOG.info("update stopped")
+                become(defaultReceive(state.copy(deployment = null)))
             }
 
             msg is NoAction ->{ }
@@ -111,6 +115,13 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
             val inDeployment = deployment != null
             fun inDeployment(id: String) = inDeployment && deployment!!.info.id == id
             fun alreadyProcessing(msg: DeploymentInfo) = inDeployment && deployment!!.equalsApartHistory(msg)
+        }
+
+        sealed class Message {
+
+            object CancelForced: Message()
+            object UpdateStopped: Message()
+
         }
     }
 
