@@ -1,30 +1,24 @@
 package com.kynetics.updatefactory.ddiclient.core.test
 
 import com.jakewharton.retrofit2.adapter.kotlin.coroutines.CoroutineCallAdapterFactory
+import com.kynetics.updatefactory.ddiclient.core.api.ConfigDataProvider
+import com.kynetics.updatefactory.ddiclient.core.api.DirectoryForArtifactsProvider
+import com.kynetics.updatefactory.ddiclient.core.api.Updater
 import kotlinx.coroutines.Deferred
+import okhttp3.Credentials
 import okhttp3.OkHttpClient
-import retrofit2.Call
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.http.*
+import retrofit2.http.DELETE
+import retrofit2.http.GET
+import retrofit2.http.Header
+import retrofit2.http.Path
+import java.io.File
 import java.util.concurrent.Executors
 
 /**
  * @author Daniele Sergio
  */
-
-interface IdentifiableObject{
-    val id:Long?
-}
-typealias ObjectDeletion = (String, Long) -> Call<Void>
-
-data class Error(val exceptionClass:String = "", val errorCode:String = "", val message:String = "Error")
-data class SoftwareModule(val vendor:String, val name:String, val description:String, val type: String, val version:String, override val id:Long? = null) : IdentifiableObject
-data class Distribution(val name:String, val description:String, val type: String, val version:String, val modules:Set<Id>, override val id:Long? = null, val requiredMigrationStep:Boolean = false) : IdentifiableObject
-data class Id(val id: Long)
-data class ObjectType(val name:String, val description:String, val key:String)
-data class WrapperList(val content:Array<ObjectType>)
-
 
 data class ActionStatus(val content:Set<ContentEntry>, val total: Int = content.size, val size: Int = content.size){
     data class ContentEntry(val type: Type, val messages:List<String?>){
@@ -60,23 +54,115 @@ interface ManagementApi {
 object ManagementClient {
 
     fun newInstance(url:String): ManagementApi {
-            return object : ManagementApi {
-                private val delegate: ManagementApi = Retrofit.Builder().baseUrl(url)
-                        .client( OkHttpClient.Builder().build())
-                        .addConverterFactory(GsonConverterFactory.create())
-                        .addCallAdapterFactory(CoroutineCallAdapterFactory())
-                        .callbackExecutor(Executors.newSingleThreadExecutor())
-                        .build()
-                        .create(ManagementApi::class.java)
+        return object : ManagementApi {
+            private val delegate: ManagementApi = Retrofit.Builder().baseUrl(url)
+                    .client( OkHttpClient.Builder().build())
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .addCallAdapterFactory(CoroutineCallAdapterFactory())
+                    .callbackExecutor(Executors.newSingleThreadExecutor())
+                    .build()
+                    .create(ManagementApi::class.java)
 
-                override fun getTargetActionStatusAsync(auth: String, targetId: String, actionId: Int): Deferred<ActionStatus> {
-                    return delegate.getTargetActionStatusAsync(auth, targetId, actionId)
-                }
-
-                override fun deleteTargetActionAsync(auth: String, targetId: String, actionId: Int): Deferred<Unit> {
-                    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-                }
+            override fun getTargetActionStatusAsync(auth: String, targetId: String, actionId: Int): Deferred<ActionStatus> {
+                return delegate.getTargetActionStatusAsync(auth, targetId, actionId)
             }
+
+            override fun deleteTargetActionAsync(auth: String, targetId: String, actionId: Int): Deferred<Unit> {
+                TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+            }
+        }
     }
+
+}
+
+object TestUtils {
+
+    data class TargetDeployments(
+            val targetId: String,
+            val targetToken: String,
+            val deploymentInfo: List<DeploymentInfo>
+    ){
+        data class DeploymentInfo(
+                val actionId: Int,
+                val actionStatusOnStart: ActionStatus,
+                val actionStatusOnFinish: ActionStatus,
+                val filesDownloadedPairedWithServerFile: Set<Pair<String,String>>
+        )
+    }
+
+    val tenantName = "DEFAULT"
+    val tenantNameToLower = tenantName.toLowerCase().capitalize()
+    val basic = Credentials.basic("$tenantName\\test", "test")
+    val ufUrl = "http://localhost:8081"
+    val downloadRootDirPath = "./build/test/download/"
+    val gatewayToken = "66076ab945a127dd80b15e9011995109"
+    val getDownloadDirectoryFromActionId = { actionId:String -> File("$downloadRootDirPath/$actionId") }
+    val directoryDataProvider = object : DirectoryForArtifactsProvider { override fun directoryForArtifacts(actionId: String): File = getDownloadDirectoryFromActionId.invoke(actionId) }
+    val configDataProvider = object : ConfigDataProvider {}
+    val updater = object : Updater {
+        override fun apply(modules: Set<Updater.SwModuleWithPath>, messanger: Updater.Messanger): Boolean {
+            println("APPLY UPDATE $modules")
+            messanger.sendMessageToServer("Applying the update...")
+            messanger.sendMessageToServer("Update applied")
+            return true
+        }
+    }
+
+    val serverFilesMappedToLocantionAndMd5 = mapOf("test1" to Pair("../docker/test/artifactrepo/$tenantName/4b/5a/b54e43082887d1e7cdb10b7a21fe4a1e56b44b5a","2490a3d39b0004e4afeb517ef0ddbe2d") ,
+            "test2" to Pair("../docker/test/artifactrepo/$tenantName/b6/1e/a096a9d3cb96fa4cf6c63bd736a84cb7a7e4b61e","b0b3b0dbf5330e3179c6ae3e0ac524c9"),
+            "test3" to Pair("../docker/test/artifactrepo/$tenantName/bf/94/cde0c01b26634f869bb876326e4fbe969792bf94","2244fbd6bee5dcbe312e387c062ce6e6"),
+            "test4" to Pair("../docker/test/artifactrepo/$tenantName/dd/0a/07fa4d03ac54d0b2a52f23d8e878c96db7aadd0a","94424c5ce3f8c57a5b26d02f37dc06fc"))
+
+    val md5OfFileNamed: (String) -> String = {key -> serverFilesMappedToLocantionAndMd5.getValue(key).second}
+    val locationOfFileNamed:  (String) -> String = {key -> serverFilesMappedToLocantionAndMd5.getValue(key).first}
+
+    fun messagesOnSuccessfullyDownloadOsWithAppDistribution(target:String) = arrayOf(
+            ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.running, listOf("successfully downloaded all files")),
+            ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.running, listOf("successfully downloaded file with md5 ${md5OfFileNamed("test1")}")),
+            ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.running, listOf("successfully downloaded file with md5 ${md5OfFileNamed("test2")}")),
+            ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.running, listOf("successfully downloaded file with md5 ${md5OfFileNamed("test3")}")),
+            ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.running, listOf("successfully downloaded file with md5 ${md5OfFileNamed("test4")}")),
+            ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.download, listOf("Update Server: Target downloads /$tenantNameToLower/controller/v1/$target/softwaremodules/2/artifacts/test_2")),
+            ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.download, listOf("Update Server: Target downloads /$tenantNameToLower/controller/v1/$target/softwaremodules/2/artifacts/test_3")),
+            ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.download, listOf("Update Server: Target downloads /$tenantNameToLower/controller/v1/$target/softwaremodules/1/artifacts/test_1")),
+            ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.download, listOf("Update Server: Target downloads /$tenantNameToLower/controller/v1/$target/softwaremodules/3/artifacts/test_4")),
+            ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.running, listOf("Start downloading 4 files"))
+    )
+
+    fun messagesOnSuccefullyDownloadOsDistribution(target:String) = arrayOf(
+            ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.running, listOf("successfully downloaded all files")),
+            ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.running, listOf("successfully downloaded file with md5 ${md5OfFileNamed("test4")}")),
+            ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.download, listOf("Update Server: Target downloads /$tenantNameToLower/controller/v1/$target/softwaremodules/3/artifacts/test_4")),
+            ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.running, listOf("Start downloading 1 files"))
+    )
+
+    fun messagesOnSuccefullyDownloadAppDistribution(target:String) = arrayOf(
+            ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.running, listOf("successfully downloaded all files")),
+            ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.running, listOf("successfully downloaded file with md5 ${md5OfFileNamed("test1")}")),
+            ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.download, listOf("Update Server: Target downloads /$tenantNameToLower/controller/v1/$target/softwaremodules/1/artifacts/test_1")),
+            ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.running, listOf("Start downloading 1 files")))
+
+    val endMessagesOnSuccessUpdate = arrayOf(
+            ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.finished, listOf("Update finished")),
+            ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.running, listOf("Update applied")),
+            ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.running, listOf("Applying the update..."))
+    )
+
+    val firstActionEntry = ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.running, listOf(null))
+
+    val startMessagesOnUpdateFond = arrayOf(
+            ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.retrieved, listOf("Update Server: Target retrieved update action and should start now the download.")),
+            firstActionEntry)
+
+    fun filesDownloadedInOsWithAppsPairedToServerFile(action:Int) = setOf("$downloadRootDirPath/$action/${md5OfFileNamed("test1")}" to locationOfFileNamed("test1"),
+            "$downloadRootDirPath/$action/${md5OfFileNamed("test2")}" to locationOfFileNamed("test2"),
+            "$downloadRootDirPath/$action/${md5OfFileNamed("test3")}" to locationOfFileNamed("test3"),
+            "$downloadRootDirPath/$action/${md5OfFileNamed("test4")}" to locationOfFileNamed("test4"))
+
+    val defaultActionStatusOnStart = ActionStatus(setOf(firstActionEntry))
+
+
+
+
 
 }
