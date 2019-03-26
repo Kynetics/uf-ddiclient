@@ -38,7 +38,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
 
             msg is DeploymentInfo && state.inDeployment(msg.info.id) ->  child("deploymentManager")!!.send(msg)
 
-            msg is DeploymentInfo && state.inDeployment -> LOG.info("HANGED DEPLOYMENT ID ???")
+            msg is DeploymentInfo && state.inDeployment -> child("deploymentManager")!!.send(CancelForced)
 
             msg is DeploymentInfo -> {
                 val deploymentManager = actorOf("deploymentManager"){ DeploymentManager.of(it) }
@@ -59,31 +59,32 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 LOG.info("UpdateFailed.")
                 become(defaultReceive(state.copy(deployment = null)))
                 child("deploymentManager")!!.close()
-                connectionManager.send(In.SetPing(null))
                 LOG.info("Restore server ping interval")
+                connectionManager.send(In.SetPing(null))
             }
 
             msg is UpdateFinished -> {
                 LOG.info("UpdateFinished.")
                 become(defaultReceive(state.copy(deployment = null)))
                 child("deploymentManager")!!.close()
-                connectionManager.send(In.SetPing(null))
                 LOG.info("Restore server ping interval")
+                connectionManager.send(In.SetPing(null))
             }
 
             msg is DeploymentCancelInfo && !state.inDeployment -> {
-                LOG.info("DeploymentCancelInfo, decreased ping interval to check fast if new action exist (ping: 1s)")
                 connectionManager.send(In.CancelFeedback(
                         CnclFdbkReq.newInstance(msg.info.cancelAction.stopId,
                                 CnclFdbkReq.Sts.Exc.closed,
                                 CnclFdbkReq.Sts.Rslt.Fnsh.success)))
                 notificationManager.send(EventListener.Event.UpdateCancelled)
-                connectionManager.send(In.SetPing(Duration.standardSeconds(1)))
+                connectionManager.send(In.SetPing(null))
             }
 
             msg is DeploymentCancelInfo -> {
                 LOG.warn("DeploymentCancelInfo")
                 child("deploymentManager")!!.send(msg)
+                LOG.info("Restore server ping interval")
+                connectionManager.send(In.SetPing(null))
             }
 
             state.inDeployment && msg is NoAction ->{
@@ -94,6 +95,8 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
             msg is UpdateStopped -> {
                 LOG.info("update stopped")
                 become(defaultReceive(state.copy(deployment = null)))
+                LOG.info("Restore server ping interval")
+                connectionManager.send(In.SetPing(null))
             }
 
             msg is NoAction ->{ }

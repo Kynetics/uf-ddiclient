@@ -20,7 +20,9 @@ import com.kynetics.updatefactory.ddiclient.core.actors.DownloadManager.Companio
 import com.kynetics.updatefactory.ddiclient.core.actors.FileDownloader.Companion.FileToDownload
 import com.kynetics.updatefactory.ddiclient.core.actors.FileDownloader.Companion.Message.*
 import com.kynetics.updatefactory.ddiclient.core.api.EventListener
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.ObsoleteCoroutinesApi
+import kotlinx.coroutines.launch
 
 @UseExperimental(ObsoleteCoroutinesApi::class)
 class DownloadManager
@@ -31,6 +33,16 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
     private val notificationManager = coroutineContext[NMActor]!!.ref
     private val connectionManager = coroutineContext[CMActor]!!.ref
 
+    @ExperimentalCoroutinesApi
+    private fun initOnChannelClose(dms:Map<String,Download>){
+        channel.invokeOnClose {
+            launch {
+                dms.forEach{(_, download) -> download.downloader.send(Stop)}
+            }
+        }
+    }
+
+    @ExperimentalCoroutinesApi
     private fun beforeStartReceive(): Receive = { msg ->
         when(msg) {
 
@@ -39,6 +51,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 val md5s = md5OfFilesToBeDownloaded(msg.info)
                 if(md5s.isNotEmpty()){
                     val dms = createDownloadsMenagers(msg.info, md5s)
+                    initOnChannelClose(dms)
                     become(downloadingReceive(State(msg.info, dms)))
                     feedback(msg.info.id, proceeding,Prgrs(dms.size, 0), none,
                             "Start downloading ${dms.size} files")

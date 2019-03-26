@@ -20,7 +20,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
 
     private val authRequest: DeploymentPermitProvider = coroutineContext[UFClientContext]!!.deploymentPermitProvider
     private val connectionManager = coroutineContext[CMActor]!!.ref
-
+    private val notificationManager = coroutineContext[NMActor]!!.ref
     private fun beginningReceive(state: State):Receive = { msg ->
         when{
 
@@ -184,10 +184,10 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
 
     private suspend fun stopUpdate() {
         LOG.info("Stopping update")
-        child("downloadManager")!!.close()
-        child("updateManager")!!.close()
+        child("downloadManager")?.close()
+        child("updateManager")?.close()
         channel.close()
-        connectionManager.send(EventListener.Event.UpdateCancelled)
+        notificationManager.send(EventListener.Event.UpdateCancelled)
         parent!!.send(UpdateStopped)
     }
 
