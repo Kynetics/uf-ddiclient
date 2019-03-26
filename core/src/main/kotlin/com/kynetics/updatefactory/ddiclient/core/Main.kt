@@ -54,6 +54,11 @@ fun main() = runBlocking {
                 override fun downloadAllowed(): Boolean = true
                 override fun updateAllowed(): Boolean = true
             },
+            listOf(object : EventListener{
+                override fun onEvent(event: EventListener.Event) {
+                    println(event)
+                }
+            }),
             object : Updater { override fun apply(modules: Set<Updater.SwModuleWithPath>, messanger: Updater.Messanger):Boolean {
                 println("APPLY UPDATE $modules")
                 messanger.sendMessageToServer("Applying the update...")

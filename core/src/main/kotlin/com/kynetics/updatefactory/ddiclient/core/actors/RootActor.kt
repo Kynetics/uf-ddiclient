@@ -25,8 +25,9 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
     }
 
     init {
-        val cmActor = actorOf("connectionManager"){ ConnectionManager.of(it)}
-        val ctxt = CMActor(cmActor)
+        val nmActor = actorOf("notificationManager"){ NotificationManager.of(it)}
+        val cmActor = actorOf("connectionManager", NMActor(nmActor)){ ConnectionManager.of(it)}
+        val ctxt = CMActor(cmActor).plus(NMActor(nmActor))
         actorOf("actionManager", ctxt){ ActionManager.of(it)}
         become(mainReceive())
     }
@@ -39,4 +40,9 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
 data class CMActor(val ref:ActorRef): AbstractCoroutineContextElement(CMActor){
     companion object Key : CoroutineContext.Key<CMActor>
     override fun toString(): String = "CMActor($ref)"
+}
+
+data class NMActor(val ref:ActorRef): AbstractCoroutineContextElement(NMActor){
+    companion object Key : CoroutineContext.Key<NMActor>
+    override fun toString(): String = "NMActor($ref)"
 }

@@ -52,6 +52,7 @@ abstract class AbstractClientTest{
                 directoryDataProvider,
                 configDataProvider,
                 deploymentPermitProvider,
+                emptyList(),
                 updater
         )
         client

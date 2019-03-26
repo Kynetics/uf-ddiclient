@@ -2,6 +2,7 @@ package com.kynetics.updatefactory.ddiclient.core.actors
 
 import com.kynetics.updatefactory.ddiapiclient.api.DdiClient
 import com.kynetics.updatefactory.ddiclient.core.actors.FileDownloader.Companion.Message.*
+import com.kynetics.updatefactory.ddiclient.core.api.EventListener
 import com.kynetics.updatefactory.ddiclient.core.md5
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.launch
@@ -14,12 +15,14 @@ private constructor(scope: ActorScope,
                     attempts: Int): AbstractActor(scope) {
 
     private val client: DdiClient = coroutineContext[UFClientContext]!!.ddiClient
+    private val notificationManager = coroutineContext[NMActor]!!.ref
 
     private fun beforeStart(state: State): Receive = { msg ->
         when(msg) {
 
             is Start ->{
                 become(downloading(state))
+                notificationManager.send(EventListener.Event.StartDownloadFile(fileToDownload.md5))
                 tryDownload(state)
             }
 
@@ -39,14 +42,18 @@ private constructor(scope: ActorScope,
 
             is FileChecked -> {
                 parent!!.send(Success(channel, fileToDownload.md5))
+                notificationManager.send(EventListener.Event.FileDownloaded(fileToDownload.md5))
             }
 
             is TrialExhausted -> {
                 parent!!.send(Error(channel, fileToDownload.md5, "trials exhausted due to errors: ${state.errors.joinToString("\n", "\n")}"))
+                notificationManager.send(EventListener.Event.Error(listOf("Fail to download file at ${fileToDownload.url}")))
             }
 
             is RetryDownload     -> {
-                parent!!.send(Info(channel, fileToDownload.md5, "retry download due to: ${msg.cause}"))
+                val errorMessage = "retry download due to: ${msg.cause}"
+                parent!!.send(Info(channel, fileToDownload.md5, errorMessage))
+                notificationManager.send(EventListener.Event.Error(listOf(errorMessage, "Remaining attempts: ${state.remainingAttempts}")))
                 val newState = state.copy(remainingAttempts = state.remainingAttempts-1, errors = state.errors+msg.cause)
                 become(downloading(newState))
                 tryDownload(newState)

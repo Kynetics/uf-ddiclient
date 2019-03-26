@@ -5,9 +5,9 @@ import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Compan
 import com.kynetics.updatefactory.ddiclient.core.api.Updater
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.runBlocking
-import org.joda.time.Instant
 import java.io.File
 import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.In.DeploymentFeedback
+import com.kynetics.updatefactory.ddiclient.core.api.EventListener
 
 @UseExperimental(ObsoleteCoroutinesApi::class)
 class UpdateManager
@@ -16,12 +16,14 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
     private val registry = coroutineContext[UFClientContext]!!.registry
     private val dfap      = coroutineContext[UFClientContext]!!.directoryForArtifactsProvider
     private val connectionManager = coroutineContext[CMActor]!!.ref
+    private val notificationManager = coroutineContext[NMActor]!!.ref
 
     private fun beforeStartReceive(): Receive = { msg ->
         when(msg) {
 
             is DeploymentInfo -> {
                 LOG.info("START UPDATING!!!")
+                notificationManager.send(EventListener.Event.StartUpdate)
                 val updaters = registry.allUpdatersWithSwModulesOrderedForPriority(msg.info.deployment.chunks)
                 //TODO make it recursive
                 val lastSuccessUpdaterPairedWithIndex = updaters
@@ -49,6 +51,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                             DeplFdbkReq.Sts.Rslt.Prgrs(updaters.size, lastSuccessUpdaterPairedWithIndex.first),
                             DeplFdbkReq.Sts.Rslt.Fnsh.failure,
                             "Update failed")
+                    notificationManager.send(EventListener.Event.UpdateFinished(successApply = false, details = emptyList()))
                 } else {
                     parent!!.send(DeploymentManager.Companion.Message.UpdateFinished)
                     sendFeedback(msg.info.id,
@@ -56,6 +59,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                             DeplFdbkReq.Sts.Rslt.Prgrs(updaters.size, updaters.size),
                             DeplFdbkReq.Sts.Rslt.Fnsh.success,
                             "Update finished")
+                    notificationManager.send(EventListener.Event.UpdateFinished(successApply = true, details = emptyList()))
                 }
             }
 

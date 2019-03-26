@@ -4,10 +4,8 @@ import com.kynetics.updatefactory.ddiapiclient.api.model.DeplBaseResp
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplBaseResp.Depl.Appl.attempt
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplBaseResp.Depl.Appl.forced
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq
-import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq.Sts
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq.Sts.Exc
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq.Sts.Exc.proceeding
-import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq.Sts.Rslt
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq.Sts.Rslt.Fnsh
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq.Sts.Rslt.Fnsh.failure
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq.Sts.Rslt.Fnsh.none
@@ -21,8 +19,8 @@ import com.kynetics.updatefactory.ddiclient.core.actors.DownloadManager.Companio
 import com.kynetics.updatefactory.ddiclient.core.actors.DownloadManager.Companion.State.Download.State.Status.*
 import com.kynetics.updatefactory.ddiclient.core.actors.FileDownloader.Companion.FileToDownload
 import com.kynetics.updatefactory.ddiclient.core.actors.FileDownloader.Companion.Message.*
+import com.kynetics.updatefactory.ddiclient.core.api.EventListener
 import kotlinx.coroutines.ObsoleteCoroutinesApi
-import java.time.Instant
 
 @UseExperimental(ObsoleteCoroutinesApi::class)
 class DownloadManager
@@ -30,12 +28,14 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
 
     private val registry = coroutineContext[UFClientContext]!!.registry
     private val dfap      = coroutineContext[UFClientContext]!!.directoryForArtifactsProvider
+    private val notificationManager = coroutineContext[NMActor]!!.ref
     private val connectionManager = coroutineContext[CMActor]!!.ref
 
     private fun beforeStartReceive(): Receive = { msg ->
         when(msg) {
 
             is DeploymentInfo -> {
+                notificationManager.send(EventListener.Event.StartDownloading)
                 val md5s = md5OfFilesToBeDownloaded(msg.info)
                 if(md5s.isNotEmpty()){
                     val dms = createDownloadsMenagers(msg.info, md5s)
@@ -91,6 +91,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 feedback(state.deplBaseResp.id, proceeding, progress, none, message)
                 feedback(state.deplBaseResp.id, proceeding, progress, none, "successfully downloaded all files")
                 newState.downloads.values.forEach{it.downloader.close()}
+                notificationManager.send(EventListener.Event.AllFilesDownloaded)
                 parent!!.send(DownloadFinished)
                 channel.close()
             }

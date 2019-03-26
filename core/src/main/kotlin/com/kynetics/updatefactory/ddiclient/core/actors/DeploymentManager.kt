@@ -8,6 +8,7 @@ import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Compan
 import com.kynetics.updatefactory.ddiclient.core.actors.DeploymentManager.Companion.Message.*
 import com.kynetics.updatefactory.ddiclient.core.actors.ActionManager.Companion.Message.*
 import com.kynetics.updatefactory.ddiclient.core.api.DeploymentPermitProvider
+import com.kynetics.updatefactory.ddiclient.core.api.EventListener
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.withContext
@@ -186,6 +187,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
         child("downloadManager")!!.close()
         child("updateManager")!!.close()
         channel.close()
+        connectionManager.send(EventListener.Event.UpdateCancelled)
         parent!!.send(UpdateStopped)
     }
 

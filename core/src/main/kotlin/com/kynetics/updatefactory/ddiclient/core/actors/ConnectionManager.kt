@@ -12,6 +12,8 @@ import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.launch
 import org.joda.time.Duration
 import org.joda.time.Instant
+import java.util.*
+import com.kynetics.updatefactory.ddiclient.core.api.EventListener
 
 //TODO use ticker for ping
 @UseExperimental(ObsoleteCoroutinesApi::class)
@@ -19,6 +21,7 @@ class ConnectionManager
 private constructor(scope: ActorScope): AbstractActor(scope) {
 
     private val client:DdiClient = coroutineContext[UFClientContext]!!.ddiClient
+    private val notificationManager = coroutineContext[NMActor]!!.ref
 
     private fun stoppedReceive(state: State):Receive =  { msg ->
         when(msg) {
@@ -81,11 +84,11 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                     become(runningReceive(startPing(newState)))
                 } catch (t: Throwable) {
                     fun loopMsg(t:Throwable):String = t.message + if(t.cause!=null) " ${loopMsg(t.cause!!)}" else ""
-                     this.send(ErrMsg(
-                            "exception: ${t.javaClass} message: ${loopMsg(t)}"
-                    ), state)
+                    val errorDetails = "exception: ${t.javaClass} message: ${loopMsg(t)}"
+                    this.send(ErrMsg(errorDetails), state)
                     LOG.warn(t.message, t)
                     become(runningReceive(startPing(s.nextBackoff())))
+                    notificationManager.send(EventListener.Event.Error(listOf(errorDetails)))
                 }
             }
 
@@ -134,9 +137,9 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
     }
 
     private fun stopPing(state: State): State = if(state.timer!=null) {
-            state.timer.cancel()
-            state.copy(timer = null)
-        } else { state
+        state.timer.cancel()
+        state.copy(timer = null)
+    } else { state
     }
 
     private suspend fun send(msg: Out, state: State) {
@@ -202,7 +205,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
             open class Out: Message(){
                 object ConfigDataRequired: Out()
                 data class DeploymentInfo(val info: DeplBaseResp): Out(){
-                     fun equalsApartHistory(other: DeploymentInfo): Boolean {
+                    fun equalsApartHistory(other: DeploymentInfo): Boolean {
                         fun pruneMessages(dbr: DeplBaseResp) = dbr.copy(actionHistory = dbr.actionHistory?.copy(messages = emptyList()))
                         return pruneMessages(info) == pruneMessages(other.info)
                     }

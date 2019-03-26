@@ -8,6 +8,7 @@ import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import com.kynetics.updatefactory.ddiclient.core.actors.ActionManager.Companion.Message.*
 import com.kynetics.updatefactory.ddiclient.core.actors.DeploymentManager.Companion.Message.*
+import com.kynetics.updatefactory.ddiclient.core.api.EventListener
 import org.joda.time.Duration
 
 //TODO set frequent ping during deployment
@@ -17,6 +18,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
 
     private val configDataProvider = coroutineContext[UFClientContext]!!.configDataProvider
     private val connectionManager  = coroutineContext[CMActor]!!.ref
+    private val notificationManager  = coroutineContext[NMActor]!!.ref
 
     private fun defaultReceive(state: State):Receive = { msg ->
         when {
@@ -75,6 +77,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                         CnclFdbkReq.newInstance(msg.info.cancelAction.stopId,
                                 CnclFdbkReq.Sts.Exc.closed,
                                 CnclFdbkReq.Sts.Rslt.Fnsh.success)))
+                notificationManager.send(EventListener.Event.UpdateCancelled)
                 connectionManager.send(In.SetPing(Duration.standardSeconds(1)))
             }
 
