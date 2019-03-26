@@ -25,7 +25,6 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 LOG.info("START UPDATING!!!")
                 notificationManager.send(EventListener.Event.StartUpdate)
                 val updaters = registry.allUpdatersWithSwModulesOrderedForPriority(msg.info.deployment.chunks)
-                //TODO make it recursive
                 val lastSuccessUpdaterPairedWithIndex = updaters
                         .mapIndexed{index, u -> index to u }
                         .takeWhile { (index, it) ->
