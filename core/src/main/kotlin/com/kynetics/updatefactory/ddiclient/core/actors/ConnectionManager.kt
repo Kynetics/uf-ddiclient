@@ -6,14 +6,13 @@ import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Compan
 import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.Out
 import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.Out.*
 import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.Out.Err.ErrMsg
-import com.kynetics.updatefactory.ddiclient.core.delay
-import kotlinx.coroutines.Job
+import com.kynetics.updatefactory.ddiclient.core.api.EventListener
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.launch
 import org.joda.time.Duration
 import org.joda.time.Instant
 import java.util.*
-import com.kynetics.updatefactory.ddiclient.core.api.EventListener
+import kotlin.concurrent.timer
 
 //TODO use ticker for ping
 @UseExperimental(ObsoleteCoroutinesApi::class)
@@ -57,31 +56,40 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 LOG.info("Execute ping calls to the server...")
                 val s = state.copy(lastPing = Instant.now())
                 try {
-                    val res = client.getControllerActions()
 
-                    if(res.requireConfigData()){
-                        this.send(ConfigDataRequired, state)
+                    client.onControllerActionsChange(state.controllerBaseEtag){ res, newControllerBaseEtag ->
+                        if(res.requireConfigData()){
+                            this.send(ConfigDataRequired, state)
+                        }
+
+                        var actionFound = false
+                        var etag = state.deploymentEtag
+                        if(res.requireDeployment()) {
+                            client.onDeploymentActionDetailsChange(res.deploymentActionId(),0, state.deploymentEtag) { deplBaseResp, newDeploymentEtag ->
+                                etag = newDeploymentEtag
+                                this.send(DeploymentInfo(deplBaseResp), state)
+                            }
+                            actionFound = true
+                        }
+
+                        if(res.requireCancel()) {
+                            val res2 = client.getCancelActionDetails(res.cancelActionId())
+                            this.send(DeploymentCancelInfo(res2), state)
+                            actionFound = true
+                        }
+
+                        if(!actionFound){
+                            this.send(NoAction, state)
+                        }
+
+                        val newState = s.copy(controllerBaseEtag = newControllerBaseEtag, deploymentEtag = etag)
+                                .withServerSleep(res.config.polling.sleep)
+                                .withoutBackoff()
+                        become(runningReceive(startPing(newState)))
+
                     }
 
-                    var actionFound = false
 
-                    if(res.requireDeployment()) {
-                        val res2 = client.getDeploymentActionDetails(res.deploymentActionId(),0)
-                        this.send(DeploymentInfo(res2), state)
-                        actionFound = true
-                    }
-                    if(res.requireCancel()) {
-                        val res2 = client.getCancelActionDetails(res.cancelActionId())
-                        this.send(DeploymentCancelInfo(res2), state)
-                        actionFound = true
-                    }
-
-                    if(!actionFound){
-                        this.send(NoAction, state)
-                    }
-
-                    val newState = s.withServerSleep(res.config.polling.sleep).withoutBackoff()
-                    become(runningReceive(startPing(newState)))
                 } catch (t: Throwable) {
                     fun loopMsg(t:Throwable):String = t.message + if(t.cause!=null) " ${loopMsg(t.cause!!)}" else ""
                     val errorDetails = "exception: ${t.javaClass} message: ${loopMsg(t)}"
@@ -161,6 +169,8 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 val clientPingInterval: Duration? = null,
                 val backoffPingInterval: Duration? = null,
                 val lastPing: Instant? = Instant.EPOCH,
+                val deploymentEtag: String = "",
+                val controllerBaseEtag: String = "",
                 val timer: Timer? = null,
                 val receivers: Set<ActorRef> = emptySet()
         ) {

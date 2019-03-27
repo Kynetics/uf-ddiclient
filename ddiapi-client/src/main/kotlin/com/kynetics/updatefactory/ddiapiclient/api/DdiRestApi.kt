@@ -12,6 +12,7 @@ package com.kynetics.updatefactory.ddiapiclient.api
 import com.kynetics.updatefactory.ddiapiclient.api.model.*
 import kotlinx.coroutines.Deferred
 import okhttp3.ResponseBody
+import retrofit2.Response
 import retrofit2.http.*
 
 /**
@@ -50,7 +51,8 @@ interface DdiRestApi {
     @Headers("Accept: application/hal+json")
     @GET(DdiRestConstants.BASE_V1_REQUEST_MAPPING + "/{controllerId}")
     fun getControllerActions(@Path("tenant") tenant: String,
-                             @Path("controllerId") controllerId: String): Deferred<CtrlBaseResp>
+                             @Path("controllerId") controllerId: String,
+                             @Header(value = "If-None-Match") etag: String = ""): Deferred<Response<CtrlBaseResp>>
 
     /**
      * Handles GET [DdiArtifact] download request.
@@ -92,7 +94,8 @@ interface DdiRestApi {
                                    @Path("controllerId") controllerId: String,
                                    @Path("actionId") actionId: String,
                                    @Query(value = "c") resource: Int?,
-                                   @Query(value = "actionHistory") actionHistoryMessageCount: Int?): Deferred<DeplBaseResp>
+                                   @Query(value = "actionHistory") actionHistoryMessageCount: Int?,
+                                   @Header(value = "If-None-Match") etag: String = ""): Deferred<Response<DeplBaseResp>>
 
     /**
      * This is the feedback channel for the [DdiDeploymentBase] action.

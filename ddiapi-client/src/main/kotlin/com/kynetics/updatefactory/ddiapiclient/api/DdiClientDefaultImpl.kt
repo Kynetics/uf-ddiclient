@@ -8,12 +8,17 @@ import com.kynetics.updatefactory.ddiapiclient.security.UpdateFactoryAuthenticat
 import com.kynetics.updatefactory.ddiclient.core.api.UpdateFactoryClientData
 import com.kynetics.updatefactory.ddiclient.core.api.UpdateFactoryClientData.ServerType.HAWKBIT
 import okhttp3.OkHttpClient
+import okhttp3.internal.http.HttpHeaders
 import org.slf4j.LoggerFactory
+import retrofit2.HttpException
+import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.io.InputStream
+import java.net.HttpURLConnection
 import java.util.*
 import java.util.concurrent.Executors
+import javax.xml.ws.spi.http.HttpHandler
 
 
 class DdiClientDefaultImpl private constructor(private val ddiRestApi: DdiRestApi, private val tenant:String, private val controllerId:String) : DdiClient {
@@ -40,10 +45,18 @@ class DdiClientDefaultImpl private constructor(private val ddiRestApi: DdiRestAp
         if(LOG.isDebugEnabled){
             LOG.debug("$response")
         }
-        return response
+        return handleResponse(response)
     }
 
+    override suspend fun onControllerActionsChange(etag: String, onChange: OnResourceChange<CtrlBaseResp>) {
+        LOG.debug("onDeploymentActionDetailsChange($etag)")
+        val response = ddiRestApi.getControllerActions(tenant, controllerId, etag).await()
+        if(LOG.isDebugEnabled){
+            LOG.debug("$response")
+        }
 
+        handleOnChangeResponse(response, etag, "BaseResource", onChange)
+    }
 
     override suspend fun getDeploymentActionDetails(actionId: String, historyCount: Int): DeplBaseResp {
         LOG.debug("getDeploymentActionDetails($actionId, $historyCount)")
@@ -51,9 +64,18 @@ class DdiClientDefaultImpl private constructor(private val ddiRestApi: DdiRestAp
         if(LOG.isDebugEnabled){
             LOG.debug("$response")
         }
-        return response
+        return handleResponse(response)
     }
 
+    override suspend fun onDeploymentActionDetailsChange(actionId: String, historyCount: Int, etag: String, onChange: OnResourceChange<DeplBaseResp>) {
+        LOG.debug("onDeploymentActionDetailsChange($actionId, $historyCount, $etag)")
+        val response = ddiRestApi.getDeploymentActionDetails(tenant, controllerId, actionId, null, historyCount, etag).await()
+        if(LOG.isDebugEnabled){
+            LOG.debug("$response")
+        }
+
+        handleOnChangeResponse(response, etag, "Deployment", onChange)
+    }
 
     override suspend fun getCancelActionDetails(actionId: String): CnclActResp {
         LOG.debug("getCancelActionDetails($actionId)")
@@ -85,8 +107,32 @@ class DdiClientDefaultImpl private constructor(private val ddiRestApi: DdiRestAp
         return ddiRestApi.downloadArtifact(url).await().byteStream()
     }
 
+    private suspend fun <T> handleOnChangeResponse(response: Response<T>, etag: String, resourceName:String, onChange: OnResourceChange<T>) {
+        when (response.code()) {
+            in 200..299 -> {
+                val newEtag = response.headers()[ETAG_HEADER] ?: ""
+                LOG.info("$resourceName is changed. Old ETag: $etag, new ETag: $newEtag")
+                onChange.invoke(response.body()!!, newEtag)
+            }
+
+            HttpURLConnection.HTTP_NOT_MODIFIED -> LOG.info("$resourceName not changed")
+
+            else -> throw HttpException(response)
+        }
+    }
+
+    private fun <T>handleResponse(response: Response<T>): T {
+        return when (response.code()) {
+            in 200..299 -> response.body()!!
+            else -> throw HttpException(response)
+        }
+    }
+
     companion object {
+        const val ETAG_HEADER = "ETag"
+
         val LOG = LoggerFactory.getLogger(DdiClient::class.java)!!
+
         fun of(updateFactoryClientData: UpdateFactoryClientData): DdiClientDefaultImpl {
             val httpBuilder = OkHttpClient.Builder()
             val authentications = HashSet<Authentication>()
