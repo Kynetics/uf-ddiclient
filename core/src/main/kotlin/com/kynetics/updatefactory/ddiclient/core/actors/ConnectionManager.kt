@@ -128,10 +128,12 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
     private fun startPing(state: State): State {
         val now = Instant.now()
         val elapsed = Duration(state.lastPing, now)
-        val sleepTime = state.pingInterval.minus(elapsed)
-        val timer = launch {
-            delay(sleepTime)
-            channel.send(Ping)
+        val timer = timer(name ="Polling",
+                initialDelay = Math.max(state.pingInterval.minus(elapsed).millis, 0),
+                period = Math.max(state.pingInterval.millis, 5_000)){
+            launch{
+                channel.send(Ping)
+            }
         }
         return stopPing(state).copy(timer = timer)
     }
@@ -139,7 +141,8 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
     private fun stopPing(state: State): State = if(state.timer!=null) {
         state.timer.cancel()
         state.copy(timer = null)
-    } else { state
+    } else {
+        state
     }
 
     private suspend fun send(msg: Out, state: State) {
@@ -158,7 +161,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 val clientPingInterval: Duration? = null,
                 val backoffPingInterval: Duration? = null,
                 val lastPing: Instant? = Instant.EPOCH,
-                val timer: Job? = null,
+                val timer: Timer? = null,
                 val receivers: Set<ActorRef> = emptySet()
         ) {
             val pingInterval = when {
