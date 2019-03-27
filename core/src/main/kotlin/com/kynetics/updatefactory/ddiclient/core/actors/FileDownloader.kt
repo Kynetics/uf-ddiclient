@@ -21,9 +21,14 @@ private constructor(scope: ActorScope,
         when(msg) {
 
             is Start ->{
-                become(downloading(state))
-                notificationManager.send(EventListener.Event.StartDownloadFile(fileToDownload.md5))
-                tryDownload(state)
+                if( fileToDownload.destination.exists()){
+                    parent!!.send(AlreadyDownloaded(channel, fileToDownload.md5))
+                    channel.close()
+                } else {
+                    become(downloading(state))
+                    notificationManager.send(EventListener.Event.StartDownloadFile(fileToDownload.md5))
+                    tryDownload(state)
+                }
             }
 
             is Stop  -> this.cancel()
@@ -83,7 +88,7 @@ private constructor(scope: ActorScope,
     }
 
     private suspend fun download() {
-        val file = fileToDownload.destination
+        val file = fileToDownload.tempFile
         if(file.exists()){
             file.delete()
         }
@@ -94,7 +99,7 @@ private constructor(scope: ActorScope,
 
     private suspend fun checkMd5OfDownloadedFile() {
         launch {
-            val file = fileToDownload.destination
+            val file = fileToDownload.tempFile
             when {
 
                 file.md5() == fileToDownload.md5 -> {
@@ -122,8 +127,9 @@ private constructor(scope: ActorScope,
         data class FileToDownload(val md5: String,
                                   val url: String,
                                   val folder: File){
-            val destination = File(folder, "$md5.$DOWNLOADING_EXTENSION")
-            fun onFileSaved() = destination.renameTo(File(folder, md5))
+            val tempFile = File(folder, "$md5.$DOWNLOADING_EXTENSION")
+            val destination = File(folder, md5)
+            fun onFileSaved() = tempFile.renameTo(destination)
         }
 
         private data class State(
@@ -141,6 +147,7 @@ private constructor(scope: ActorScope,
             object TrialExhausted: Message()
 
             data class Success(val sender:ActorRef, val md5: String): Message()
+            data class AlreadyDownloaded(val sender:ActorRef, val md5: String): Message()
             data class Info(val sender:ActorRef, val md5: String, val message:String): Message()
             data class Error(val sender:ActorRef, val md5: String, val message:String): Message()
         }

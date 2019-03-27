@@ -71,6 +71,10 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 processMessage(state, msg.md5, SUCCESS, "successfully downloaded file with md5 ${msg.md5}")
             }
 
+            is AlreadyDownloaded ->{
+                processMessage(state, msg.md5, SUCCESS, "${msg.md5} already downloaded")
+            }
+
             is Info -> LOG.info(msg.toString())
 
             is Error -> {
