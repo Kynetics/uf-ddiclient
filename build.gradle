@@ -18,14 +18,16 @@ repositories {
 
 final def deps = gradle.settings.app_dependencies
 final def tdeps = gradle.settings.test_dependencies
+final def app_version = '1.0.0-SNAPHOST'
 
-group 'com.kynetics.updatefactory'
-version '0.4.3'
 
 subprojects {
     apply plugin: 'org.jetbrains.kotlin.jvm'
+    apply plugin: 'maven'
+
     repositories {
         mavenCentral()
+        mavenLocal()
     }
     dependencies {
         implementation deps.kotlin_stdlib
@@ -35,6 +37,9 @@ subprojects {
 }
 
 project(':ddiapi-client') {
+    group 'com.kynetics.updatefactory.uf-ddiclient'
+    version app_version
+
     final def subprj = ':ddiapi-client:ddiapi-client-api'
     dependencies {
         implementation project(subprj)
@@ -62,7 +67,15 @@ project(':ddiapi-client') {
     }
 }
 
+project(':ddiapi-client:ddiapi-client-api') {
+    group 'com.kynetics.updatefactory.uf-ddiclient.ddiapi-client'
+    version app_version
+}
+
 project(':core') {
+    group 'com.kynetics.updatefactory.uf-ddiclient'
+    version app_version
+
     dependencies {
         implementation project(':core:core-api')
         implementation project(':ddiapi-client')
@@ -131,6 +144,11 @@ project(':core') {
     test.dependsOn waitingUFServer
     test.dependsOn cleanTest
 
+}
+
+project(':core:core-api') {
+    group 'com.kynetics.updatefactory.uf-ddiclient.core'
+    version app_version
 }
 
 
