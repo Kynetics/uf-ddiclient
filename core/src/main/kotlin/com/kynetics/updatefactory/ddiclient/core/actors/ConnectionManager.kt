@@ -14,7 +14,6 @@ import org.joda.time.Instant
 import java.util.*
 import kotlin.concurrent.timer
 
-//TODO use ticker for ping
 @UseExperimental(ObsoleteCoroutinesApi::class)
 class ConnectionManager
 private constructor(scope: ActorScope): AbstractActor(scope) {

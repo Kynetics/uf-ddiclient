@@ -11,7 +11,6 @@ import com.kynetics.updatefactory.ddiclient.core.actors.DeploymentManager.Compan
 import com.kynetics.updatefactory.ddiclient.core.api.EventListener
 import org.joda.time.Duration
 
-//TODO set frequent ping during deployment
 @UseExperimental(ObsoleteCoroutinesApi::class)
 class ActionManager
 private constructor(scope: ActorScope): AbstractActor(scope) {

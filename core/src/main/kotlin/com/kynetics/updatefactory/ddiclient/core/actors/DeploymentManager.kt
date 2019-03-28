@@ -118,14 +118,13 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
     private fun waitingUpdateAuthorization(state: State) :Receive = { msg ->
         when(msg){
 
-            is DeploymentInfo -> {// TODO check this case
+            is DeploymentInfo -> {
                 become(downloadingReceive(state.copy(deplBaseResp = msg.info)))
                 channel.send(DownloadFinished)
             }
 
             is Message.UpdateDenied -> {
                 LOG.info("Authorization denied for update")
-//                become(beginningReceive(state))
             }
 
             is Message.UpdateGranted -> {
