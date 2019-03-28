@@ -23,17 +23,15 @@ import java.util.concurrent.Executors
 class DdiClientDefaultImpl private constructor(private val ddiRestApi: DdiRestApi, private val tenant:String, private val controllerId:String) : DdiClient {
 
     override suspend fun getSoftwareModulesArtifacts(softwareModuleId: String): List<ArtfctResp>{
-        LOG.debug("getSoftwareModulesArtifacts(%s)", softwareModuleId)
+        LOG.debug("getSoftwareModulesArtifacts({})", softwareModuleId)
         val artifact = ddiRestApi.getSoftwareModulesArtifacts(tenant, controllerId, softwareModuleId).await()
-        if(LOG.isDebugEnabled){
-            LOG.debug("$artifact")
-        }
+        LOG.debug("{}",artifact)
         return artifact
     }
 
 
     override suspend fun putConfigData(data: CfgDataReq){
-        LOG.debug("putConfigData(%s)",CfgDataReq)
+        LOG.debug("putConfigData({})",CfgDataReq)
         ddiRestApi.putConfigData(tenant, controllerId, data).await()
     }
 
@@ -41,53 +39,52 @@ class DdiClientDefaultImpl private constructor(private val ddiRestApi: DdiRestAp
     override suspend fun getControllerActions(): CtrlBaseResp{
         LOG.debug("getControllerActions()")
         val response = ddiRestApi.getControllerActions(tenant, controllerId).await()
-        LOG.debug("%s",response)
+        LOG.debug("{}",response)
         return handleResponse(response)
     }
 
     override suspend fun onControllerActionsChange(etag: String, onChange: OnResourceChange<CtrlBaseResp>) {
-        LOG.debug("onDeploymentActionDetailsChange(%s)", etag)
+        LOG.debug("onDeploymentActionDetailsChange({})", etag)
         val response = ddiRestApi.getControllerActions(tenant, controllerId, etag).await()
-        LOG.debug("%s",response)
-
+        LOG.debug("{}",response)
         handleOnChangeResponse(response, etag, "BaseResource", onChange)
     }
 
     override suspend fun getDeploymentActionDetails(actionId: String, historyCount: Int): DeplBaseResp {
         LOG.debug("getDeploymentActionDetails($actionId, $historyCount)")
         val response = ddiRestApi.getDeploymentActionDetails(tenant, controllerId, actionId, null, historyCount).await()
-        LOG.debug("%s",response)
+        LOG.debug("{}",response)
         return handleResponse(response)
     }
 
     override suspend fun onDeploymentActionDetailsChange(actionId: String, historyCount: Int, etag: String, onChange: OnResourceChange<DeplBaseResp>) {
         LOG.debug("onDeploymentActionDetailsChange($actionId, $historyCount, $etag)")
         val response = ddiRestApi.getDeploymentActionDetails(tenant, controllerId, actionId, null, historyCount, etag).await()
-        LOG.debug("%s",response)
+        LOG.debug("{}",response)
         handleOnChangeResponse(response, etag, "Deployment", onChange)
     }
 
     override suspend fun getCancelActionDetails(actionId: String): CnclActResp {
         LOG.debug("getCancelActionDetails($actionId)")
         val response = ddiRestApi.getCancelActionDetails(tenant, controllerId, actionId).await()
-        LOG.debug("%s",response)
+        LOG.debug("{}",response)
         return response
     }
 
 
     override suspend fun postDeploymentActionFeedback(actionId: String, feedback: DeplFdbkReq) {
-        LOG.debug("postDeploymentActionFeedback(%s,%s)",actionId, feedback)
+        LOG.debug("postDeploymentActionFeedback({},{})",actionId, feedback)
         ddiRestApi.postDeploymentActionFeedback(tenant, controllerId, actionId, feedback).await()
     }
 
 
     override suspend fun postCancelActionFeedback(actionId: String, feedback: CnclFdbkReq) {
-        LOG.debug("postCancelActionFeedback(%s,%s)",actionId, feedback)
+        LOG.debug("postCancelActionFeedback({},{})",actionId, feedback)
         ddiRestApi.postCancelActionFeedback(tenant, controllerId, actionId, feedback).await()
     }
 
     override suspend fun downloadArtifact(url: String): InputStream {
-        LOG.debug("downloadArtifact(%s)",url)
+        LOG.debug("downloadArtifact({})",url)
         return ddiRestApi.downloadArtifact(url).await().byteStream()
     }
 
@@ -95,11 +92,11 @@ class DdiClientDefaultImpl private constructor(private val ddiRestApi: DdiRestAp
         when (response.code()) {
             in 200..299 -> {
                 val newEtag = response.headers()[ETAG_HEADER] ?: ""
-                LOG.info("%s is changed. Old ETag: %s, new ETag: %s", resourceName,etag,newEtag)
+                LOG.info("{} is changed. Old ETag: {}, new ETag: {}", resourceName,etag,newEtag)
                 onChange.invoke(response.body()!!, newEtag)
             }
 
-            HttpURLConnection.HTTP_NOT_MODIFIED -> LOG.info("%s not changed",resourceName)
+            HttpURLConnection.HTTP_NOT_MODIFIED -> LOG.info("{} not changed",resourceName)
 
             else -> throw HttpException(response)
         }

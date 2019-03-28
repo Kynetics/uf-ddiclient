@@ -59,9 +59,7 @@ abstract class AbstractActor protected constructor(private val actorScope: Actor
 
     override val channel: Channel<Any> = object : Channel<Any> by actorScope.channel {
         override suspend fun send(element: Any) {
-            if(LOG.isDebugEnabled){
-                LOG.debug("Send message ${element.javaClass.simpleName} to actor $name.")
-            }
+            LOG.debug("Send message {} to actor {}.", element.javaClass.simpleName, name)
             actorScope.channel.send(element)
         }
 
@@ -90,16 +88,12 @@ abstract class AbstractActor protected constructor(private val actorScope: Actor
         private fun <T:AbstractActor> __workflow__(logger:Logger, block: suspend (ActorScope) -> T): suspend ActorScope.() -> Unit = {
             try {
                 val actor = block(this)
-                if(actor.LOG.isInfoEnabled){
-                    actor.LOG.info("Actor ${actor.name} created.")
-                }
+                actor.LOG.info("Actor {} created.", actor.name)
                 try {
                     for (message in channel) { actor.__receive__(message) }
-                    if(actor.LOG.isInfoEnabled){
-                        actor.LOG.info("Actor ${actor.name} exiting.")
-                    }
+                    actor.LOG.info("Actor {} exiting.", actor.name)
                 } catch (t:Throwable){
-                    actor.LOG.error("Error processing message in actor ${actor.name}. error: ${t.javaClass} message: ${t.message}")
+                    actor.LOG.error("Error processing message in actor {}. error: {} message: {}", actor.name, t.javaClass, t.message)
                     if(actor.parent != null) {
                         actor.parent.send(ActorException(actor.name, actor.channel, t))
                     } else {
