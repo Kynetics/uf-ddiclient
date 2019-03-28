@@ -27,18 +27,11 @@ import com.kynetics.updatefactory.ddiclient.core.api.TargetTokenFoundListener
 /**
  * @author Daniele Sergio
  */
-class UpdateFactoryAuthenticationRequestInterceptor(private val authentications: MutableSet<Authentication>, targetTokenFoundListener: TargetTokenFoundListener?) : Interceptor {
+class UpdateFactoryAuthenticationRequestInterceptor(private val authentications: MutableSet<Authentication>,
+                                                    private val targetTokenFoundListener: TargetTokenFoundListener =
+                                                            object : TargetTokenFoundListener{}
+) : Interceptor {
 
-    //TODO why not declared in cunstructor?
-    private val targetTokenFoundListener: TargetTokenFoundListener
-
-    init {
-        Objects.requireNonNull<Set<Authentication>>(authentications)
-        this.targetTokenFoundListener = targetTokenFoundListener ?: object : TargetTokenFoundListener {
-            override fun onFound(targetToken: String) {
-            }
-        }
-    }
 
     @Throws(IOException::class)
     override fun intercept(chain: Interceptor.Chain): Response {

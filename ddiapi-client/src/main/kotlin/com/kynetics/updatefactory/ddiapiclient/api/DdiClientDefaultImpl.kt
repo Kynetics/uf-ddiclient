@@ -146,7 +146,7 @@ class DdiClientDefaultImpl private constructor(private val ddiRestApi: DdiRestAp
                 httpBuilder.interceptors().add(0, if (serverType == HAWKBIT)
                     HawkbitAuthenticationRequestInterceptor(authentications)
                 else
-                    UpdateFactoryAuthenticationRequestInterceptor(authentications, targetTokenFoundListener))
+                    UpdateFactoryAuthenticationRequestInterceptor(authentications, targetTokenFoundListener ?: object:TargetTokenFoundListener{}))
                 val ddiRestApi = Retrofit.Builder()
                         .baseUrl(serverUrl)
                         .addConverterFactory(GsonConverterFactory.create())
