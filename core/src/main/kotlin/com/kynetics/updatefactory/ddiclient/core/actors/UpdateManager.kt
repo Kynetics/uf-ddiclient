@@ -78,7 +78,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
 
     private fun pathCalculator(id: String):(artifact: Updater.SwModule.Artifact) -> String {
         return { artifact ->
-            File(dfap.directoryForArtifacts(id), artifact.hashes.md5).absolutePath
+            File(dfap.directoryForArtifacts(), "$id/${artifact.hashes.md5}").absolutePath
         }
     }
 

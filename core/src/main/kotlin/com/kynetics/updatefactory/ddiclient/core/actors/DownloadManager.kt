@@ -24,6 +24,7 @@ import com.kynetics.updatefactory.ddiclient.core.api.EventListener
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.launch
+import java.io.File
 
 @UseExperimental(ObsoleteCoroutinesApi::class)
 class DownloadManager
@@ -118,7 +119,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
     }
 
     private fun createDownloadsMenagers(dbr: DeplBaseResp, md5s: Set<String>): Map<String, Download> {
-        val wd = dfap.directoryForArtifacts(dbr.id)
+        val wd = File(dfap.directoryForArtifacts(),dbr.id)
         if (!wd.exists()) {
             wd.mkdirs()
         }

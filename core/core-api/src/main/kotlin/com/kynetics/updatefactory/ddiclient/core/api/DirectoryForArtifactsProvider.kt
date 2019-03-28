@@ -4,6 +4,6 @@ import java.io.File
 
 interface DirectoryForArtifactsProvider {
 
-    fun directoryForArtifacts(actionId:String): File
+    fun directoryForArtifacts(): File
 
 }

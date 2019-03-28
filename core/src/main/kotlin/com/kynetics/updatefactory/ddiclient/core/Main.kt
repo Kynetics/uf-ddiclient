@@ -55,7 +55,7 @@ fun main() = runBlocking {
     val client = UpdateFactoryClientDefaultImpl()
     client.init(
             clientData,
-            object : DirectoryForArtifactsProvider { override fun directoryForArtifacts(actionId: String): File = File("./$actionId") },
+            object : DirectoryForArtifactsProvider { override fun directoryForArtifacts(): File = File(".") },
             object : ConfigDataProvider{},
             object : DeploymentPermitProvider{
                 override fun downloadAllowed(): Boolean {
