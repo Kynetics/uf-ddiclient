@@ -21,9 +21,7 @@ import com.kynetics.updatefactory.ddiclient.core.actors.DownloadManager.Companio
 import com.kynetics.updatefactory.ddiclient.core.actors.FileDownloader.Companion.FileToDownload
 import com.kynetics.updatefactory.ddiclient.core.actors.FileDownloader.Companion.Message.*
 import com.kynetics.updatefactory.ddiclient.core.api.EventListener
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.ObsoleteCoroutinesApi
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import java.io.File
 
 @UseExperimental(ObsoleteCoroutinesApi::class)
@@ -40,6 +38,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
         when(msg) {
 
             is DeploymentInfo -> {
+                clean(msg.info.id)
                 notificationManager.send(EventListener.Event.InDownloading)
                 val md5s = md5OfFilesToBeDownloaded(msg.info)
                 if(md5s.isNotEmpty()){
@@ -134,6 +133,15 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
     }
 
     private fun childName(md5: String) = "fileDownloader_for_$md5"
+
+    private fun clean(currentActionId: String) = runBlocking{
+        withContext(Dispatchers.IO){
+            dfap.directoryForArtifacts()
+                    .walkBottomUp()
+                    .filter { it.name != currentActionId }
+                    .forEach { it.deleteRecursively() }
+        }
+    }
 
     override fun beforeCloseChannel() {
         forEachActorNode{ actorRef -> launch{actorRef.send(Stop)}}
