@@ -34,8 +34,6 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 }
             }
 
-            msg is DeploymentInfo && state.alreadyProcessing(msg) -> LOG.info("Skip unchanged deployment info")
-
             msg is DeploymentInfo && state.inDeployment(msg.info.id) ->  child("deploymentManager")!!.send(msg)
 
             msg is DeploymentInfo && state.inDeployment -> child("deploymentManager")!!.send(CancelForced)
@@ -120,7 +118,6 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
         data class State(val deployment: DeploymentInfo? = null) {
             val inDeployment = deployment != null
             fun inDeployment(id: String) = inDeployment && deployment!!.info.id == id
-            fun alreadyProcessing(msg: DeploymentInfo) = inDeployment && deployment!!.equalsApartHistory(msg)
         }
 
         sealed class Message {

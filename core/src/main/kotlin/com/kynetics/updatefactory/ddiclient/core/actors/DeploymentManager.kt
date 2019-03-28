@@ -12,6 +12,7 @@ import com.kynetics.updatefactory.ddiclient.core.api.EventListener
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.withContext
+import sun.rmi.runtime.Log
 
 
 @UseExperimental(ObsoleteCoroutinesApi::class)
@@ -30,6 +31,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
             }
 
             msg is DeploymentInfo && msg.downloadIs(attempt) -> {
+                LOG.info("Waiting authorization to download")
                 become(waitingDownloadAuthorization(state.copy(deplBaseResp = msg.info)))
                 channel.send(withContext(Dispatchers.IO) {
                     if (authRequest.downloadAllowed()) DownloadGranted else DownloadDenied
@@ -88,6 +90,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
             }
 
             msg is DownloadFinished &&  state.updateIs(attempt) -> {
+                LOG.info("Waiting authorization to update")
                 become(waitingUpdateAuthorization(state))
                 channel.send(withContext(Dispatchers.IO) {
                     if (authRequest.updateAllowed()) UpdateGranted else UpdateDenied
@@ -116,13 +119,13 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
         when(msg){
 
             is DeploymentInfo -> {// TODO check this case
-                become(beginningReceive(state.copy(deplBaseResp = null)))
-                channel.send(msg)
+                become(downloadingReceive(state.copy(deplBaseResp = msg.info)))
+                channel.send(DownloadFinished)
             }
 
             is Message.UpdateDenied -> {
                 LOG.info("Authorization denied for update")
-                become(beginningReceive(state))
+//                become(beginningReceive(state))
             }
 
             is Message.UpdateGranted -> {

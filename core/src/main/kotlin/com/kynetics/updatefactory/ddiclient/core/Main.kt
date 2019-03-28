@@ -30,29 +30,42 @@ fun File.md5():String{
 }
 
 //TODO add exception handling ! --> A
-//TODO add updater confirmation check for download and installaion ! --> D
-//TODO apply returns with messages ! --> D
-//TODO add event notification
-//TODO manage ETAG & co. --> A
 @ObsoleteCoroutinesApi
 fun main() = runBlocking {
     System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "TRACE")
 
+    var test = false
+
+
     val clientData= UpdateFactoryClientData(
             "Default",
-            "target3",
+            "Target4",
             "http://localhost:8081",
             UpdateFactoryClientData.ServerType.UPDATE_FACTORY,
             "66076ab945a127dd80b15e9011995109")
 
+/*
+    val clientData= UpdateFactoryClientData(
+            "test",
+            "Target4",
+            "https://stage.updatefactory.io",
+            UpdateFactoryClientData.ServerType.UPDATE_FACTORY,
+            "528e9265ab4c7687ca2d8f933d3b77ec")
+*/
     val client = UpdateFactoryClientDefaultImpl()
     client.init(
             clientData,
             object : DirectoryForArtifactsProvider { override fun directoryForArtifacts(actionId: String): File = File("./$actionId") },
             object : ConfigDataProvider{},
             object : DeploymentPermitProvider{
-                override fun downloadAllowed(): Boolean = true
-                override fun updateAllowed(): Boolean = true
+                override fun downloadAllowed(): Boolean {
+                    test = !test
+                    return test
+                }
+                override fun updateAllowed(): Boolean {
+                    test = !test
+                    return test
+                }
             },
             listOf(object : EventListener{
                 override fun onEvent(event: EventListener.Event) {
@@ -67,17 +80,12 @@ fun main() = runBlocking {
                 return true
             } }
     )
-    println("start")
-    client.startAsync()
-    delay(Duration.standardSeconds(5))
-    println("force ping")
-    repeat(3) {
+    Thread().run {
+        client.startAsync()
+        delay(5000)
         client.forcePing()
-        delay(Duration.standardSeconds(3))
+        delay(5000)
+        client.forcePing()
     }
-    delay(Duration.standardSeconds(5))
-    println("exit")
-    client.stop()
-    delay(Duration.standardSeconds(3))
-    System.exit(0)
+    while(true){}
 }

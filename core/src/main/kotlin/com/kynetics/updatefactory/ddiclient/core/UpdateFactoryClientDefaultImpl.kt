@@ -34,5 +34,5 @@ class UpdateFactoryClientDefaultImpl: UpdateFactoryClient {
 
     override fun stop() = runBlocking { rootActor!!.send(Stop) }
 
-    override fun forcePing() = runBlocking { rootActor!!.send(Ping) }
+    override fun forcePing() = runBlocking { rootActor!!.send(ForcePing) }
 }

@@ -129,6 +129,7 @@ project(':core') {
     }
 
     test.dependsOn waitingUFServer
+    test.dependsOn cleanTest
 
 }
 

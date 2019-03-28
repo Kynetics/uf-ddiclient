@@ -52,6 +52,11 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
 
             is SetPing -> become(runningReceive(startPing(state.copy(clientPingInterval = msg.duration,  lastPing = Instant.EPOCH))))
 
+            is ForcePing -> {
+                become(runningReceive(state.copy(controllerBaseEtag = "", deploymentEtag = "")))
+                channel.send(SetPing(null))
+            }
+
             is Ping -> {
                 LOG.info("Execute ping calls to the server...")
                 val s = state.copy(lastPing = Instant.now())
@@ -207,6 +212,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 object Start : In()
                 object Stop : In()
                 object Ping : In()
+                object ForcePing: In()
                 data class Register(val listener: ActorRef): In()
                 data class Unregister(val listener: ActorRef): In()
                 data class SetPing(val duration: Duration?) : In()
@@ -217,12 +223,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
 
             open class Out: Message(){
                 object ConfigDataRequired: Out()
-                data class DeploymentInfo(val info: DeplBaseResp): Out(){
-                    fun equalsApartHistory(other: DeploymentInfo): Boolean {
-                        fun pruneMessages(dbr: DeplBaseResp) = dbr.copy(actionHistory = dbr.actionHistory?.copy(messages = emptyList()))
-                        return pruneMessages(info) == pruneMessages(other.info)
-                    }
-                }
+                data class DeploymentInfo(val info: DeplBaseResp): Out()
                 data class DeploymentCancelInfo(val info: CnclActResp): Out()
 
                 object NoAction: Out()

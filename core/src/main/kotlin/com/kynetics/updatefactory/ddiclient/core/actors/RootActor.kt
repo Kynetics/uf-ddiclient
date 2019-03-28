@@ -11,7 +11,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
 
     private fun mainReceive(): Receive = { msg ->
         when(msg) {
-            is Start, Ping -> child("connectionManager")!!.send(msg)
+            is Start, ForcePing -> child("connectionManager")!!.send(msg)
 
             is Stop -> {
                 child("actionManager")!!.close()
