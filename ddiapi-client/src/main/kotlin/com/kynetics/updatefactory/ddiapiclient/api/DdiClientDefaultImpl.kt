@@ -5,10 +5,10 @@ import com.kynetics.updatefactory.ddiapiclient.api.model.*
 import com.kynetics.updatefactory.ddiapiclient.security.Authentication
 import com.kynetics.updatefactory.ddiapiclient.security.HawkbitAuthenticationRequestInterceptor
 import com.kynetics.updatefactory.ddiapiclient.security.UpdateFactoryAuthenticationRequestInterceptor
+import com.kynetics.updatefactory.ddiclient.core.api.TargetTokenFoundListener
 import com.kynetics.updatefactory.ddiclient.core.api.UpdateFactoryClientData
 import com.kynetics.updatefactory.ddiclient.core.api.UpdateFactoryClientData.ServerType.HAWKBIT
 import okhttp3.OkHttpClient
-import okhttp3.internal.http.HttpHeaders
 import org.slf4j.LoggerFactory
 import retrofit2.HttpException
 import retrofit2.Response
@@ -18,13 +18,12 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.util.*
 import java.util.concurrent.Executors
-import javax.xml.ws.spi.http.HttpHandler
 
 
 class DdiClientDefaultImpl private constructor(private val ddiRestApi: DdiRestApi, private val tenant:String, private val controllerId:String) : DdiClient {
 
     override suspend fun getSoftwareModulesArtifacts(softwareModuleId: String): List<ArtfctResp>{
-        LOG.debug("getSoftwareModulesArtifacts($softwareModuleId)")
+        LOG.debug("getSoftwareModulesArtifacts(%s)", softwareModuleId)
         val artifact = ddiRestApi.getSoftwareModulesArtifacts(tenant, controllerId, softwareModuleId).await()
         if(LOG.isDebugEnabled){
             LOG.debug("$artifact")
@@ -34,7 +33,7 @@ class DdiClientDefaultImpl private constructor(private val ddiRestApi: DdiRestAp
 
 
     override suspend fun putConfigData(data: CfgDataReq){
-        LOG.debug("putConfigData($CfgDataReq)")
+        LOG.debug("putConfigData(%s)",CfgDataReq)
         ddiRestApi.putConfigData(tenant, controllerId, data).await()
     }
 
@@ -42,18 +41,14 @@ class DdiClientDefaultImpl private constructor(private val ddiRestApi: DdiRestAp
     override suspend fun getControllerActions(): CtrlBaseResp{
         LOG.debug("getControllerActions()")
         val response = ddiRestApi.getControllerActions(tenant, controllerId).await()
-        if(LOG.isDebugEnabled){
-            LOG.debug("$response")
-        }
+        LOG.debug("%s",response)
         return handleResponse(response)
     }
 
     override suspend fun onControllerActionsChange(etag: String, onChange: OnResourceChange<CtrlBaseResp>) {
-        LOG.debug("onDeploymentActionDetailsChange($etag)")
+        LOG.debug("onDeploymentActionDetailsChange(%s)", etag)
         val response = ddiRestApi.getControllerActions(tenant, controllerId, etag).await()
-        if(LOG.isDebugEnabled){
-            LOG.debug("$response")
-        }
+        LOG.debug("%s",response)
 
         handleOnChangeResponse(response, etag, "BaseResource", onChange)
     }
@@ -61,49 +56,38 @@ class DdiClientDefaultImpl private constructor(private val ddiRestApi: DdiRestAp
     override suspend fun getDeploymentActionDetails(actionId: String, historyCount: Int): DeplBaseResp {
         LOG.debug("getDeploymentActionDetails($actionId, $historyCount)")
         val response = ddiRestApi.getDeploymentActionDetails(tenant, controllerId, actionId, null, historyCount).await()
-        if(LOG.isDebugEnabled){
-            LOG.debug("$response")
-        }
+        LOG.debug("%s",response)
         return handleResponse(response)
     }
 
     override suspend fun onDeploymentActionDetailsChange(actionId: String, historyCount: Int, etag: String, onChange: OnResourceChange<DeplBaseResp>) {
         LOG.debug("onDeploymentActionDetailsChange($actionId, $historyCount, $etag)")
         val response = ddiRestApi.getDeploymentActionDetails(tenant, controllerId, actionId, null, historyCount, etag).await()
-        if(LOG.isDebugEnabled){
-            LOG.debug("$response")
-        }
-
+        LOG.debug("%s",response)
         handleOnChangeResponse(response, etag, "Deployment", onChange)
     }
 
     override suspend fun getCancelActionDetails(actionId: String): CnclActResp {
         LOG.debug("getCancelActionDetails($actionId)")
         val response = ddiRestApi.getCancelActionDetails(tenant, controllerId, actionId).await()
-        if(LOG.isDebugEnabled){
-            LOG.debug("$response")
-        }
+        LOG.debug("%s",response)
         return response
     }
 
 
     override suspend fun postDeploymentActionFeedback(actionId: String, feedback: DeplFdbkReq) {
-        if(LOG.isDebugEnabled){
-            LOG.debug("postDeploymentActionFeedback($actionId, $feedback)")
-        }
+        LOG.debug("postDeploymentActionFeedback(%s,%s)",actionId, feedback)
         ddiRestApi.postDeploymentActionFeedback(tenant, controllerId, actionId, feedback).await()
     }
 
 
     override suspend fun postCancelActionFeedback(actionId: String, feedback: CnclFdbkReq) {
-        if(LOG.isDebugEnabled){
-            LOG.debug("postCancelActionFeedback($actionId, $feedback)")
-        }
+        LOG.debug("postCancelActionFeedback(%s,%s)",actionId, feedback)
         ddiRestApi.postCancelActionFeedback(tenant, controllerId, actionId, feedback).await()
     }
 
     override suspend fun downloadArtifact(url: String): InputStream {
-        LOG.debug("downloadArtifact($url)")
+        LOG.debug("downloadArtifact(%s)",url)
         return ddiRestApi.downloadArtifact(url).await().byteStream()
     }
 
@@ -111,11 +95,11 @@ class DdiClientDefaultImpl private constructor(private val ddiRestApi: DdiRestAp
         when (response.code()) {
             in 200..299 -> {
                 val newEtag = response.headers()[ETAG_HEADER] ?: ""
-                LOG.info("$resourceName is changed. Old ETag: $etag, new ETag: $newEtag")
+                LOG.info("%s is changed. Old ETag: %s, new ETag: %s", resourceName,etag,newEtag)
                 onChange.invoke(response.body()!!, newEtag)
             }
 
-            HttpURLConnection.HTTP_NOT_MODIFIED -> LOG.info("$resourceName not changed")
+            HttpURLConnection.HTTP_NOT_MODIFIED -> LOG.info("%s not changed",resourceName)
 
             else -> throw HttpException(response)
         }
