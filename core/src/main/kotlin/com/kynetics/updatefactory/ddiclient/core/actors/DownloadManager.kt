@@ -5,6 +5,7 @@ import com.kynetics.updatefactory.ddiapiclient.api.model.DeplBaseResp.Depl.Appl.
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplBaseResp.Depl.Appl.forced
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq.Sts.Exc
+import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq.Sts.Exc.closed
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq.Sts.Exc.proceeding
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq.Sts.Rslt.Fnsh
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq.Sts.Rslt.Fnsh.failure
@@ -90,9 +91,10 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 become(downloadingReceive(newState))
             }
             downloads.any { it.state.status == ERROR } -> {
-                feedback(state.deplBaseResp.id, proceeding, progress, failure, message)
-                newState.downloads.values.forEach{it.downloader.close()}
-                parent!!.send(DownloadFailed)
+                feedback(state.deplBaseResp.id, closed, progress, failure, message)
+                notificationManager.send(EventListener.Event.UpdateFinished(successApply = false,
+                        details = listOf(message)))
+                parent!!.send(DownloadFailed(listOf(message)))
             }
             else -> {
                 feedback(state.deplBaseResp.id, proceeding, progress, none, message)

@@ -99,14 +99,15 @@ private constructor(scope: ActorScope,
     private suspend fun checkMd5OfDownloadedFile() {
         launch {
             val file = fileToDownload.tempFile
+            val md5 = file.md5()
             when {
 
-                file.md5() == fileToDownload.md5 -> {
+                md5 == fileToDownload.md5 -> {
                     fileToDownload.onFileSaved()
                     channel.send(FileChecked)
                 }
 
-                file.delete() -> channel.send(Companion.Message.RetryDownload("unable verify md5 sum of downloaded file"))
+                file.delete() -> channel.send(Companion.Message.RetryDownload("Downloaded file has wrong md5 sum ($md5)"))
 
                 else -> throw IllegalStateException("UNABLE DELETE FILE $file")
             }

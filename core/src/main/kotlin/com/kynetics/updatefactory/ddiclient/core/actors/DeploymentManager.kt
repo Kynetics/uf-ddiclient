@@ -98,7 +98,6 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
             }
 
             msg is DownloadFailed -> {
-                //TODO handle download failed
                 LOG.error("download failed")
                 parent!!.send(msg)
             }
@@ -215,7 +214,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
             object UpdateGranted: Message()
             object UpdateDenied: Message()
             object DownloadFinished: Message()
-            object DownloadFailed: Message()
+            data class DownloadFailed(val details: List<String>): Message()
             object UpdateFailed: Message()
             object UpdateFinished: Message()
         }

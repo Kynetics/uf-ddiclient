@@ -46,10 +46,8 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
             }
 
             msg is DownloadFailed -> {
-                LOG.warn("DownloadFailed. Not yet implemented")
                 become(defaultReceive(state.copy(deployment = null)))
                 child("deploymentManager")!!.close()
-
             }
 
             msg is UpdateFailed -> {
