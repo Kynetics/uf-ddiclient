@@ -186,8 +186,6 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
 
     private suspend fun stopUpdate() {
         LOG.info("Stopping update")
-        child("downloadManager")?.close()
-        child("updateManager")?.close()
         channel.close()
         notificationManager.send(EventListener.Event.UpdateCancelled)
         parent!!.send(UpdateStopped)

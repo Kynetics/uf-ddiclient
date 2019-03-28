@@ -14,9 +14,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
             is Start, ForcePing -> child("connectionManager")!!.send(msg)
 
             is Stop -> {
-                child("actionManager")!!.close()
                 child("connectionManager")!!.send(msg)
-                child("connectionManager")!!.close()
                 channel.close()
             }
 

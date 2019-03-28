@@ -34,15 +34,6 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
     private val connectionManager = coroutineContext[CMActor]!!.ref
 
     @ExperimentalCoroutinesApi
-    private fun initOnChannelClose(dms:Map<String,Download>){
-        channel.invokeOnClose {
-            launch {
-                dms.forEach{(_, download) -> download.downloader.send(Stop)}
-            }
-        }
-    }
-
-    @ExperimentalCoroutinesApi
     private fun beforeStartReceive(): Receive = { msg ->
         when(msg) {
 
@@ -51,7 +42,6 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 val md5s = md5OfFilesToBeDownloaded(msg.info)
                 if(md5s.isNotEmpty()){
                     val dms = createDownloadsMenagers(msg.info, md5s)
-                    initOnChannelClose(dms)
                     become(downloadingReceive(State(msg.info, dms)))
                     feedback(msg.info.id, proceeding,Prgrs(dms.size, 0), none,
                             "Start downloading ${dms.size} files")
@@ -141,6 +131,10 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
     }
 
     private fun childName(md5: String) = "fileDownloader_for_$md5"
+
+    override fun beforeCloseChannel() {
+        forEachActorNode{ actorRef -> launch{actorRef.send(Stop)}}
+    }
 
     init {
         become(beforeStartReceive())

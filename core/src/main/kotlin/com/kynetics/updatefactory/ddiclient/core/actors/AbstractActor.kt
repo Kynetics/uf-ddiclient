@@ -49,6 +49,14 @@ abstract class AbstractActor protected constructor(private val actorScope: Actor
 
     protected val name: String = coroutineContext[CoroutineName]!!.name
 
+    protected open fun beforeCloseChannel(){
+        childs.forEach{(_,c) -> c.close()}
+    }
+
+    protected fun forEachActorNode(ope: (ActorRef) -> Unit){
+            childs.forEach{(_, actorRef) -> ope(actorRef)}
+    }
+
     override val channel: Channel<Any> = object : Channel<Any> by actorScope.channel {
         override suspend fun send(element: Any) {
             if(LOG.isDebugEnabled){
@@ -57,6 +65,10 @@ abstract class AbstractActor protected constructor(private val actorScope: Actor
             actorScope.channel.send(element)
         }
 
+        override fun close(cause: Throwable?): Boolean {
+            beforeCloseChannel()
+            return actorScope.channel.close(cause)
+        }
     }
 
     protected fun <T:AbstractActor> actorOf(

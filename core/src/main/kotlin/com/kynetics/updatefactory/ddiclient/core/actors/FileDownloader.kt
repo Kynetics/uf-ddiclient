@@ -23,7 +23,6 @@ private constructor(scope: ActorScope,
             is Start ->{
                 if( fileToDownload.destination.exists()){
                     parent!!.send(AlreadyDownloaded(channel, fileToDownload.md5))
-                    channel.close()
                 } else {
                     become(downloading(state))
                     notificationManager.send(EventListener.Event.StartDownloadFile(fileToDownload.md5))
