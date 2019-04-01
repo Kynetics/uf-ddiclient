@@ -124,7 +124,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
         }
         return dbr.deployment.chunks.flatMap { it.artifacts }.filter { md5s.contains(it.hashes.md5) }.map { at ->
             val md5 = at.hashes.md5
-            val ftd = FileToDownload(md5, at._links.download_http.href, wd)
+            val ftd = FileToDownload(at.filename, md5, at._links.download_http.href, wd)
             val dm = actorOf(childName(md5)){
                 FileDownloader.of(it, 3, ftd)
             }

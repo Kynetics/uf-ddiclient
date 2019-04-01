@@ -50,7 +50,7 @@ private constructor(scope: ActorScope,
             }
 
             is TrialExhausted -> {
-                parent!!.send(Error(channel, fileToDownload.md5, "trials exhausted due to errors: ${state.errors.joinToString("\n", "\n")}"))
+                parent!!.send(Error(channel, fileToDownload.md5, "trials exhausted due to errors (${fileToDownload.fileName}): ${state.errors.joinToString("\n", "\n")}"))
                 notificationManager.send(EventListener.Event.Error(listOf("Fail to download file at ${fileToDownload.url}")))
             }
 
@@ -107,7 +107,7 @@ private constructor(scope: ActorScope,
                     channel.send(FileChecked)
                 }
 
-                file.delete() -> channel.send(Companion.Message.RetryDownload("Downloaded file has wrong md5 sum ($md5)"))
+                file.delete() -> channel.send(Companion.Message.RetryDownload("Downloaded file (${fileToDownload.fileName}) has wrong md5 sum ($md5)"))
 
                 else -> throw IllegalStateException("UNABLE DELETE FILE $file")
             }
@@ -124,7 +124,8 @@ private constructor(scope: ActorScope,
                attempts: Int,
                fileToDownload: FileToDownload) = FileDownloader(scope, fileToDownload, attempts)
 
-        data class FileToDownload(val md5: String,
+        data class FileToDownload(val fileName: String,
+                                  val md5: String,
                                   val url: String,
                                   val folder: File){
             val tempFile = File(folder, "$md5.$DOWNLOADING_EXTENSION")
