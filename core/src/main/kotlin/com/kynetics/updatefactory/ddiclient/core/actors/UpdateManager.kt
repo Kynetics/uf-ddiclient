@@ -25,9 +25,9 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 LOG.info("START UPDATING!!!")
                 notificationManager.send(EventListener.Event.InUpdating)
                 val updaters = registry.allUpdatersWithSwModulesOrderedForPriority(msg.info.deployment.chunks)
-                val lastSuccessUpdaterPairedWithIndex = updaters
+                val updaterError = updaters
                         .mapIndexed{index, u -> index to u }
-                        .takeWhile { (index, it) ->
+                        .dropWhile { (index, it) ->
                             it.updater.apply(it.softwareModules.map { swModule ->
                                 convert(swModule, pathCalculator(msg.info.id)) }.toSet(), object: Updater.Messanger{
                                 override fun sendMessageToServer(msgStr: String) {
@@ -40,14 +40,14 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                                     }
                                 }
                             })
-                        }.last()
+                        }
 
-                if(lastSuccessUpdaterPairedWithIndex.first != updaters.size - 1){
-                    LOG.warn("update ${lastSuccessUpdaterPairedWithIndex.first} failed!")
+                if(updaterError.isNotEmpty()){
+                    LOG.warn("update ${updaterError[0].first} failed!")
                     parent!!.send(DeploymentManager.Companion.Message.UpdateFailed)
                     sendFeedback(msg.info.id,
                             DeplFdbkReq.Sts.Exc.closed,
-                            DeplFdbkReq.Sts.Rslt.Prgrs(updaters.size, lastSuccessUpdaterPairedWithIndex.first),
+                            DeplFdbkReq.Sts.Rslt.Prgrs(updaters.size, updaterError[0].first),
                             DeplFdbkReq.Sts.Rslt.Fnsh.failure,
                             "Update failed")
                     notificationManager.send(EventListener.Event.UpdateFinished(successApply = false, details = emptyList()))
