@@ -24,7 +24,7 @@ class UpdateFactoryClientDefaultImpl: UpdateFactoryClient {
                 DdiClientDefaultImpl.of(updateFactoryClientData),
                 UpdaterRegistry(*updaters),
                 configDataProvider,
-                directoryForArtifactsProvider,
+                PathResolver(directoryForArtifactsProvider),
                 deploymentPermitProvider,
                 eventListeners
         )){ RootActor.of(it)}

@@ -29,7 +29,7 @@ class DownloadManager
 private constructor(scope: ActorScope): AbstractActor(scope) {
 
     private val registry = coroutineContext[UFClientContext]!!.registry
-    private val dfap      = coroutineContext[UFClientContext]!!.directoryForArtifactsProvider
+    private val pathResolver      = coroutineContext[UFClientContext]!!.pathResolver
     private val notificationManager = coroutineContext[NMActor]!!.ref
     private val connectionManager = coroutineContext[CMActor]!!.ref
 
@@ -118,7 +118,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
     }
 
     private fun createDownloadsMenagers(dbr: DeplBaseResp, md5s: Set<String>): Map<String, Download> {
-        val wd = File(dfap.directoryForArtifacts(),dbr.id)
+        val wd = pathResolver.updateDir(dbr.id)
         if (!wd.exists()) {
             wd.mkdirs()
         }
@@ -135,11 +135,14 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
     private fun childName(md5: String) = "fileDownloader_for_$md5"
 
     private fun clean(currentActionId: String) = runBlocking{
+        LOG.info("Removing artifacts of old updates (current action is $currentActionId)")
         withContext(Dispatchers.IO){
-            dfap.directoryForArtifacts()
-                    .walkBottomUp()
-                    .filter { it.name != currentActionId }
-                    .forEach { it.deleteRecursively() }
+            pathResolver.baseDirectory()
+                    .listFiles()
+                    ?.filter { it != pathResolver.updateDir(currentActionId) }
+                    ?.forEach {
+                        LOG.info("Removing artifacts of update with action id ${it.name}")
+                        it.deleteRecursively() }
         }
     }
 

@@ -1,6 +1,7 @@
 package com.kynetics.updatefactory.ddiclient.core.test
 
 import com.jakewharton.retrofit2.adapter.kotlin.coroutines.CoroutineCallAdapterFactory
+import com.kynetics.updatefactory.ddiclient.core.PathResolver
 import com.kynetics.updatefactory.ddiclient.core.api.ConfigDataProvider
 import com.kynetics.updatefactory.ddiclient.core.api.DirectoryForArtifactsProvider
 import com.kynetics.updatefactory.ddiclient.core.api.Updater
@@ -97,7 +98,8 @@ object TestUtils {
     val downloadRootDirPath = "./build/test/download/"
     val gatewayToken = "66076ab945a127dd80b15e9011995109"
     val getDownloadDirectoryFromActionId = { actionId:String -> File("$downloadRootDirPath/$actionId") }
-    val directoryDataProvider = object : DirectoryForArtifactsProvider { override fun directoryForArtifacts(actionId: String): File = getDownloadDirectoryFromActionId.invoke(actionId) }
+    val directoryDataProvider = object : DirectoryForArtifactsProvider { override fun directoryForArtifacts(): File = File(downloadRootDirPath) }
+    val pathResolver = PathResolver(directoryDataProvider)
     val configDataProvider = object : ConfigDataProvider {}
     val updater = object : Updater {
         override fun apply(modules: Set<Updater.SwModuleWithPath>, messanger: Updater.Messanger): Boolean {
@@ -113,8 +115,14 @@ object TestUtils {
             "test3" to Pair("../docker/test/artifactrepo/$tenantName/bf/94/cde0c01b26634f869bb876326e4fbe969792bf94","2244fbd6bee5dcbe312e387c062ce6e6"),
             "test4" to Pair("../docker/test/artifactrepo/$tenantName/dd/0a/07fa4d03ac54d0b2a52f23d8e878c96db7aadd0a","94424c5ce3f8c57a5b26d02f37dc06fc"))
 
+
     val md5OfFileNamed: (String) -> String = {key -> serverFilesMappedToLocantionAndMd5.getValue(key).second}
     val locationOfFileNamed:  (String) -> String = {key -> serverFilesMappedToLocantionAndMd5.getValue(key).first}
+
+    val test1Artifact = Updater.SwModule.Artifact("test1", Updater.Hashes("", md5OfFileNamed("test1")), 0)
+    val test2Artifact = Updater.SwModule.Artifact("test2", Updater.Hashes("", md5OfFileNamed("test2")), 0)
+    val test3Artifact = Updater.SwModule.Artifact("test3", Updater.Hashes("", md5OfFileNamed("test3")), 0)
+    val test4Artifact = Updater.SwModule.Artifact("test4", Updater.Hashes("", md5OfFileNamed("test4")), 0)
 
     fun messagesOnSuccessfullyDownloadOsWithAppDistribution(target:String) = arrayOf(
             ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.running, listOf("successfully downloaded all files")),
@@ -154,10 +162,10 @@ object TestUtils {
             ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.retrieved, listOf("Update Server: Target retrieved update action and should start now the download.")),
             firstActionEntry)
 
-    fun filesDownloadedInOsWithAppsPairedToServerFile(action:Int) = setOf("$downloadRootDirPath/$action/${md5OfFileNamed("test1")}" to locationOfFileNamed("test1"),
-            "$downloadRootDirPath/$action/${md5OfFileNamed("test2")}" to locationOfFileNamed("test2"),
-            "$downloadRootDirPath/$action/${md5OfFileNamed("test3")}" to locationOfFileNamed("test3"),
-            "$downloadRootDirPath/$action/${md5OfFileNamed("test4")}" to locationOfFileNamed("test4"))
+    fun filesDownloadedInOsWithAppsPairedToServerFile(action:Int) = setOf(pathResolver.fromArtifact(action.toString()).invoke(test1Artifact) to locationOfFileNamed("test1"),
+            pathResolver.fromArtifact(action.toString()).invoke(test2Artifact) to locationOfFileNamed("test2"),
+            pathResolver.fromArtifact(action.toString()).invoke(test3Artifact) to locationOfFileNamed("test3"),
+            pathResolver.fromArtifact(action.toString()).invoke(test4Artifact) to locationOfFileNamed("test4"))
 
     val defaultActionStatusOnStart = ActionStatus(setOf(firstActionEntry))
 

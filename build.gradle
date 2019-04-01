@@ -18,7 +18,7 @@ repositories {
 
 final def deps = gradle.settings.app_dependencies
 final def tdeps = gradle.settings.test_dependencies
-final def app_version = '1.0.0-SNAPHOST'
+final def app_version = '1.0.0-SNAPSHOST'
 
 
 subprojects {
@@ -70,6 +70,10 @@ project(':ddiapi-client') {
 project(':ddiapi-client:ddiapi-client-api') {
     group 'com.kynetics.updatefactory.uf-ddiclient.ddiapi-client'
     version app_version
+
+    dependencies {
+        implementation deps.joda
+    }
 }
 
 project(':core') {
@@ -82,6 +86,7 @@ project(':core') {
         implementation project(':ddiapi-client:ddiapi-client-api')
         implementation deps.slf4j_api
         implementation deps.slf4j_simple
+        implementation deps.joda
         //implementation deps.retrofit
 
         implementation deps.gson
@@ -91,9 +96,6 @@ project(':core') {
         testCompile deps.retrofit_coroutines
         testCompile deps.retrofit_converter
 
-    }
-    dependencies {
-        implementation deps.joda
     }
     
     tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {

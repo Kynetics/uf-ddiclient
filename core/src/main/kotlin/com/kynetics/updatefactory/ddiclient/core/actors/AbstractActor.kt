@@ -1,10 +1,10 @@
 package com.kynetics.updatefactory.ddiclient.core.actors
 
 import com.kynetics.updatefactory.ddiapiclient.api.DdiClient
+import com.kynetics.updatefactory.ddiclient.core.PathResolver
 import com.kynetics.updatefactory.ddiclient.core.UpdaterRegistry
 import com.kynetics.updatefactory.ddiclient.core.api.DeploymentPermitProvider
 import com.kynetics.updatefactory.ddiclient.core.api.ConfigDataProvider
-import com.kynetics.updatefactory.ddiclient.core.api.DirectoryForArtifactsProvider
 import com.kynetics.updatefactory.ddiclient.core.api.EventListener
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
@@ -130,7 +130,7 @@ data class UFClientContext(
         val ddiClient: DdiClient,
         val registry: UpdaterRegistry,
         val configDataProvider: ConfigDataProvider,
-        val directoryForArtifactsProvider: DirectoryForArtifactsProvider,
+        val pathResolver: PathResolver,
         val deploymentPermitProvider: DeploymentPermitProvider,
         val eventListeners: List<EventListener>
 ): AbstractCoroutineContextElement(UFClientContext){

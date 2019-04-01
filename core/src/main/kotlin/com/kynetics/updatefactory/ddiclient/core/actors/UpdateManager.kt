@@ -5,7 +5,6 @@ import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Compan
 import com.kynetics.updatefactory.ddiclient.core.api.Updater
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.runBlocking
-import java.io.File
 import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.In.DeploymentFeedback
 import com.kynetics.updatefactory.ddiclient.core.api.EventListener
 
@@ -14,7 +13,7 @@ class UpdateManager
 private constructor(scope: ActorScope): AbstractActor(scope) {
 
     private val registry = coroutineContext[UFClientContext]!!.registry
-    private val dfap      = coroutineContext[UFClientContext]!!.directoryForArtifactsProvider
+    private val pathResolver      = coroutineContext[UFClientContext]!!.pathResolver
     private val connectionManager = coroutineContext[CMActor]!!.ref
     private val notificationManager = coroutineContext[NMActor]!!.ref
 
@@ -29,7 +28,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                         .mapIndexed{index, u -> index to u }
                         .dropWhile { (index, it) ->
                             it.updater.apply(it.softwareModules.map { swModule ->
-                                convert(swModule, pathCalculator(msg.info.id)) }.toSet(), object: Updater.Messanger{
+                                convert(swModule, pathResolver.fromArtifact(msg.info.id)) }.toSet(), object: Updater.Messanger{
                                 override fun sendMessageToServer(msgStr: String) {
                                     runBlocking {
                                         sendFeedback(msg.info.id,
@@ -74,12 +73,6 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                                      vararg messages: String){
         val request = DeplFdbkReq.newInstance(id,execution, progress, finished, *messages)
         connectionManager.send(DeploymentFeedback(request))
-    }
-
-    private fun pathCalculator(id: String):(artifact: Updater.SwModule.Artifact) -> String {
-        return { artifact ->
-            File(dfap.directoryForArtifacts(), "$id/${artifact.hashes.md5}").absolutePath
-        }
     }
 
     private fun convert (swModule: Updater.SwModule, pathCalculator: (Updater.SwModule.Artifact) -> String): Updater.SwModuleWithPath =
