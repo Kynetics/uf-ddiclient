@@ -34,9 +34,12 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
             msg is DeploymentInfo && msg.downloadIs(attempt) -> {
                 LOG.info("Waiting authorization to download")
                 become(waitingDownloadAuthorization(state.copy(deplBaseResp = msg.info)))
-                channel.send(withContext(Dispatchers.IO) {
-                    if (authRequest.downloadAllowed()) DownloadGranted else DownloadDenied
-                })
+                notificationManager.send(EventListener.Event.WaitingDownloadAuthorization)
+                withContext(Dispatchers.IO) {
+                    channel.send(
+                            if (authRequest.downloadAllowed()) DownloadGranted else DownloadDenied
+                    )
+                }
             }
 
             msg is DeploymentInfo && msg.downloadIs(skip) -> {
@@ -93,9 +96,12 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
             msg is DownloadFinished &&  state.updateIs(attempt) -> {
                 LOG.info("Waiting authorization to update")
                 become(waitingUpdateAuthorization(state))
-                channel.send(withContext(Dispatchers.IO) {
-                    if (authRequest.updateAllowed()) UpdateGranted else UpdateDenied
-                })
+                notificationManager.send(EventListener.Event.WaitingUpdateAuthorization)
+                withContext(Dispatchers.IO) {
+                    channel.send(
+                            if (authRequest.updateAllowed()) UpdateGranted else UpdateDenied
+                    )
+                }
             }
 
             msg is DownloadFailed -> {

@@ -18,5 +18,7 @@ interface EventListener {
         data class UpdateFinished(val successApply: Boolean, val details:List<String>): Event()
         data class Error(val message:List<String>) : Event()
         object Polling:Event()
+        object WaitingDownloadAuthorization:Event()
+        object WaitingUpdateAuthorization:Event()
     }
 }
