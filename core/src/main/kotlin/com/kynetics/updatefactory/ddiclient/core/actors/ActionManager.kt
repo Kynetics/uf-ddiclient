@@ -94,7 +94,9 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 connectionManager.send(In.SetPing(null))
             }
 
-            msg is NoAction ->{ }
+            msg is NoAction ->{
+                notificationManager.send(EventListener.Event.Polling)
+            }
 
             msg is ErrMsg -> {
                 LOG.warn("ErrMsg. Not yet implemented")
