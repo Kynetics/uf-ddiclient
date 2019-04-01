@@ -50,8 +50,10 @@ private constructor(scope: ActorScope,
             }
 
             is TrialExhausted -> {
-                parent!!.send(Error(channel, fileToDownload.md5, "trials exhausted due to errors (${fileToDownload.fileName}): ${state.errors.joinToString("\n", "\n")}"))
-                notificationManager.send(EventListener.Event.Error(listOf("Fail to download file at ${fileToDownload.url}")))
+                val errors = state.errors.toMutableList()
+                errors.add(0,"trials exhausted due to errors (${fileToDownload.fileName})")
+                parent!!.send(Error(channel, fileToDownload.md5, errors))
+                notificationManager.send(EventListener.Event.Error(errors))
             }
 
             is RetryDownload     -> {
@@ -150,7 +152,7 @@ private constructor(scope: ActorScope,
             data class Success(val sender:ActorRef, val md5: String): Message()
             data class AlreadyDownloaded(val sender:ActorRef, val md5: String): Message()
             data class Info(val sender:ActorRef, val md5: String, val message:String): Message()
-            data class Error(val sender:ActorRef, val md5: String, val message:String): Message()
+            data class Error(val sender:ActorRef, val md5: String, val message:List<String> = emptyList()): Message()
         }
     }
 }

@@ -76,7 +76,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
         }
     }
 
-    private suspend fun processMessage(state: State, md5:String, status: Status, message: String, errorMsg:String?=null) {
+    private suspend fun processMessage(state: State, md5:String, status: Status, message: String, errorMsg:List<String>?=null) {
         val download = state.downloads.getValue(md5)
         val newErrMessages = if(errorMsg == null) download.state.messages else download.state.messages + errorMsg
         val newDownload = download.copy(state = download.state.copy(status = status, messages = newErrMessages))

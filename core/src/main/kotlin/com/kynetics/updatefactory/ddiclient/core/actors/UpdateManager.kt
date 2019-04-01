@@ -29,13 +29,13 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                         .dropWhile { (index, it) ->
                             it.updater.apply(it.softwareModules.map { swModule ->
                                 convert(swModule, pathResolver.fromArtifact(msg.info.id)) }.toSet(), object: Updater.Messanger{
-                                override fun sendMessageToServer(msgStr: String) {
+                                override fun sendMessageToServer(vararg msgStr: String) {
                                     runBlocking {
                                         sendFeedback(msg.info.id,
                                                 DeplFdbkReq.Sts.Exc.proceeding,
                                                 DeplFdbkReq.Sts.Rslt.Prgrs(updaters.size, index),
                                                 DeplFdbkReq.Sts.Rslt.Fnsh.none,
-                                                msgStr)
+                                                *msgStr)
                                     }
                                 }
                             })

@@ -3,7 +3,7 @@ package com.kynetics.updatefactory.ddiclient.core.api
 interface Updater {
 
     interface Messanger{
-        fun sendMessageToServer(msg:String)
+        fun sendMessageToServer(vararg msg:String)
     }
 
     fun requiredSoftwareModulesAndPriority(swModules: Set<SwModule>): SwModsApplication =
