@@ -28,7 +28,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                         .mapIndexed{index, u -> index to u }
                         .dropWhile { (index, it) ->
                             it.updater.apply(it.softwareModules.map { swModule ->
-                                convert(swModule, pathResolver.fromArtifact(msg.info.id)) }.toSet(), object: Updater.Messanger{
+                                convert(swModule, pathResolver.fromArtifact(msg.info.id)) }.toSet(), object: Updater.Messenger{
                                 override fun sendMessageToServer(vararg msgStr: String) {
                                     runBlocking {
                                         sendFeedback(msg.info.id,

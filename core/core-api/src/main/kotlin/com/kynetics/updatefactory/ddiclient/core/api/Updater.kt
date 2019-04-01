@@ -2,7 +2,7 @@ package com.kynetics.updatefactory.ddiclient.core.api
 
 interface Updater {
 
-    interface Messanger{
+    interface Messenger{
         fun sendMessageToServer(vararg msg:String)
     }
 
@@ -19,7 +19,7 @@ interface Updater {
     /**
      * @return true if succesfully applied
      */
-    fun apply(modules: Set<SwModuleWithPath>, messanger: Messanger):Boolean
+    fun apply(modules: Set<SwModuleWithPath>, messenger: Messenger):Boolean
 
     data class SwModule(
             val metadata: Set<Metadata>?,

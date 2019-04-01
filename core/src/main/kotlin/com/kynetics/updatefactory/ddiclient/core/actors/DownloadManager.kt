@@ -22,7 +22,6 @@ import com.kynetics.updatefactory.ddiclient.core.actors.FileDownloader.Companion
 import com.kynetics.updatefactory.ddiclient.core.actors.FileDownloader.Companion.Message.*
 import com.kynetics.updatefactory.ddiclient.core.api.EventListener
 import kotlinx.coroutines.*
-import java.io.File
 
 @UseExperimental(ObsoleteCoroutinesApi::class)
 class DownloadManager
@@ -42,7 +41,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 notificationManager.send(EventListener.Event.InDownloading)
                 val md5s = md5OfFilesToBeDownloaded(msg.info)
                 if(md5s.isNotEmpty()){
-                    val dms = createDownloadsMenagers(msg.info, md5s)
+                    val dms = createDownloadsManagers(msg.info, md5s)
                     become(downloadingReceive(State(msg.info, dms)))
                     feedback(msg.info.id, proceeding,Prgrs(dms.size, 0), none,
                             "Start downloading ${dms.size} files")
@@ -117,7 +116,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
         else            -> emptySet()
     }
 
-    private fun createDownloadsMenagers(dbr: DeplBaseResp, md5s: Set<String>): Map<String, Download> {
+    private fun createDownloadsManagers(dbr: DeplBaseResp, md5s: Set<String>): Map<String, Download> {
         val wd = pathResolver.updateDir(dbr.id)
         if (!wd.exists()) {
             wd.mkdirs()

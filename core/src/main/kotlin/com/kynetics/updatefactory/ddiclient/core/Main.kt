@@ -72,11 +72,11 @@ fun main() = runBlocking {
                     println(event)
                 }
             }),
-            object : Updater { override fun apply(modules: Set<Updater.SwModuleWithPath>, messanger: Updater.Messanger):Boolean {
+            object : Updater { override fun apply(modules: Set<Updater.SwModuleWithPath>, messenger: Updater.Messenger):Boolean {
                 println("APPLY UPDATE $modules")
-                messanger.sendMessageToServer("Applying the update...")
+                messenger.sendMessageToServer("Applying the update...")
                 Thread.sleep(1000)
-                messanger.sendMessageToServer("Update applied")
+                messenger.sendMessageToServer("Update applied")
                 return true
             } }
     )
