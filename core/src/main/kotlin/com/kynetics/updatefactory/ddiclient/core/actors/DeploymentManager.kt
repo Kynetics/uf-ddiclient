@@ -46,6 +46,10 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 TODO("NOT YET IMPLEMENTED (Appl.skip)")
             }
 
+            msg is DeploymentCancelInfo -> {
+                stopUpdateAndNotify(msg)
+            }
+
             else -> unhandled(msg)
         }
     }
