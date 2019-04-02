@@ -7,7 +7,7 @@ import java.io.File
 class PathResolver(private val dfap: DirectoryForArtifactsProvider) {
 
     companion object {
-        const val ROOT = "UF"
+        const val ROOT = "artifacts"
     }
 
     fun fromArtifact(id: String):(artifact: Updater.SwModule.Artifact) -> String {
