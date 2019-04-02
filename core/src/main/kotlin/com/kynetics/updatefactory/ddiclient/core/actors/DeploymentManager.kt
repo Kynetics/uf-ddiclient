@@ -13,7 +13,7 @@ import com.kynetics.updatefactory.ddiclient.core.api.DeploymentPermitProvider
 import com.kynetics.updatefactory.ddiclient.core.api.EventListener
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ObsoleteCoroutinesApi
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.async
 
 
 @UseExperimental(ObsoleteCoroutinesApi::class)
@@ -35,7 +35,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 LOG.info("Waiting authorization to download")
                 become(waitingDownloadAuthorization(state.copy(deplBaseResp = msg.info)))
                 notificationManager.send(EventListener.Event.WaitingDownloadAuthorization)
-                withContext(Dispatchers.IO) {
+                async(Dispatchers.IO) {
                     channel.send(
                             if (authRequest.downloadAllowed()) DownloadGranted else DownloadDenied
                     )
@@ -101,7 +101,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 LOG.info("Waiting authorization to update")
                 become(waitingUpdateAuthorization(state))
                 notificationManager.send(EventListener.Event.WaitingUpdateAuthorization)
-                withContext(Dispatchers.IO) {
+                async(Dispatchers.IO) {
                     channel.send(
                             if (authRequest.updateAllowed()) UpdateGranted else UpdateDenied
                     )
