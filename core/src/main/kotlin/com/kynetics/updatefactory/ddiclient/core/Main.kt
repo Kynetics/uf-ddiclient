@@ -78,12 +78,7 @@ fun main() = runBlocking {
                 Thread.sleep(1000)
                 messenger.sendMessageToServer("Update applied")
                 return true
-            }
-
-                override fun updateIsCancellable(): Boolean {
-                    return false
-                }
-            }
+            } }
     )
     Thread().run {
         client.startAsync()

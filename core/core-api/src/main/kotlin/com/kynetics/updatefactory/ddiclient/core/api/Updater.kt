@@ -17,7 +17,7 @@ interface Updater {
                     }.toSet())
 
 
-    fun updateIsCancellable():Boolean
+    fun updateIsCancellable():Boolean = true
 
     /**
      * @return true if succesfully applied
