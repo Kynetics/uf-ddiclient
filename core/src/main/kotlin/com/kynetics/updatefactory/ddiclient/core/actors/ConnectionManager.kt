@@ -61,6 +61,8 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 val s = state.copy(lastPing = Instant.now())
                 try {
 
+                    notificationManager.send(EventListener.Event.Polling)
+
                     client.onControllerActionsChange(state.controllerBaseEtag){ res, newControllerBaseEtag ->
                         if(res.requireConfigData()){
                             this.send(ConfigDataRequired, state)

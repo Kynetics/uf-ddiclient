@@ -95,7 +95,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
             }
 
             msg is NoAction ->{
-                notificationManager.send(EventListener.Event.Polling)
+                notificationManager.send(EventListener.Event.Idle)
             }
 
             msg is ErrMsg -> {
