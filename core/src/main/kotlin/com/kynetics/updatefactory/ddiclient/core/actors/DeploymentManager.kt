@@ -24,6 +24,18 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
     private val connectionManager = coroutineContext[CMActor]!!.ref
     private val notificationManager = coroutineContext[NMActor]!!.ref
     private fun beginningReceive(state: State):Receive = { msg ->
+        //todo implement download skip option and move content of attempt function to 'msg is DeploymentInfo && msg.downloadIs(attempt)' when case
+        suspend fun attempt(msg:DeploymentInfo){
+            LOG.info("Waiting authorization to download")
+            become(waitingDownloadAuthorization(state.copy(deplBaseResp = msg.info)))
+            notificationManager.send(EventListener.Event.WaitingDownloadAuthorization)
+            async(Dispatchers.IO) {
+                channel.send(
+                        if (authRequest.downloadAllowed()) DownloadGranted else DownloadDenied
+                )
+            }
+        }
+
         when{
 
             msg is DeploymentInfo && msg.downloadIs(forced)  -> {
@@ -32,18 +44,12 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
             }
 
             msg is DeploymentInfo && msg.downloadIs(attempt) -> {
-                LOG.info("Waiting authorization to download")
-                become(waitingDownloadAuthorization(state.copy(deplBaseResp = msg.info)))
-                notificationManager.send(EventListener.Event.WaitingDownloadAuthorization)
-                async(Dispatchers.IO) {
-                    channel.send(
-                            if (authRequest.downloadAllowed()) DownloadGranted else DownloadDenied
-                    )
-                }
+                attempt(msg)
             }
 
             msg is DeploymentInfo && msg.downloadIs(skip) -> {
-                TODO("NOT YET IMPLEMENTED (Appl.skip)")
+                LOG.warn("skip download not yet implemented (used attempt)")
+                attempt(msg)
             }
 
             msg is DeploymentCancelInfo -> {
