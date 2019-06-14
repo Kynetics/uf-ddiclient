@@ -15,6 +15,7 @@ import org.joda.time.Duration
 class ActionManager
 private constructor(scope: ActorScope): AbstractActor(scope) {
 
+    private val registry = coroutineContext[UFClientContext]!!.registry
     private val configDataProvider = coroutineContext[UFClientContext]!!.configDataProvider
     private val connectionManager  = coroutineContext[CMActor]!!.ref
     private val notificationManager  = coroutineContext[NMActor]!!.ref
@@ -66,13 +67,21 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 connectionManager.send(In.SetPing(null))
             }
 
-            msg is DeploymentCancelInfo && !state.inDeployment -> {
+            msg is DeploymentCancelInfo && !state.inDeployment && registry.currentUpdateIsCancellable()-> {
                 connectionManager.send(In.CancelFeedback(
                         CnclFdbkReq.newInstance(msg.info.cancelAction.stopId,
                                 CnclFdbkReq.Sts.Exc.closed,
                                 CnclFdbkReq.Sts.Rslt.Fnsh.success)))
                 notificationManager.send(EventListener.Event.UpdateCancelled)
                 connectionManager.send(In.SetPing(null))
+            }
+
+            msg is DeploymentCancelInfo && !registry.currentUpdateIsCancellable() -> {
+                connectionManager.send(ConnectionManager.Companion.Message.In.CancelFeedback(
+                        CnclFdbkReq.newInstance(msg.info.cancelAction.stopId,
+                                CnclFdbkReq.Sts.Exc.rejected,
+                                CnclFdbkReq.Sts.Rslt.Fnsh.success,
+                                "Update already started. Can't be stopped.")))
             }
 
             msg is DeploymentCancelInfo -> {

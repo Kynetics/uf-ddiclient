@@ -16,6 +16,9 @@ interface Updater {
                                 it.artifacts.map { a->a.hashes }.toSet())
                     }.toSet())
 
+
+    fun updateIsCancellable():Boolean
+
     /**
      * @return true if succesfully applied
      */

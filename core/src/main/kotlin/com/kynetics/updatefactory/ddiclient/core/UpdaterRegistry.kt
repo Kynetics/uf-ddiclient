@@ -28,6 +28,10 @@ class UpdaterRegistry(private vararg val updaters: Updater) {
         }.toSortedSet(Comparator { p1, p2 -> p1.priority.compareTo(p2.priority) })
     }
 
+    fun currentUpdateIsCancellable():Boolean{
+        return updaters.map{ it.updateIsCancellable()}
+                .reduce{ acc, value -> acc && value }
+    }
 
     data class UpdaterWithSwModule(val priority: Int, val updater: Updater, val softwareModules: Set<Updater.SwModule>)
 
