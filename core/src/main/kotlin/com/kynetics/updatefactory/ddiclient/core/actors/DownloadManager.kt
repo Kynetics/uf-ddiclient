@@ -38,7 +38,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
 
             is DeploymentInfo -> {
                 clean(msg.info.id)
-                notificationManager.send(EventListener.Event.InDownloading)
+                notificationManager.send(EventListener.Event.Downloading)
                 val md5s = md5OfFilesToBeDownloaded(msg.info)
                 if(md5s.isNotEmpty()){
                     val dms = createDownloadsManagers(msg.info, md5s)

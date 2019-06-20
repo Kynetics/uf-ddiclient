@@ -22,7 +22,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
 
             is DeploymentInfo -> {
                 LOG.info("START UPDATING!!!")
-                notificationManager.send(EventListener.Event.InUpdating)
+                notificationManager.send(EventListener.Event.Updating)
                 val updaters = registry.allUpdatersWithSwModulesOrderedForPriority(msg.info.deployment.chunks)
                 val details = mutableListOf("Details:")
                 val updaterError = updaters
