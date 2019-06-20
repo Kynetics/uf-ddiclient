@@ -22,8 +22,9 @@ interface Updater {
     /**
      * @return true if succesfully applied
      */
-    fun apply(modules: Set<SwModuleWithPath>, messenger: Messenger):Boolean
+    fun apply(modules: Set<SwModuleWithPath>, messenger: Messenger): UpdateResult
 
+    data class UpdateResult(val success:Boolean, val details:List<String> = emptyList())
     data class SwModule(
             val metadata: Set<Metadata>?,
             val type: String,

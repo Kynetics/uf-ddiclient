@@ -24,10 +24,11 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 LOG.info("START UPDATING!!!")
                 notificationManager.send(EventListener.Event.InUpdating)
                 val updaters = registry.allUpdatersWithSwModulesOrderedForPriority(msg.info.deployment.chunks)
+                val details = mutableListOf("Details:")
                 val updaterError = updaters
                         .mapIndexed{index, u -> index to u }
                         .dropWhile { (index, it) ->
-                            it.updater.apply(it.softwareModules.map { swModule ->
+                            val updateResult = it.updater.apply(it.softwareModules.map { swModule ->
                                 convert(swModule, pathResolver.fromArtifact(msg.info.id)) }.toSet(), object: Updater.Messenger{
                                 override fun sendMessageToServer(vararg msgStr: String) {
                                     runBlocking {
@@ -39,6 +40,9 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                                     }
                                 }
                             })
+                            details.add("********")
+                            details.addAll(updateResult.details)
+                            updateResult.success
                         }
 
                 if(updaterError.isNotEmpty()){
@@ -49,7 +53,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                             DeplFdbkReq.Sts.Rslt.Prgrs(updaters.size, updaterError[0].first),
                             DeplFdbkReq.Sts.Rslt.Fnsh.failure,
                             "Update failed")
-                    notificationManager.send(EventListener.Event.UpdateFinished(successApply = false, details = emptyList()))
+                    notificationManager.send(EventListener.Event.UpdateFinished(successApply = false, details = details))
                 } else {
                     parent!!.send(DeploymentManager.Companion.Message.UpdateFinished)
                     sendFeedback(msg.info.id,
@@ -57,7 +61,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                             DeplFdbkReq.Sts.Rslt.Prgrs(updaters.size, updaters.size),
                             DeplFdbkReq.Sts.Rslt.Fnsh.success,
                             "Update finished")
-                    notificationManager.send(EventListener.Event.UpdateFinished(successApply = true, details = emptyList()))
+                    notificationManager.send(EventListener.Event.UpdateFinished(successApply = true, details = details))
                 }
             }
 

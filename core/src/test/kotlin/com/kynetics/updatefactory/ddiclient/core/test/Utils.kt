@@ -102,11 +102,11 @@ object TestUtils {
     val pathResolver = PathResolver(directoryDataProvider)
     val configDataProvider = object : ConfigDataProvider {}
     val updater = object : Updater {
-        override fun apply(modules: Set<Updater.SwModuleWithPath>, messenger: Updater.Messenger): Boolean {
+        override fun apply(modules: Set<Updater.SwModuleWithPath>, messenger: Updater.Messenger): Updater.UpdateResult{
             println("APPLY UPDATE $modules")
             messenger.sendMessageToServer("Applying the update...")
             messenger.sendMessageToServer("Update applied")
-            return true
+            return Updater.UpdateResult(true)
         }
     }
 
