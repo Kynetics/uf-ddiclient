@@ -1,21 +1,34 @@
 package com.kynetics.updatefactory.ddiclient.core.actors
 
 import com.kynetics.updatefactory.ddiapiclient.api.DdiClient
+import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq
 import com.kynetics.updatefactory.ddiclient.core.actors.FileDownloader.Companion.Message.*
 import com.kynetics.updatefactory.ddiclient.core.api.EventListener
+import com.kynetics.updatefactory.ddiclient.core.inputstream.FilterInputStreamWithProgress
 import com.kynetics.updatefactory.ddiclient.core.md5
 import kotlinx.coroutines.ObsoleteCoroutinesApi
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import java.io.File
+import java.io.IOException
+import java.io.FilterInputStream
+import java.io.InputStream
+import java.text.NumberFormat
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
+import kotlin.concurrent.fixedRateTimer
+
 
 @UseExperimental(ObsoleteCoroutinesApi::class)
 class FileDownloader
 private constructor(scope: ActorScope,
                     private val fileToDownload: FileToDownload,
-                    attempts: Int): AbstractActor(scope) {
+                    attempts: Int,
+                    actionId: String): AbstractActor(scope) {
 
     private val client: DdiClient = coroutineContext[UFClientContext]!!.ddiClient
     private val notificationManager = coroutineContext[NMActor]!!.ref
+    private val connectionManager = coroutineContext[CMActor]!!.ref
 
     private fun beforeStart(state: State): Receive = { msg ->
         when(msg) {
@@ -79,23 +92,50 @@ private constructor(scope: ActorScope,
         } else {
             launch {
                 try {
-                    download()
+                    download(state.actionId)
                     channel.send(FileDownloaded)
                 } catch (t:Throwable){
                     channel.send(RetryDownload("exception: ${t.javaClass.simpleName}. message: ${t.message}"))
+                    LOG.warn("Failed to download file ${fileToDownload.fileName}", t)
                 }
             }
         }
     }
 
-    private suspend fun download() {
+    fun Double.toPercentage(minFractionDigits:Int = 0):String{
+        val format = NumberFormat.getPercentInstance()
+        format.minimumFractionDigits = minFractionDigits
+        return format.format(this)
+    }
+
+    private suspend fun download(actionId:String) {
         val file = fileToDownload.tempFile
         if(file.exists()){
             file.delete()
         }
-        file.outputStream().use {
-            client.downloadArtifact(fileToDownload.url).copyTo(it)
+
+        val inputStream = FilterInputStreamWithProgress(client.downloadArtifact(fileToDownload.url), fileToDownload.size)
+
+        val timer = fixedRateTimer("Download Checker ${fileToDownload.fileName}",false, 0, 5_000){
+            async {
+                feedback(actionId,
+                        DeplFdbkReq.Sts.Exc.proceeding,
+                        DeplFdbkReq.Sts.Rslt.Prgrs(0,0),
+                        DeplFdbkReq.Sts.Rslt.Fnsh.none, "Downloading file named ${fileToDownload.fileName} - ${inputStream.getProgress().toPercentage(2)}")
+            }
         }
+
+        file.outputStream().use {
+            inputStream.copyTo(it)
+        }
+
+        timer.purge()
+        timer.cancel()
+    }
+
+    private suspend fun feedback(id: String, execution: DeplFdbkReq.Sts.Exc, progress: DeplFdbkReq.Sts.Rslt.Prgrs, finished: DeplFdbkReq.Sts.Rslt.Fnsh, vararg messages: String) {
+        val deplFdbkReq = DeplFdbkReq.newInstance(id, execution, progress, finished, *messages)
+        connectionManager.send(ConnectionManager.Companion.Message.In.DeploymentFeedback(deplFdbkReq))
     }
 
     private suspend fun checkMd5OfDownloadedFile() {
@@ -117,19 +157,21 @@ private constructor(scope: ActorScope,
     }
 
     init {
-        become (beforeStart(State(attempts)))
+        become (beforeStart(State(attempts, actionId)))
     }
 
     companion object {
         const val DOWNLOADING_EXTENSION = "downloading"
         fun of(scope: ActorScope,
                attempts: Int,
-               fileToDownload: FileToDownload) = FileDownloader(scope, fileToDownload, attempts)
+               fileToDownload: FileToDownload,
+               actionId: String) = FileDownloader(scope, fileToDownload, attempts, actionId)
 
         data class FileToDownload(val fileName: String,
                                   val md5: String,
                                   val url: String,
-                                  val folder: File){
+                                  val folder: File,
+                                  val size: Long){
             val tempFile = File(folder, "$md5.$DOWNLOADING_EXTENSION")
             val destination = File(folder, md5)
             fun onFileSaved() = tempFile.renameTo(destination)
@@ -137,6 +179,7 @@ private constructor(scope: ActorScope,
 
         private data class State(
                 val remainingAttempts:Int,
+                val actionId: String,
                 val errors: List<String> = emptyList())
 
         sealed class Message {

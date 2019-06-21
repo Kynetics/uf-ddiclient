@@ -68,7 +68,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
             is Info -> LOG.info(msg.toString())
 
             is Error -> {
-                processMessage(state, msg.md5, ERROR, "failed downloading file with md5 ${msg.md5} due to ${msg.message}", msg.message)
+                processMessage(state, msg.md5, ERROR, "failed to download file with md5 ${msg.md5} due to ${msg.message}", msg.message)
             }
 
             else -> unhandled(msg)
@@ -123,9 +123,9 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
         }
         return dbr.deployment.chunks.flatMap { it.artifacts }.filter { md5s.contains(it.hashes.md5) }.map { at ->
             val md5 = at.hashes.md5
-            val ftd = FileToDownload(at.filename, md5, at._links.download_http.href, wd)
+            val ftd = FileToDownload(at.filename, md5, at._links.download_http.href, wd, at.size)
             val dm = actorOf(childName(md5)){
-                FileDownloader.of(it, 3, ftd)
+                FileDownloader.of(it, 3, ftd, dbr.id)
             }
             Pair(md5, Download(dm))
         }.toMap()
