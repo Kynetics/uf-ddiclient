@@ -11,6 +11,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import java.io.File
 import java.text.NumberFormat
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.BlockingQueue
 import kotlin.concurrent.fixedRateTimer
 
 
@@ -111,13 +113,21 @@ private constructor(scope: ActorScope,
 
         val inputStream = FilterInputStreamWithProgress(client.downloadArtifact(fileToDownload.url), fileToDownload.size)
 
+        val queue = ArrayBlockingQueue<Double>(10, true, (1..9).map { it.toDouble() / 10 })
+
         val timer = fixedRateTimer("Download Checker ${fileToDownload.fileName}",false, 0, 60_000){
             async {
                 val progress = inputStream.getProgress()
-                feedback(actionId,
-                        DeplFdbkReq.Sts.Exc.proceeding,
-                        DeplFdbkReq.Sts.Rslt.Prgrs(0,0),
-                        DeplFdbkReq.Sts.Rslt.Fnsh.none, "Downloading file named ${fileToDownload.fileName} - ${progress.toPercentage(2)}")
+                val limit = queue.peek() ?: 1.0
+                if(progress > limit) {
+                    feedback(actionId,
+                            DeplFdbkReq.Sts.Exc.proceeding,
+                            DeplFdbkReq.Sts.Rslt.Prgrs(0, 0),
+                            DeplFdbkReq.Sts.Rslt.Fnsh.none, "Downloading file named ${fileToDownload.fileName} - ${progress.toPercentage(2)}")
+                    while(progress > queue.peek() ?: 1.0 && queue.isNotEmpty()){
+                        queue.poll()
+                    }
+                }
                 notificationManager.send(EventListener.Event.Downloading(progress))
             }
         }
