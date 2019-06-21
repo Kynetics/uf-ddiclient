@@ -10,12 +10,7 @@ import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import java.io.File
-import java.io.IOException
-import java.io.FilterInputStream
-import java.io.InputStream
 import java.text.NumberFormat
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicLong
 import kotlin.concurrent.fixedRateTimer
 
 
@@ -116,12 +111,14 @@ private constructor(scope: ActorScope,
 
         val inputStream = FilterInputStreamWithProgress(client.downloadArtifact(fileToDownload.url), fileToDownload.size)
 
-        val timer = fixedRateTimer("Download Checker ${fileToDownload.fileName}",false, 0, 5_000){
+        val timer = fixedRateTimer("Download Checker ${fileToDownload.fileName}",false, 0, 60_000){
             async {
+                val progress = inputStream.getProgress()
                 feedback(actionId,
                         DeplFdbkReq.Sts.Exc.proceeding,
                         DeplFdbkReq.Sts.Rslt.Prgrs(0,0),
-                        DeplFdbkReq.Sts.Rslt.Fnsh.none, "Downloading file named ${fileToDownload.fileName} - ${inputStream.getProgress().toPercentage(2)}")
+                        DeplFdbkReq.Sts.Rslt.Fnsh.none, "Downloading file named ${fileToDownload.fileName} - ${progress.toPercentage(2)}")
+                notificationManager.send(EventListener.Event.Downloading(progress))
             }
         }
 

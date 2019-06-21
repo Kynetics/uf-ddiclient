@@ -9,7 +9,7 @@ interface EventListener {
             return this.javaClass.simpleName
         }
 
-        object Downloading: Event()
+        data class Downloading(val percentage:Double = 0.0): Event()
         data class StartDownloadFile(val fileName: String):Event()
         data class FileDownloaded(val fileDownloaded:String): Event()
         object AllFilesDownloaded: Event()
