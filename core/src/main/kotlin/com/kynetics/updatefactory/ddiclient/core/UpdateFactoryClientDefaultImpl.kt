@@ -18,7 +18,7 @@ class UpdateFactoryClientDefaultImpl: UpdateFactoryClient {
             directoryForArtifactsProvider: DirectoryForArtifactsProvider,
             configDataProvider: ConfigDataProvider,
             deploymentPermitProvider: DeploymentPermitProvider,
-            eventListeners: List<EventListener>,
+            messageListeners: List<MessageListener>,
             vararg updaters: Updater) {
         rootActor = AbstractActor.actorOf("rootActor", UFClientContext(
                 DdiClientDefaultImpl.of(updateFactoryClientData),
@@ -26,7 +26,7 @@ class UpdateFactoryClientDefaultImpl: UpdateFactoryClient {
                 configDataProvider,
                 PathResolver(directoryForArtifactsProvider),
                 deploymentPermitProvider,
-                eventListeners
+                messageListeners
         )){ RootActor.of(it)}
     }
 

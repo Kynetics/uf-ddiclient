@@ -5,7 +5,7 @@ import com.kynetics.updatefactory.ddiclient.core.PathResolver
 import com.kynetics.updatefactory.ddiclient.core.UpdaterRegistry
 import com.kynetics.updatefactory.ddiclient.core.api.DeploymentPermitProvider
 import com.kynetics.updatefactory.ddiclient.core.api.ConfigDataProvider
-import com.kynetics.updatefactory.ddiclient.core.api.EventListener
+import com.kynetics.updatefactory.ddiclient.core.api.MessageListener
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
@@ -132,7 +132,7 @@ data class UFClientContext(
         val configDataProvider: ConfigDataProvider,
         val pathResolver: PathResolver,
         val deploymentPermitProvider: DeploymentPermitProvider,
-        val eventListeners: List<EventListener>
+        val messageListeners: List<MessageListener>
 ): AbstractCoroutineContextElement(UFClientContext){
     companion object Key : CoroutineContext.Key<UFClientContext>
     override fun toString(): String = "UFClientContext($this)"

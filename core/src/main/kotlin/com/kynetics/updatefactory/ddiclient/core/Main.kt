@@ -38,11 +38,11 @@ fun main() = runBlocking {
 
 
     val clientData= UpdateFactoryClientData(
-            "Default",
-            "Target4",
-            "http://localhost:8081",
+            "ABA",
+            "test-rc2",
+            "https://stage.updatefactory.io",
             UpdateFactoryClientData.ServerType.UPDATE_FACTORY,
-            "66076ab945a127dd80b15e9011995109")
+            "4625fea04ef2dea436c9fe342dbc2586")
 
 /*
     val clientData= UpdateFactoryClientData(
@@ -67,9 +67,9 @@ fun main() = runBlocking {
                     return test
                 }
             },
-            listOf(object : EventListener{
-                override fun onEvent(event: EventListener.Event) {
-                    println(event)
+            listOf(object : MessageListener{
+                override fun onMessage(message: MessageListener.Message) {
+                    println(message)
                 }
             }),
             object : Updater { override fun apply(modules: Set<Updater.SwModuleWithPath>, messenger: Updater.Messenger): Updater.UpdateResult {

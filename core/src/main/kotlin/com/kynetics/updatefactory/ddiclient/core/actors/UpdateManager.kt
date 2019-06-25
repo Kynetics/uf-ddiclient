@@ -6,7 +6,7 @@ import com.kynetics.updatefactory.ddiclient.core.api.Updater
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.In.DeploymentFeedback
-import com.kynetics.updatefactory.ddiclient.core.api.EventListener
+import com.kynetics.updatefactory.ddiclient.core.api.MessageListener
 
 @UseExperimental(ObsoleteCoroutinesApi::class)
 class UpdateManager
@@ -22,7 +22,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
 
             is DeploymentInfo -> {
                 LOG.info("START UPDATING!!!")
-                notificationManager.send(EventListener.Event.Updating)
+                notificationManager.send(MessageListener.Message.State.Updating)
                 val updaters = registry.allUpdatersWithSwModulesOrderedForPriority(msg.info.deployment.chunks)
                 val details = mutableListOf("Details:")
                 val updaterError = updaters
@@ -53,7 +53,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                             DeplFdbkReq.Sts.Rslt.Prgrs(updaters.size, updaterError[0].first),
                             DeplFdbkReq.Sts.Rslt.Fnsh.failure,
                             "Update failed")
-                    notificationManager.send(EventListener.Event.UpdateFinished(successApply = false, details = details))
+                    notificationManager.send(MessageListener.Message.Event.UpdateFinished(successApply = false, details = details))
                 } else {
                     parent!!.send(DeploymentManager.Companion.Message.UpdateFinished)
                     sendFeedback(msg.info.id,
@@ -61,7 +61,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                             DeplFdbkReq.Sts.Rslt.Prgrs(updaters.size, updaters.size),
                             DeplFdbkReq.Sts.Rslt.Fnsh.success,
                             "Update finished")
-                    notificationManager.send(EventListener.Event.UpdateFinished(successApply = true, details = details))
+                    notificationManager.send(MessageListener.Message.Event.UpdateFinished(successApply = true, details = details))
                 }
             }
 

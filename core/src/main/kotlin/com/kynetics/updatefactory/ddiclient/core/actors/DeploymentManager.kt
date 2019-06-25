@@ -10,7 +10,7 @@ import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Compan
 import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.Out.DeploymentInfo
 import com.kynetics.updatefactory.ddiclient.core.actors.DeploymentManager.Companion.Message.*
 import com.kynetics.updatefactory.ddiclient.core.api.DeploymentPermitProvider
-import com.kynetics.updatefactory.ddiclient.core.api.EventListener
+import com.kynetics.updatefactory.ddiclient.core.api.MessageListener
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.async
@@ -28,7 +28,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
         suspend fun attempt(msg:DeploymentInfo){
             LOG.info("Waiting authorization to download")
             become(waitingDownloadAuthorization(state.copy(deplBaseResp = msg.info)))
-            notificationManager.send(EventListener.Event.WaitingDownloadAuthorization)
+            notificationManager.send(MessageListener.Message.State.WaitingDownloadAuthorization)
             async(Dispatchers.IO) {
                 channel.send(
                         if (authRequest.downloadAllowed()) DownloadGranted else DownloadDenied
@@ -106,7 +106,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
             msg is DownloadFinished &&  state.updateIs(attempt) -> {
                 LOG.info("Waiting authorization to update")
                 become(waitingUpdateAuthorization(state))
-                notificationManager.send(EventListener.Event.WaitingUpdateAuthorization)
+                notificationManager.send(MessageListener.Message.State.WaitingUpdateAuthorization)
                 async(Dispatchers.IO) {
                     channel.send(
                             if (authRequest.updateAllowed()) UpdateGranted else UpdateDenied
@@ -203,7 +203,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
     private suspend fun stopUpdate() {
         LOG.info("Stopping update")
         channel.close()
-        notificationManager.send(EventListener.Event.UpdateCancelled)
+        notificationManager.send(MessageListener.Message.State.CancellingUpdate)
         parent!!.send(UpdateStopped)
     }
 

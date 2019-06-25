@@ -8,7 +8,7 @@ import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import com.kynetics.updatefactory.ddiclient.core.actors.ActionManager.Companion.Message.*
 import com.kynetics.updatefactory.ddiclient.core.actors.DeploymentManager.Companion.Message.*
-import com.kynetics.updatefactory.ddiclient.core.api.EventListener
+import com.kynetics.updatefactory.ddiclient.core.api.MessageListener
 import org.joda.time.Duration
 
 @UseExperimental(ObsoleteCoroutinesApi::class)
@@ -72,7 +72,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                         CnclFdbkReq.newInstance(msg.info.cancelAction.stopId,
                                 CnclFdbkReq.Sts.Exc.closed,
                                 CnclFdbkReq.Sts.Rslt.Fnsh.success)))
-                notificationManager.send(EventListener.Event.UpdateCancelled)
+                notificationManager.send(MessageListener.Message.State.CancellingUpdate)
                 connectionManager.send(In.SetPing(null))
             }
 
@@ -104,7 +104,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
             }
 
             msg is NoAction ->{
-                notificationManager.send(EventListener.Event.Idle)
+                notificationManager.send(MessageListener.Message.State.Waiting)
             }
 
             msg is ErrMsg -> {

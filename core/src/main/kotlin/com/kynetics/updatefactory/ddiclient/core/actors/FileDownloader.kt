@@ -3,7 +3,7 @@ package com.kynetics.updatefactory.ddiclient.core.actors
 import com.kynetics.updatefactory.ddiapiclient.api.DdiClient
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq
 import com.kynetics.updatefactory.ddiclient.core.actors.FileDownloader.Companion.Message.*
-import com.kynetics.updatefactory.ddiclient.core.api.EventListener
+import com.kynetics.updatefactory.ddiclient.core.api.MessageListener
 import com.kynetics.updatefactory.ddiclient.core.inputstream.FilterInputStreamWithProgress
 import com.kynetics.updatefactory.ddiclient.core.md5
 import kotlinx.coroutines.ObsoleteCoroutinesApi
@@ -12,7 +12,6 @@ import kotlinx.coroutines.launch
 import java.io.File
 import java.text.NumberFormat
 import java.util.concurrent.ArrayBlockingQueue
-import java.util.concurrent.BlockingQueue
 import kotlin.concurrent.fixedRateTimer
 
 
@@ -35,7 +34,7 @@ private constructor(scope: ActorScope,
                     parent!!.send(AlreadyDownloaded(channel, fileToDownload.md5))
                 } else {
                     become(downloading(state))
-                    notificationManager.send(EventListener.Event.StartDownloadFile(fileToDownload.md5))
+                    notificationManager.send(MessageListener.Message.Event.StartDownloadFile(fileToDownload.fileName))
                     tryDownload(state)
                 }
             }
@@ -56,20 +55,20 @@ private constructor(scope: ActorScope,
 
             is FileChecked -> {
                 parent!!.send(Success(channel, fileToDownload.md5))
-                notificationManager.send(EventListener.Event.FileDownloaded(fileToDownload.md5))
+                notificationManager.send(MessageListener.Message.Event.FileDownloaded(fileToDownload.fileName))
             }
 
             is TrialExhausted -> {
                 val errors = state.errors.toMutableList()
                 errors.add(0,"trials exhausted due to errors (${fileToDownload.fileName})")
                 parent!!.send(Error(channel, fileToDownload.md5, errors))
-                notificationManager.send(EventListener.Event.Error(errors))
+                notificationManager.send(MessageListener.Message.State.Error(errors))
             }
 
             is RetryDownload     -> {
                 val errorMessage = "retry download due to: ${msg.cause}"
                 parent!!.send(Info(channel, fileToDownload.md5, errorMessage))
-                notificationManager.send(EventListener.Event.Error(listOf(errorMessage, "Remaining attempts: ${state.remainingAttempts}")))
+                notificationManager.send(MessageListener.Message.State.Error(listOf(errorMessage, "Remaining attempts: ${state.remainingAttempts}")))
                 val newState = state.copy(remainingAttempts = state.remainingAttempts-1, errors = state.errors+msg.cause)
                 become(downloading(newState))
                 tryDownload(newState)
@@ -115,7 +114,7 @@ private constructor(scope: ActorScope,
 
         val queue = ArrayBlockingQueue<Double>(10, true, (1..9).map { it.toDouble() / 10 })
 
-        val timer = fixedRateTimer("Download Checker ${fileToDownload.fileName}",false, 0, 60_000){
+        val timer = fixedRateTimer("Download Checker ${fileToDownload.fileName}",false, 60_000, 60_000){
             async {
                 val progress = inputStream.getProgress()
                 val limit = queue.peek() ?: 1.0
@@ -128,7 +127,7 @@ private constructor(scope: ActorScope,
                         queue.poll()
                     }
                 }
-                notificationManager.send(EventListener.Event.Downloading(progress))
+                notificationManager.send(MessageListener.Message.Event.DownloadProgress(fileToDownload.fileName, progress))
             }
         }
 

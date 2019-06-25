@@ -2,7 +2,7 @@ package com.kynetics.updatefactory.ddiclient.core.test
 
 import com.kynetics.updatefactory.ddiclient.core.UpdateFactoryClientDefaultImpl
 import com.kynetics.updatefactory.ddiclient.core.api.*
-import com.kynetics.updatefactory.ddiclient.core.api.EventListener
+import com.kynetics.updatefactory.ddiclient.core.api.MessageListener
 import com.kynetics.updatefactory.ddiclient.core.test.TestUtils.basic
 import com.kynetics.updatefactory.ddiclient.core.test.TestUtils.gatewayToken
 import com.kynetics.updatefactory.ddiclient.core.test.TestUtils.getDownloadDirectoryFromActionId
@@ -27,7 +27,7 @@ abstract class AbstractClientTest{
             directoryDataProvider:DirectoryForArtifactsProvider = TestUtils.directoryDataProvider,
             configDataProvider: ConfigDataProvider = TestUtils.configDataProvider,
             updater: Updater = TestUtils.updater,
-            eventListeners: List<EventListener> = emptyList(),
+            messageListeners: List<MessageListener> = emptyList(),
             deploymentPermitProvider: DeploymentPermitProvider = object : DeploymentPermitProvider{}): (String) -> UpdateFactoryClient = { targetId ->
         val clientData= UpdateFactoryClientData(
                 tenantName,
@@ -38,15 +38,15 @@ abstract class AbstractClientTest{
 
         val client = UpdateFactoryClientDefaultImpl()
 
-        val eventListener = object : EventListener {
-            override fun onEvent(event: EventListener.Event) {
-                when (event){
+        val eventListener = object : MessageListener {
+            override fun onMessage(message: MessageListener.Message) {
+                when (message){
 
-                    is EventListener.Event.UpdateFinished, EventListener.Event.UpdateCancelled -> {
+                    is MessageListener.Message.Event.UpdateFinished, MessageListener.Message.State.CancellingUpdate -> {
                         queue.poll().invoke()
                     }
 
-                    else -> { println(event) }
+                    else -> { println(message) }
                 }
             }
         }
@@ -56,7 +56,7 @@ abstract class AbstractClientTest{
                 directoryDataProvider,
                 configDataProvider,
                 deploymentPermitProvider,
-                listOf(eventListener, *eventListeners.toTypedArray()),
+                listOf(eventListener, *messageListeners.toTypedArray()),
                 updater
         )
         client

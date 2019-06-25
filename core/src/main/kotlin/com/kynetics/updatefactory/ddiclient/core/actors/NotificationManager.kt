@@ -1,19 +1,19 @@
 package com.kynetics.updatefactory.ddiclient.core.actors
 
-import com.kynetics.updatefactory.ddiclient.core.api.EventListener
+import com.kynetics.updatefactory.ddiclient.core.api.MessageListener
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 
 @UseExperimental(ObsoleteCoroutinesApi::class)
 class NotificationManager
 private constructor(scope: ActorScope): AbstractActor(scope) {
 
-    private val listeners = coroutineContext[UFClientContext]!!.eventListeners
+    private val listeners = coroutineContext[UFClientContext]!!.messageListeners
 
     private fun defaultReceive():Receive = { msg ->
 
         when (msg) {
 
-            is EventListener.Event -> listeners.forEach { it.onEvent(msg) }
+            is MessageListener.Message -> listeners.forEach { it.onMessage(msg) }
 
             else -> unhandled(msg)
 

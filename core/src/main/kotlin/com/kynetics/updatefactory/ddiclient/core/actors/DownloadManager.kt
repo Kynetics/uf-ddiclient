@@ -20,7 +20,7 @@ import com.kynetics.updatefactory.ddiclient.core.actors.DownloadManager.Companio
 import com.kynetics.updatefactory.ddiclient.core.actors.DownloadManager.Companion.State.Download.State.Status.*
 import com.kynetics.updatefactory.ddiclient.core.actors.FileDownloader.Companion.FileToDownload
 import com.kynetics.updatefactory.ddiclient.core.actors.FileDownloader.Companion.Message.*
-import com.kynetics.updatefactory.ddiclient.core.api.EventListener
+import com.kynetics.updatefactory.ddiclient.core.api.MessageListener
 import kotlinx.coroutines.*
 
 @UseExperimental(ObsoleteCoroutinesApi::class)
@@ -38,7 +38,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
 
             is DeploymentInfo -> {
                 clean(msg.info.id)
-                notificationManager.send(EventListener.Event.Downloading())
+                notificationManager.send(MessageListener.Message.State.Downloading)
                 val md5s = md5OfFilesToBeDownloaded(msg.info)
                 if(md5s.isNotEmpty()){
                     val dms = createDownloadsManagers(msg.info, md5s)
@@ -91,7 +91,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
             }
             downloads.any { it.state.status == ERROR } -> {
                 feedback(state.deplBaseResp.id, closed, progress, failure, message)
-                notificationManager.send(EventListener.Event.UpdateFinished(successApply = false,
+                notificationManager.send(MessageListener.Message.Event.UpdateFinished(successApply = false,
                         details = listOf(message)))
                 parent!!.send(DownloadFailed(listOf(message)))
             }
@@ -99,7 +99,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 feedback(state.deplBaseResp.id, proceeding, progress, none, message)
                 feedback(state.deplBaseResp.id, proceeding, progress, none, "successfully downloaded all files")
                 newState.downloads.values.forEach{it.downloader.close()}
-                notificationManager.send(EventListener.Event.AllFilesDownloaded)
+                notificationManager.send(MessageListener.Message.Event.AllFilesDownloaded)
                 parent!!.send(DownloadFinished)
                 channel.close()
             }

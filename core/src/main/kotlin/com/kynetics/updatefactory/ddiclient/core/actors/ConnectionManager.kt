@@ -6,7 +6,7 @@ import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Compan
 import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.Out
 import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.Out.*
 import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.Out.Err.ErrMsg
-import com.kynetics.updatefactory.ddiclient.core.api.EventListener
+import com.kynetics.updatefactory.ddiclient.core.api.MessageListener
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.launch
 import org.joda.time.Duration
@@ -61,7 +61,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                 val s = state.copy(lastPing = Instant.now())
                 try {
 
-                    notificationManager.send(EventListener.Event.Polling)
+                    notificationManager.send(MessageListener.Message.Event.Polling)
 
                     client.onControllerActionsChange(state.controllerBaseEtag){ res, newControllerBaseEtag ->
                         if(res.requireConfigData()){
@@ -102,7 +102,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                     this.send(ErrMsg(errorDetails), state)
                     LOG.warn(t.message, t)
                     become(runningReceive(startPing(s.nextBackoff())))
-                    notificationManager.send(EventListener.Event.Error(listOf(errorDetails)))
+                    notificationManager.send(MessageListener.Message.State.Error(listOf(errorDetails)))
                 }
             }
 
