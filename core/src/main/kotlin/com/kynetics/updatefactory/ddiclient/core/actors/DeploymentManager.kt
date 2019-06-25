@@ -20,6 +20,7 @@ import kotlinx.coroutines.async
 class DeploymentManager
 private constructor(scope: ActorScope): AbstractActor(scope) {
 
+    private val registry = coroutineContext[UFClientContext]!!.registry
     private val authRequest: DeploymentPermitProvider = coroutineContext[UFClientContext]!!.deploymentPermitProvider
     private val connectionManager = coroutineContext[CMActor]!!.ref
     private val notificationManager = coroutineContext[NMActor]!!.ref
@@ -38,7 +39,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
 
         when{
 
-            msg is DeploymentInfo && msg.downloadIs(forced)  -> {
+            msg is DeploymentInfo && (msg.downloadIs(forced) || !registry.currentUpdateIsCancellable())  -> {
                 become(downloadingReceive(state.copy(deplBaseResp = msg.info)))
                 child("downloadManager")!!.send(msg)
             }
@@ -98,7 +99,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
     private fun downloadingReceive(state: State): Receive = { msg ->
         when{
 
-            msg is DownloadFinished && state.updateIs(forced) -> {
+            msg is DownloadFinished && (state.updateIs(forced) || !registry.currentUpdateIsCancellable() )-> {
                 become(updatingReceive(state))
                 child("updateManager")!!.send(DeploymentInfo(state.deplBaseResp!!))
             }
