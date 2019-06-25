@@ -40,7 +40,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                                     }
                                 }
                             })
-                            details.add("********")
+                            details.add("Feedback updater named ${it.updater.javaClass.simpleName}")
                             details.addAll(updateResult.details)
                             updateResult.success
                         }
@@ -52,7 +52,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                             DeplFdbkReq.Sts.Exc.closed,
                             DeplFdbkReq.Sts.Rslt.Prgrs(updaters.size, updaterError[0].first),
                             DeplFdbkReq.Sts.Rslt.Fnsh.failure,
-                            "Update failed")
+                            *details.toTypedArray())
                     notificationManager.send(MessageListener.Message.Event.UpdateFinished(successApply = false, details = details))
                 } else {
                     parent!!.send(DeploymentManager.Companion.Message.UpdateFinished)
@@ -60,7 +60,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                             DeplFdbkReq.Sts.Exc.closed,
                             DeplFdbkReq.Sts.Rslt.Prgrs(updaters.size, updaters.size),
                             DeplFdbkReq.Sts.Rslt.Fnsh.success,
-                            "Update finished")
+                            *details.toTypedArray())
                     notificationManager.send(MessageListener.Message.Event.UpdateFinished(successApply = true, details = details))
                 }
             }
