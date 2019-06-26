@@ -10,7 +10,7 @@ interface MessageListener {
         }
 
         sealed class State(description: String):Message(description){
-            object Downloading: State("Client are downloading artifacts from server")
+            object Downloading: State("Client is downloading artifacts from server")
             object Updating: State("The update process is started. Any request to cancel an update will be rejected")
             object CancellingUpdate: State("Last update request is being cancelled")
             object WaitingDownloadAuthorization: State("Waiting authorization to start download")
@@ -20,7 +20,7 @@ interface MessageListener {
         }
 
         sealed class Event(description: String):Message(description){
-            object Polling: Event("Client are contacting server to retrieve new action to execute")
+            object Polling: Event("Client is contacting server to retrieve new action to execute")
             data class StartDownloadFile(val fileName: String): Event("A file downloading is started")
             data class FileDownloaded(val fileDownloaded:String): Event("A file is downloaded")
             data class DownloadProgress(val fileName: String, val percentage:Double = 0.0): Event("Percent of file downloaded")
