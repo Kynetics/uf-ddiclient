@@ -40,8 +40,10 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                                     }
                                 }
                             })
-                            details.add("Feedback updater named ${it.updater.javaClass.simpleName}")
-                            details.addAll(updateResult.details)
+                            if(updateResult.details.isNotEmpty()) {
+                                details.add("Feedback updater named ${it.updater.javaClass.simpleName}")
+                                details.addAll(updateResult.details)
+                            }
                             updateResult.success
                         }
 
