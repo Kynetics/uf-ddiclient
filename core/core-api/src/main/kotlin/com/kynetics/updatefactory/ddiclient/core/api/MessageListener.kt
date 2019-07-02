@@ -15,7 +15,6 @@ interface MessageListener {
             object CancellingUpdate: State("Last update request is being cancelled")
             object WaitingDownloadAuthorization: State("Waiting authorization to start download")
             object WaitingUpdateAuthorization: State("Waiting authorization to start update")
-            data class Error(val details:List<String>) : State("An error is occurred")
             object Waiting: State("There isn't any request from server")
         }
 
@@ -26,6 +25,7 @@ interface MessageListener {
             data class DownloadProgress(val fileName: String, val percentage:Double = 0.0): Event("Percent of file downloaded")
             object AllFilesDownloaded: Event("All file needed are downloaded")
             data class UpdateFinished(val successApply: Boolean, val details:List<String>): Event("The update is finished")
+            data class Error(val details:List<String>) : Event("An error is occurred")
         }
 
     }

@@ -102,7 +102,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                     this.send(ErrMsg(errorDetails), state)
                     LOG.warn(t.message, t)
                     become(runningReceive(startPing(s.nextBackoff())))
-                    notificationManager.send(MessageListener.Message.State.Error(listOf(errorDetails)))
+                    notificationManager.send(MessageListener.Message.Event.Error(listOf(errorDetails)))
                 }
             }
 

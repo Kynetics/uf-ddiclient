@@ -62,13 +62,13 @@ private constructor(scope: ActorScope,
                 val errors = state.errors.toMutableList()
                 errors.add(0,"trials exhausted due to errors (${fileToDownload.fileName})")
                 parent!!.send(Error(channel, fileToDownload.md5, errors))
-                notificationManager.send(MessageListener.Message.State.Error(errors))
+                notificationManager.send(MessageListener.Message.Event.Error(errors))
             }
 
             is RetryDownload     -> {
                 val errorMessage = "retry download due to: ${msg.cause}"
                 parent!!.send(Info(channel, fileToDownload.md5, errorMessage))
-                notificationManager.send(MessageListener.Message.State.Error(listOf(errorMessage, "Remaining attempts: ${state.remainingAttempts}")))
+                notificationManager.send(MessageListener.Message.Event.Error(listOf(errorMessage, "Remaining attempts: ${state.remainingAttempts}")))
                 val newState = state.copy(remainingAttempts = state.remainingAttempts-1, errors = state.errors+msg.cause)
                 become(downloading(newState))
                 tryDownload(newState)
