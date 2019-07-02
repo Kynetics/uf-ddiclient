@@ -20,6 +20,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
 
     private val client:DdiClient = coroutineContext[UFClientContext]!!.ddiClient
     private val notificationManager = coroutineContext[NMActor]!!.ref
+    private val configDataProvider = coroutineContext[UFClientContext]!!.configDataProvider
 
     private fun stoppedReceive(state: State):Receive =  { msg ->
         when(msg) {
@@ -64,7 +65,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
                     notificationManager.send(MessageListener.Message.Event.Polling)
 
                     client.onControllerActionsChange(state.controllerBaseEtag){ res, newControllerBaseEtag ->
-                        if(res.requireConfigData()){
+                        if(res.requireConfigData() || configDataProvider.isUpdated()){
                             this.send(ConfigDataRequired, state)
                         }
 
@@ -126,7 +127,9 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
 
             is ConfigDataFeedback -> {
                 try {
-                    client.putConfigData(msg.cfgDataReq)
+                    client.putConfigData(msg.cfgDataReq){
+                        configDataProvider.onConfigDataUpdate()
+                    }
                 } catch (t: Throwable) {
                     this.send(ErrMsg("exception: ${t.javaClass}"+ if(t.message != null) " message: ${t.message}" else ""), state)
                     LOG.warn(t.message, t)

@@ -4,4 +4,7 @@ interface ConfigDataProvider {
 
     fun configData():Map<String, String> = emptyMap()
 
+    fun isUpdated(): Boolean = false
+
+    fun onConfigDataUpdate() {}
 }

@@ -117,7 +117,7 @@ interface DdiRestApi {
     fun postDeploymentActionFeedback(@Path("tenant") tenant: String,
                                      @Path("controllerId") controllerId: String,
                                      @Path("actionId") actionId: String?,
-                                     @Body feedback: DeplFdbkReq): Deferred<Unit>
+                                     @Body feedback: DeplFdbkReq): Deferred<Response<Unit>>
 
     /**
      * This is the feedback channel for the config data action.
@@ -136,7 +136,7 @@ interface DdiRestApi {
             + DdiRestConstants.CONFIG_DATA_ACTION)
     fun putConfigData(@Path("tenant") tenant: String,
                       @Path("controllerId") controllerId: String,
-                      @Body configData: CfgDataReq): Deferred<Unit>
+                      @Body configData: CfgDataReq): Deferred<Response<Unit>>
 
     /**
      * RequestMethod.GET method for the [DdiCancel] action.

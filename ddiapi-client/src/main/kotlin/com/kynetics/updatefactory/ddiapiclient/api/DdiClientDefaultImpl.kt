@@ -30,9 +30,12 @@ class DdiClientDefaultImpl private constructor(private val ddiRestApi: DdiRestAp
     }
 
 
-    override suspend fun putConfigData(data: CfgDataReq){
+    override suspend fun putConfigData(data: CfgDataReq, onSuccessConfigData: () -> Unit ){
         LOG.debug("putConfigData({})",CfgDataReq)
-        ddiRestApi.putConfigData(tenant, controllerId, data).await()
+        val responseCode = ddiRestApi.putConfigData(tenant, controllerId, data).await().code()
+        if(responseCode in 200 until 300){
+            onSuccessConfigData.invoke()
+        }
     }
 
 

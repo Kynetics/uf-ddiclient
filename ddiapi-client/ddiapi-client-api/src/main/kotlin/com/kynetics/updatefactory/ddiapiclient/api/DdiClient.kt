@@ -23,7 +23,7 @@ interface DdiClient {
 
     suspend fun postCancelActionFeedback(actionId: String, feedback: CnclFdbkReq)
 
-    suspend fun putConfigData(data: CfgDataReq)
+    suspend fun putConfigData(data: CfgDataReq, onSuccessConfigData: () -> Unit)
 
     suspend fun downloadArtifact(url: String): InputStream
 }
