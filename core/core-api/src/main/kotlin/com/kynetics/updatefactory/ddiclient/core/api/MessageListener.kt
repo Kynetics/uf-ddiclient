@@ -10,7 +10,9 @@ interface MessageListener {
         }
 
         sealed class State(description: String):Message(description){
-            object Downloading: State("Client is downloading artifacts from server")
+            data class Downloading(val artifacts:List<Artifact>): State("Client is downloading artifacts from server"){
+                data class Artifact(val name:String, val size:Long, val md5:String)
+            }
             object Updating: State("The update process is started. Any request to cancel an update will be rejected")
             object CancellingUpdate: State("Last update request is being cancelled")
             object WaitingDownloadAuthorization: State("Waiting authorization to start download")

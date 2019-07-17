@@ -38,9 +38,18 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
 
             is DeploymentInfo -> {
                 clean(msg.info.id)
-                notificationManager.send(MessageListener.Message.State.Downloading)
                 val md5s = md5OfFilesToBeDownloaded(msg.info)
+
                 if(md5s.isNotEmpty()){
+
+                    notificationManager.send(
+                            MessageListener.Message.State.Downloading(
+                                    msg.info.deployment.chunks.flatMap { it.artifacts }.filter { md5s.contains(it.hashes.md5) }.map { at ->
+                                        MessageListener.Message.State.Downloading.Artifact(at.filename, at.size, at.hashes.md5)
+                                    }.toList()
+                            )
+                    )
+
                     val dms = createDownloadsManagers(msg.info, md5s)
                     become(downloadingReceive(State(msg.info, dms)))
                     feedback(msg.info.id, proceeding,Prgrs(dms.size, 0), none,
