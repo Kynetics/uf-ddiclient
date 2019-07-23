@@ -17,7 +17,7 @@ interface MessageListener {
             object CancellingUpdate: State("Last update request is being cancelled")
             object WaitingDownloadAuthorization: State("Waiting authorization to start download")
             object WaitingUpdateAuthorization: State("Waiting authorization to start update")
-            object Waiting: State("There isn't any request from server")
+            object Idle: State("Client is waiting for new requests from server")
         }
 
         sealed class Event(description: String):Message(description){

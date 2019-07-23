@@ -104,7 +104,7 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
             }
 
             msg is NoAction ->{
-                notificationManager.send(MessageListener.Message.State.Waiting)
+                notificationManager.send(MessageListener.Message.State.Idle)
             }
 
             msg is ErrMsg -> {
