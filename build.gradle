@@ -200,6 +200,7 @@ task installClientSideGitHooks(type: Exec, group: "git-hooks") {
 }
 
 detekt {
+    config = files("$rootDir/default-detekt-config.yml", "$rootDir/detekt-config.yml")
     toolVersion = "1.0.0-RC16"
     input = files("$projectDir")
     filters = ".*/resources/.*,.*/build/.*"
