@@ -1,0 +1,46 @@
+package com.kynetics.updatefactory.ddiclient.core.actors
+
+import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.In.*
+import kotlinx.coroutines.ObsoleteCoroutinesApi
+import kotlin.coroutines.AbstractCoroutineContextElement
+import kotlin.coroutines.CoroutineContext
+
+@UseExperimental(ObsoleteCoroutinesApi::class)
+class RootActor
+private constructor(scope: ActorScope): AbstractActor(scope) {
+
+    private fun mainReceive(): Receive = { msg ->
+        when(msg) {
+            is Start, ForcePing -> child("connectionManager")!!.send(msg)
+
+            is Stop -> {
+                child("connectionManager")!!.send(msg)
+                channel.close()
+            }
+
+            else -> unhandled(msg)
+        }
+    }
+
+    init {
+        val nmActor = actorOf("notificationManager"){ NotificationManager.of(it)}
+        val cmActor = actorOf("connectionManager", NMActor(nmActor)){ ConnectionManager.of(it)}
+        val ctxt = CMActor(cmActor).plus(NMActor(nmActor))
+        actorOf("actionManager", ctxt){ ActionManager.of(it)}
+        become(mainReceive())
+    }
+
+    companion object {
+        fun of(scope: ActorScope) = RootActor(scope)
+    }
+}
+
+data class CMActor(val ref:ActorRef): AbstractCoroutineContextElement(CMActor){
+    companion object Key : CoroutineContext.Key<CMActor>
+    override fun toString(): String = "CMActor($ref)"
+}
+
+data class NMActor(val ref:ActorRef): AbstractCoroutineContextElement(NMActor){
+    companion object Key : CoroutineContext.Key<NMActor>
+    override fun toString(): String = "NMActor($ref)"
+}
