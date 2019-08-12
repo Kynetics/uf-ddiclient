@@ -20,7 +20,7 @@ repositories {
 
 final def deps = gradle.settings.app_dependencies
 final def tdeps = gradle.settings.test_dependencies
-final def app_version = '1.0.0-rc2'
+final def app_version = '1.0.0-rc3'
 
 
 subprojects {
