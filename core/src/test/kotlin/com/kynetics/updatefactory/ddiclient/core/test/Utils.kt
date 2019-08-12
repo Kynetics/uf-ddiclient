@@ -5,8 +5,6 @@ import com.kynetics.updatefactory.ddiclient.core.PathResolver
 import com.kynetics.updatefactory.ddiclient.core.api.ConfigDataProvider
 import com.kynetics.updatefactory.ddiclient.core.api.DirectoryForArtifactsProvider
 import com.kynetics.updatefactory.ddiclient.core.api.Updater
-import java.io.File
-import java.util.concurrent.Executors
 import kotlinx.coroutines.Deferred
 import okhttp3.Credentials
 import okhttp3.OkHttpClient
@@ -16,6 +14,8 @@ import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Path
+import java.io.File
+import java.util.concurrent.Executors
 
 /**
  * @author Daniele Sergio
@@ -146,7 +146,7 @@ object TestUtils {
             ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.running, listOf("Start downloading 1 files")))
 
     val endMessagesOnSuccessUpdate = arrayOf(
-            ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.finished, listOf("Update finished")),
+            ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.finished, listOf("Details:")),
             ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.running, listOf("Update applied")),
             ActionStatus.ContentEntry(ActionStatus.ContentEntry.Type.running, listOf("Applying the update..."))
     )
