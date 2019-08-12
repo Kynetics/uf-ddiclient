@@ -1,6 +1,6 @@
 sudo: required
 language: java
-jdk: oraclejdk8
+jdk: openjdk8
 branches:
   only:
   - master
@@ -17,6 +17,9 @@ cache:
   - "$HOME/.gradle/wrapper/"
   - "$HOME/.android/build-cache"
 
+script:
+  - "./gradlew clean build -x test"
+
 deploy:
   provider: releases
   overwrite: true
@@ -25,8 +28,8 @@ deploy:
   api_key:
     secure: "xQaujpMdRJ0IQFE1wbmdJ592+rzyWHAUrPi6ECZr0jDa4h7gnMCBfVOctAsvvMGUxtrHrhUYzXTcHStvVhf8Wo0W+onC6ZHMKjO3VzXep7rQ8V+pAZt2AVCPrlkxZlzXvnMtAKH/EyzWKR1VNU9PvAywFVpgv14vO9yW18Yac/rJIbQUyI7P9vatq5O19P/Leg5Unuut2ZCEFXhMCJW2xTFmFFyWsFVFK8MfbVbXLVVu55hbxxghArWfBWW0fi9mBntsagAjxxVKn81debje4oL+BW2AFEQTS3yYLz0Nd40f7PtpxwAvIoYaTpr4nsmnvUJc5rjBtSRsJosSvF4owSW2XJRb5i1D5izLmkh8KHnPLh+gRALwX4vtoDZym/U4PsUJuY3uq8mTyV/tcxbF54Fd7dWQe0s1MA2Rx7ejHf/t6iHcIJMWnqewjD+W1RUd2YQep6VfxNUAfs/hS1F7CzR7hvuQzQICOiJasrvKqKkJP8qm3rb+hLDmBtA2KMJJD78jjBcXBLBSwzejmrIyfQgxlqOtkJdMSjXyzY+OwTjR4dg9RpS5zQ5oiiJ+f5P968V7lbexuf6KQAX62iud30+o8Vx41RziY4jVsOzmoN28y+A1uYD6YnCFrtQ309HJ13uElHulKf4VF7X5m4r73scwjE0uEaxYRYse5NI9F3s="
   file:
-  - "ddiclient-api/build/libs/*"
-  - "ddiclient-core/build/libs/*"
+  - "ddiapi-client/**/build/libs/*.jar"
+  - "core/**/build/libs/*.jar"
   on:
     branch: /^v\d+\.\d+(\.\d+)?(-\S*)?$/
     tags: true
