@@ -20,11 +20,10 @@ class Authentication private constructor(internal val type: AuthenticationType, 
     internal val headerValue: String
     internal val header: String
 
-    init{
+    init {
         headerValue = String.format(HEADER_VALUE_TEMPLATE, type.type, token)
         header = type.header
     }
-
 
     enum class AuthenticationType constructor(internal val type: String) {
         TARGET_TOKEN_AUTHENTICATION("TargetToken"),
@@ -32,7 +31,6 @@ class Authentication private constructor(internal val type: AuthenticationType, 
         ANONYMOUS_AUTHENTICATION("");
 
         internal val header = "Authorization"
-
     }
 
     companion object {

@@ -13,25 +13,21 @@ package com.kynetics.updatefactory.ddiapiclient.security
 import com.kynetics.updatefactory.ddiapiclient.api.DdiRestConstants.Companion.CONFIG_DATA_ACTION
 import com.kynetics.updatefactory.ddiapiclient.api.DdiRestConstants.Companion.TARGET_TOKEN_HEADER_NAME
 import com.kynetics.updatefactory.ddiapiclient.api.DdiRestConstants.Companion.TARGET_TOKEN_REQUEST_HEADER_NAME
-
-import okhttp3.Interceptor
-import okhttp3.Response
-
-import java.io.IOException
-import java.util.Objects
-
 import com.kynetics.updatefactory.ddiapiclient.security.Authentication.AuthenticationType.TARGET_TOKEN_AUTHENTICATION
 import com.kynetics.updatefactory.ddiapiclient.security.Authentication.Companion.newInstance
 import com.kynetics.updatefactory.ddiclient.core.api.TargetTokenFoundListener
+import java.io.IOException
+import okhttp3.Interceptor
+import okhttp3.Response
 
 /**
  * @author Daniele Sergio
  */
-class UpdateFactoryAuthenticationRequestInterceptor(private val authentications: MutableSet<Authentication>,
-                                                    private val targetTokenFoundListener: TargetTokenFoundListener =
-                                                            object : TargetTokenFoundListener{}
+class UpdateFactoryAuthenticationRequestInterceptor(
+    private val authentications: MutableSet<Authentication>,
+    private val targetTokenFoundListener: TargetTokenFoundListener =
+            object : TargetTokenFoundListener {}
 ) : Interceptor {
-
 
     @Throws(IOException::class)
     override fun intercept(chain: Interceptor.Chain): Response {

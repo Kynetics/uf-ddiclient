@@ -10,17 +10,17 @@ class PathResolver(private val dfap: DirectoryForArtifactsProvider) {
         const val ROOT = "artifacts"
     }
 
-    fun fromArtifact(id: String):(artifact: Updater.SwModule.Artifact) -> String {
+    fun fromArtifact(id: String): (artifact: Updater.SwModule.Artifact) -> String {
         return { artifact ->
             File(dfap.directoryForArtifacts(), "$ROOT/$id/${artifact.hashes.md5}").absolutePath
         }
     }
 
-    fun baseDirectory():File{
+    fun baseDirectory(): File {
         return File(dfap.directoryForArtifacts(), ROOT)
     }
 
-    fun updateDir(actionId:String):File{
+    fun updateDir(actionId: String): File {
         return File(baseDirectory(), actionId)
     }
 }

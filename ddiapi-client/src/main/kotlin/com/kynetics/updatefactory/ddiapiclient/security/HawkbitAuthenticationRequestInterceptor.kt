@@ -10,18 +10,16 @@
 
 package com.kynetics.updatefactory.ddiapiclient.security
 
-import okhttp3.Interceptor
-import okhttp3.Response
-
 import java.io.IOException
 import java.util.ArrayList
 import java.util.Objects
+import okhttp3.Interceptor
+import okhttp3.Response
 
 /**
  * @author Daniele Sergio
  */
 class HawkbitAuthenticationRequestInterceptor(authentications: Set<Authentication>) : Interceptor {
-
 
     private val authentications: List<Authentication>
     private var authenticationUse = 0

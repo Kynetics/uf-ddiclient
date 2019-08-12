@@ -8,33 +8,38 @@ import org.joda.time.Instant
  *====================================================================================================================*/
 
 data class CnclFdbkReq(
-        val id: String,
-        val time: String,
-        val status: Sts){
+    val id: String,
+    val time: String,
+    val status: Sts
+) {
     data class Sts(
-            val execution: Exc,
-            val result: Rslt,
-            val details: List<String>) {
-        enum class Exc{
+        val execution: Exc,
+        val result: Rslt,
+        val details: List<String>
+    ) {
+        enum class Exc {
             closed,
             proceeding,
             canceled,
             scheduled,
             rejected,
-            resumed}
+            resumed }
         data class Rslt(
-                val finished: Fnsh){
-            enum class Fnsh{
+            val finished: Fnsh
+        ) {
+            enum class Fnsh {
                 success,
                 failure,
-                none}
+                none }
         }
     }
     companion object {
-        fun newInstance(id: String,
-                        execution: CnclFdbkReq.Sts.Exc,
-                        finished: CnclFdbkReq.Sts.Rslt.Fnsh,
-                        vararg messages: String):CnclFdbkReq {
+        fun newInstance(
+            id: String,
+            execution: CnclFdbkReq.Sts.Exc,
+            finished: CnclFdbkReq.Sts.Rslt.Fnsh,
+            vararg messages: String
+        ): CnclFdbkReq {
             return CnclFdbkReq(id, Instant.now().toString(), CnclFdbkReq.Sts(
                     execution,
                     CnclFdbkReq.Sts.Rslt(
@@ -46,40 +51,46 @@ data class CnclFdbkReq(
 }
 
 data class DeplFdbkReq(
-        val id: String,
-        val time: String,
-        val status: Sts) {
+    val id: String,
+    val time: String,
+    val status: Sts
+) {
     data class Sts(
-            val execution: Exc,
-            val result: Rslt,
-            val details: List<String>) {
+        val execution: Exc,
+        val result: Rslt,
+        val details: List<String>
+    ) {
         enum class Exc {
             closed,
             proceeding,
             canceled,
             scheduled,
             rejected,
-            resumed}
+            resumed }
         data class Rslt(
-                val finished: Fnsh,
-                val progress: Prgrs?) {
+            val finished: Fnsh,
+            val progress: Prgrs?
+        ) {
             enum class Fnsh {
                 success,
                 failure,
-                none}
+                none }
             data class Prgrs(
-                    val of: Int,
-                    val cnt: Int)
+                val of: Int,
+                val cnt: Int
+            )
         }
     }
 
     companion object {
-        fun newInstance(id: String,
-                        execution: Sts.Exc,
-                        progress: Sts.Rslt.Prgrs,
-                        finished: Sts.Rslt.Fnsh,
-                        vararg messages: String):DeplFdbkReq {
-            return DeplFdbkReq(id, Instant.now().toString(),Sts(
+        fun newInstance(
+            id: String,
+            execution: Sts.Exc,
+            progress: Sts.Rslt.Prgrs,
+            finished: Sts.Rslt.Fnsh,
+            vararg messages: String
+        ): DeplFdbkReq {
+            return DeplFdbkReq(id, Instant.now().toString(), Sts(
                     execution,
                     Sts.Rslt(
                             finished,
@@ -91,39 +102,42 @@ data class DeplFdbkReq(
 }
 
 data class CfgDataReq(
-        val id: String,
-        val time: String,
-        val status: Sts,
-        val data: Map<String,String>?,
-        val mode: Mod){
+    val id: String,
+    val time: String,
+    val status: Sts,
+    val data: Map<String, String>?,
+    val mode: Mod
+) {
     data class Sts(
-            val execution: Exc,
-            val result: Rslt,
-            val details: List<String>) {
-        enum class Exc{
+        val execution: Exc,
+        val result: Rslt,
+        val details: List<String>
+    ) {
+        enum class Exc {
             closed,
             proceeding,
             canceled,
             scheduled,
             rejected,
-            resumed}
+            resumed }
         data class Rslt(
-                val finished: Fnsh){
-            enum class Fnsh{
+            val finished: Fnsh
+        ) {
+            enum class Fnsh {
                 success,
                 failure,
-                none}
+                none }
         }
     }
-    enum class Mod{
+    enum class Mod {
         merge,
         replace,
         remove }
 
     companion object {
-        fun of(map: Map<String, String>?=null, mod: Mod) = CfgDataReq(
+        fun of(map: Map<String, String>? = null, mod: Mod) = CfgDataReq(
                 "",
-                "20140511T121314",//Instant.now().toString(),
+                "20140511T121314", // Instant.now().toString(),
                 Sts(
                         Sts.Exc.closed,
                         Sts.Rslt(
@@ -134,46 +148,47 @@ data class CfgDataReq(
                     mod
                 )
     }
-
 }
-
-
 
 /*======================================================================================================================
  *==== RESPONSES =======================================================================================================
  *====================================================================================================================*/
 
-
-
 data class CnclActResp(
-        val id: String,
-        val cancelAction: Act){
+    val id: String,
+    val cancelAction: Act
+) {
     data class Act(
-            val stopId: String
+        val stopId: String
     )
 }
 
 data class CtrlBaseResp(
-        val config: Cfg,
-        val _links: Lnks?) {
+    val config: Cfg,
+    val _links: Lnks?
+) {
     data class Cfg(
-            val polling: Polling){
+        val polling: Polling
+    ) {
         data class Polling(
-                val sleep: String)
+            val sleep: String
+        )
     }
     data class Lnks(
-            val deploymentBase: Lnk?,
-            val cancelAction: Lnk?,
-            val configData: Lnk?){
+        val deploymentBase: Lnk?,
+        val cancelAction: Lnk?,
+        val configData: Lnk?
+    ) {
         data class Lnk(
-                val href: String)
+            val href: String
+        )
     }
     fun requireConfigData() = _links?.configData != null
     fun requireDeployment() = _links?.deploymentBase != null
     fun requireCancel() = _links?.cancelAction != null
     fun deploymentActionId() = xxxAid("deploymentBase")
     fun cancelActionId() = xxxAid("cancelAction")
-    private fun xxxAid(pfx:String) =
+    private fun xxxAid(pfx: String) =
             ".*$pfx/([a-zA-Z0-9_]+)"
             .toRegex()
             .find(_links?.deploymentBase?.href ?: _links?.cancelAction?.href ?: "")
@@ -182,77 +197,88 @@ data class CtrlBaseResp(
 }
 
 data class DeplBaseResp(
-        val id: String,
-        val deployment: Depl,
-        val actionHistory: Hist?){
+    val id: String,
+    val deployment: Depl,
+    val actionHistory: Hist?
+) {
     data class Depl(
-            val download:Appl,
-            val update: Appl,
-            val maintenanceWindow: MaintWind,
-            val chunks: Set<Cnk>){
-        enum class Appl{
+        val download: Appl,
+        val update: Appl,
+        val maintenanceWindow: MaintWind,
+        val chunks: Set<Cnk>
+    ) {
+        enum class Appl {
             skip,
             attempt,
-            forced}
-        enum class MaintWind{
+            forced }
+        enum class MaintWind {
             available,
-            unavailable}
+            unavailable }
         data class Cnk(
-                val metadata:Set<Mtdt>?,
-                val part: String,
-                val name: String,
-                val version: String,
-                val artifacts: Set<Artfct>){
+            val metadata: Set<Mtdt>?,
+            val part: String,
+            val name: String,
+            val version: String,
+            val artifacts: Set<Artfct>
+        ) {
             data class Mtdt(
-                    val key: String,
-                    val value: String)
+                val key: String,
+                val value: String
+            )
             data class Artfct(
-                    val filename: String,
-                    val hashes: Hshs,
-                    val size: Long,
-                    val _links: Lnks){
+                val filename: String,
+                val hashes: Hshs,
+                val size: Long,
+                val _links: Lnks
+            ) {
                 data class Hshs(
-                        val sha1: String,
-                        val md5: String)
+                    val sha1: String,
+                    val md5: String
+                )
                 data class Lnks(
-                        val download: Lnk,
-                        val md5sum: Lnk,
-                        @SerializedName("download-http")
-                        val download_http: Lnk,
-                        @SerializedName("md5sum-http")
-                        val md5sum_http: Lnk){
+                    val download: Lnk,
+                    val md5sum: Lnk,
+                    @SerializedName("download-http")
+                    val download_http: Lnk,
+                    @SerializedName("md5sum-http")
+                    val md5sum_http: Lnk
+                ) {
                     data class Lnk(val href: String)
                 }
             }
         }
     }
     data class Hist(
-            val status: Sts?,
-            val messages: List<String>){
-        enum class Sts{
+        val status: Sts?,
+        val messages: List<String>
+    ) {
+        enum class Sts {
             CANCELED,
             WARNING,
             ERROR,
             FINISHED,
-            RUNNING}
+            RUNNING }
     }
 }
 
 data class ArtfctResp(
-        val filename: String,
-        val hashes: Hshs,
-        val size: Long,
-        val _links: Lnks){
+    val filename: String,
+    val hashes: Hshs,
+    val size: Long,
+    val _links: Lnks
+) {
     data class Hshs(
-            val sha1: String,
-            val md5: String)
+        val sha1: String,
+        val md5: String
+    )
     data class Lnks(
-            val download: Lnk,
-            val md5sum: Lnk,
-            @SerializedName("download-http")
-            val download_http: Lnk,
-            @SerializedName("md5sum-http")
-            val md5sum_http: Lnk){
+        val download: Lnk,
+        val md5sum: Lnk,
+        @SerializedName("download-http")
+        val download_http: Lnk,
+        @SerializedName("md5sum-http")
+        val md5sum_http: Lnk
+    ) {
         data class Lnk(val href: String)
     }
 }

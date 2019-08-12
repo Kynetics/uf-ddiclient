@@ -1,24 +1,29 @@
 package com.kynetics.updatefactory.ddiclient.core
 
-import com.kynetics.updatefactory.ddiclient.core.api.*
+import com.kynetics.updatefactory.ddiclient.core.api.ConfigDataProvider
+import com.kynetics.updatefactory.ddiclient.core.api.DeploymentPermitProvider
+import com.kynetics.updatefactory.ddiclient.core.api.DirectoryForArtifactsProvider
+import com.kynetics.updatefactory.ddiclient.core.api.MessageListener
+import com.kynetics.updatefactory.ddiclient.core.api.UpdateFactoryClientData
+import com.kynetics.updatefactory.ddiclient.core.api.Updater
+import java.io.File
+import java.security.DigestInputStream
+import java.security.MessageDigest
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.joda.time.Duration
-import java.io.File
-import java.security.DigestInputStream
-import java.security.MessageDigest
 
-suspend fun delay(duration:Duration)=delay(duration.millis)
+suspend fun delay(duration: Duration) = delay(duration.millis)
 
-fun File.md5():String{
+fun File.md5(): String {
     val md = MessageDigest.getInstance("MD5")
     val sb = StringBuilder()
 
     inputStream().use { fis ->
         val digestInputStream = DigestInputStream(fis, md)
         val buffer = ByteArray(4096)
-        while (digestInputStream.read(buffer) > -1){}
+        while (digestInputStream.read(buffer) > -1) {}
         digestInputStream.close()
         digestInputStream.messageDigest
                 .digest()
@@ -29,15 +34,14 @@ fun File.md5():String{
     return sb.toString().toLowerCase()
 }
 
-//TODO add exception handling ! --> A
+// TODO add exception handling ! --> A
 @ObsoleteCoroutinesApi
 fun main() = runBlocking {
     System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "TRACE")
 
     var test = false
 
-
-    val clientData= UpdateFactoryClientData(
+    val clientData = UpdateFactoryClientData(
             "ABA",
             "test-rc2",
             "https://stage.updatefactory.io",
@@ -56,8 +60,8 @@ fun main() = runBlocking {
     client.init(
             clientData,
             object : DirectoryForArtifactsProvider { override fun directoryForArtifacts(): File = File(".") },
-            object : ConfigDataProvider{},
-            object : DeploymentPermitProvider{
+            object : ConfigDataProvider {},
+            object : DeploymentPermitProvider {
                 override fun downloadAllowed(): Boolean {
                     test = !test
                     return test
@@ -67,7 +71,7 @@ fun main() = runBlocking {
                     return test
                 }
             },
-            listOf(object : MessageListener{
+            listOf(object : MessageListener {
                 override fun onMessage(message: MessageListener.Message) {
                     println(message)
                 }
@@ -87,5 +91,5 @@ fun main() = runBlocking {
         delay(5000)
         client.forcePing()
     }
-    while(true){}
+    while (true) {}
 }

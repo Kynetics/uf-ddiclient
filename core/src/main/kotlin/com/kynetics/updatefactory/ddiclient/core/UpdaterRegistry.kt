@@ -5,7 +5,7 @@ import com.kynetics.updatefactory.ddiclient.core.api.Updater
 
 class UpdaterRegistry(private vararg val updaters: Updater) {
 
-    fun allRequiredArtifactsFor(chunks: Set<DeplBaseResp.Depl.Cnk>):Set<Updater.Hashes> =
+    fun allRequiredArtifactsFor(chunks: Set<DeplBaseResp.Depl.Cnk>): Set<Updater.Hashes> =
             updaters.flatMap { u ->
                 u.requiredSoftwareModulesAndPriority(chunks.map { convert(it) }.toSet())
                         .swModules.flatMap { it.hashes } }.toSet()
@@ -28,14 +28,14 @@ class UpdaterRegistry(private vararg val updaters: Updater) {
         }.toSortedSet(Comparator { p1, p2 -> p1.priority.compareTo(p2.priority) })
     }
 
-    fun currentUpdateIsCancellable():Boolean{
-        return updaters.map{ it.updateIsCancellable()}
-                .reduce{ acc, value -> acc && value }
+    fun currentUpdateIsCancellable(): Boolean {
+        return updaters.map { it.updateIsCancellable() }
+                .reduce { acc, value -> acc && value }
     }
 
     data class UpdaterWithSwModule(val priority: Int, val updater: Updater, val softwareModules: Set<Updater.SwModule>)
 
-    private fun convert(cnk:DeplBaseResp.Depl.Cnk):Updater.SwModule =
+    private fun convert(cnk: DeplBaseResp.Depl.Cnk): Updater.SwModule =
             Updater.SwModule(
                     cnk.metadata?.map { convert(it) }?.toSet(),
                     cnk.part,

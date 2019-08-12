@@ -5,20 +5,18 @@ import kotlinx.coroutines.ObsoleteCoroutinesApi
 
 @UseExperimental(ObsoleteCoroutinesApi::class)
 class NotificationManager
-private constructor(scope: ActorScope): AbstractActor(scope) {
+private constructor(scope: ActorScope) : AbstractActor(scope) {
 
     private val listeners = coroutineContext[UFClientContext]!!.messageListeners
 
-    private fun defaultReceive():Receive = { msg ->
+    private fun defaultReceive(): Receive = { msg ->
 
         when (msg) {
 
             is MessageListener.Message -> listeners.forEach { it.onMessage(msg) }
 
             else -> unhandled(msg)
-
         }
-
     }
 
     init {
@@ -27,7 +25,5 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
 
     companion object {
         fun of(scope: ActorScope) = NotificationManager(scope)
-
     }
-
 }

@@ -1,19 +1,19 @@
 package com.kynetics.updatefactory.ddiclient.core.actors
 
-import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.In.*
-import kotlinx.coroutines.ObsoleteCoroutinesApi
+import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.In
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.ObsoleteCoroutinesApi
 
 @UseExperimental(ObsoleteCoroutinesApi::class)
 class RootActor
-private constructor(scope: ActorScope): AbstractActor(scope) {
+private constructor(scope: ActorScope) : AbstractActor(scope) {
 
     private fun mainReceive(): Receive = { msg ->
-        when(msg) {
-            is Start, ForcePing -> child("connectionManager")!!.send(msg)
+        when (msg) {
+            is In.Start, In.ForcePing -> child("connectionManager")!!.send(msg)
 
-            is Stop -> {
+            is In.Stop -> {
                 child("connectionManager")!!.send(msg)
                 channel.close()
             }
@@ -23,10 +23,10 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
     }
 
     init {
-        val nmActor = actorOf("notificationManager"){ NotificationManager.of(it)}
-        val cmActor = actorOf("connectionManager", NMActor(nmActor)){ ConnectionManager.of(it)}
+        val nmActor = actorOf("notificationManager") { NotificationManager.of(it) }
+        val cmActor = actorOf("connectionManager", NMActor(nmActor)) { ConnectionManager.of(it) }
         val ctxt = CMActor(cmActor).plus(NMActor(nmActor))
-        actorOf("actionManager", ctxt){ ActionManager.of(it)}
+        actorOf("actionManager", ctxt) { ActionManager.of(it) }
         become(mainReceive())
     }
 
@@ -35,12 +35,12 @@ private constructor(scope: ActorScope): AbstractActor(scope) {
     }
 }
 
-data class CMActor(val ref:ActorRef): AbstractCoroutineContextElement(CMActor){
+data class CMActor(val ref: ActorRef) : AbstractCoroutineContextElement(CMActor) {
     companion object Key : CoroutineContext.Key<CMActor>
     override fun toString(): String = "CMActor($ref)"
 }
 
-data class NMActor(val ref:ActorRef): AbstractCoroutineContextElement(NMActor){
+data class NMActor(val ref: ActorRef) : AbstractCoroutineContextElement(NMActor) {
     companion object Key : CoroutineContext.Key<NMActor>
     override fun toString(): String = "NMActor($ref)"
 }

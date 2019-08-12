@@ -1,32 +1,24 @@
 package com.kynetics.updatefactory.ddiclient.core.test
 
 import com.kynetics.updatefactory.ddiclient.core.test.TestUtils.defaultActionStatusOnStart
-import com.kynetics.updatefactory.ddiclient.core.test.TestUtils.downloadRootDirPath
 import com.kynetics.updatefactory.ddiclient.core.test.TestUtils.endMessagesOnSuccessUpdate
 import com.kynetics.updatefactory.ddiclient.core.test.TestUtils.filesDownloadedInOsWithAppsPairedToServerFile
-import com.kynetics.updatefactory.ddiclient.core.test.TestUtils.firstActionEntry
-import com.kynetics.updatefactory.ddiclient.core.test.TestUtils.locationOfFileNamed
-import com.kynetics.updatefactory.ddiclient.core.test.TestUtils.md5OfFileNamed
-import com.kynetics.updatefactory.ddiclient.core.test.TestUtils.messagesOnSuccefullyDownloadAppDistribution
-import com.kynetics.updatefactory.ddiclient.core.test.TestUtils.messagesOnSuccefullyDownloadOsDistribution
 import com.kynetics.updatefactory.ddiclient.core.test.TestUtils.messagesOnSuccessfullyDownloadOsWithAppDistribution
 import com.kynetics.updatefactory.ddiclient.core.test.TestUtils.startMessagesOnUpdateFond
 import org.testng.annotations.DataProvider
 import org.testng.annotations.Test
 
-
-class SuccessfulSoftUpdateWithDownloadAndUpdateAlwaysAllowed:AbstractClientTest() {
+class SuccessfulSoftUpdateWithDownloadAndUpdateAlwaysAllowed : AbstractClientTest() {
 
     @DataProvider(name = "targetUpdateProvider")
-    fun dataProvider():Array<TestUtils.TargetDeployments>{
+    fun dataProvider(): Array<TestUtils.TargetDeployments> {
         return arrayOf(target4ApplyOsWithAppsUpdate())
     }
 
     @Test(enabled = true, dataProvider = "targetUpdateProvider")
-    fun test(targetDeployments: TestUtils.TargetDeployments){
+    fun test(targetDeployments: TestUtils.TargetDeployments) {
         testTemplate(targetDeployments)
     }
-
 
     private fun target4ApplyOsWithAppsUpdate(): TestUtils.TargetDeployments {
         val targetId = "Target4"
@@ -49,5 +41,4 @@ class SuccessfulSoftUpdateWithDownloadAndUpdateAlwaysAllowed:AbstractClientTest(
                 )
         )
     }
-
 }

@@ -6,8 +6,9 @@ import java.io.InputStream
 import java.util.concurrent.atomic.AtomicInteger
 
 class FilterInputStreamWithProgress(
-        inputStream: InputStream,
-        private val totalSize: Long) : FilterInputStream(inputStream) {
+    inputStream: InputStream,
+    private val totalSize: Long
+) : FilterInputStream(inputStream) {
 
     private var alreadyRead: AtomicInteger = AtomicInteger(0)
 
@@ -20,7 +21,6 @@ class FilterInputStreamWithProgress(
         } catch (e: IOException) {
             throw e
         }
-
     }
 
     @Throws(IOException::class)
@@ -32,11 +32,9 @@ class FilterInputStreamWithProgress(
         } catch (e: IOException) {
             throw e
         }
-
     }
 
-    fun getProgress():Double{
+    fun getProgress(): Double {
         return alreadyRead.get().toDouble() / totalSize
     }
-
 }

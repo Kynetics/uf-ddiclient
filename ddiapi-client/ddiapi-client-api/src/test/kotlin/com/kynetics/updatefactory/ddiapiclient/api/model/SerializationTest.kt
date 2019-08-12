@@ -15,18 +15,14 @@ import org.testng.Assert.assertEquals
 import org.testng.annotations.DataProvider
 import org.testng.annotations.Test
 
-
-class SerializationTest{
-
+class SerializationTest {
 
     val gson = Gson()
-
 
     @DataProvider(name = "Serialization")
     fun objectsToSerialize(): Array<Any> {
         val cfgDataReq = CfgDataReq.of(emptyMap(), CfgDataReq.Mod.merge)
         return arrayOf(cfgDataReq.copy(data = mapOf("ciao" to "miao")))
-
     }
 
     @Test(dataProvider = "Serialization")
@@ -34,6 +30,6 @@ class SerializationTest{
         val json = gson.toJson(expected)
         println(json)
         val actual = gson.fromJson(json, expected.javaClass)
-        assertEquals(actual,expected)
+        assertEquals(actual, expected)
     }
 }

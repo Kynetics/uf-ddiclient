@@ -5,5 +5,4 @@ import java.io.File
 interface DirectoryForArtifactsProvider {
 
     fun directoryForArtifacts(): File
-
 }
