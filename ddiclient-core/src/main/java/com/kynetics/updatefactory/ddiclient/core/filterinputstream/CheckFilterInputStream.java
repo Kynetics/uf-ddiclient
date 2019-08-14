@@ -16,7 +16,6 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
-import java.net.SocketException;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -113,9 +112,6 @@ public class CheckFilterInputStream extends FilterInputStream {
                 invokeListener();
             }
             return count;
-        }catch (SocketException se){
-            listener.onValidationResult(false, null);
-            return 0;
         } catch (IOException e){
             listener.onValidationResult(false, null);
             throw e;
@@ -130,9 +126,6 @@ public class CheckFilterInputStream extends FilterInputStream {
                 invokeListener();
             }
             return count;
-        } catch (SocketException se){
-            listener.onValidationResult(false, null);
-            return 0;
         } catch (IOException e){
             listener.onValidationResult(false, null);
             throw e;

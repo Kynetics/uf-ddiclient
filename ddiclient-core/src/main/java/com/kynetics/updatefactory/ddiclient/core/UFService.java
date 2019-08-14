@@ -53,7 +53,6 @@ public class  UFService {
         Map<String, String> get();
     }
 
-
     public static class SharedEvent {
         private final AbstractEvent event;
         private final AbstractState newState;
@@ -102,6 +101,7 @@ public class  UFService {
         this.targetData = targetData;
         this.systemOperation = systemOperation;
         this.userInteraction = userInteraction;
+        process();
     }
 
     public void start(){
@@ -131,6 +131,7 @@ public class  UFService {
         timer.purge();
         timer = null;
         currentObservableState.resetState();
+        abortRequest();
     }
 
     public void restart(){
@@ -142,12 +143,14 @@ public class  UFService {
         currentObservableState.addObserver(observer);
     }
 
-    private void setUpdateSucceffullyUpdate(SystemOperation.UpdateStatus updateStatus){
+    private void setUpdateSucceffullyUpdate(SystemOperation.UpdateStatus updateStatus, AbstractState state){
         checkServiceRunning();
         if(!currentObservableState.get().getStateName().equals(AbstractState.StateName.UPDATE_STARTED)){
             throw new IllegalStateException("current state must be UPDATE_STARTED to call this method");
         }
-        onEvent(updateStatus.getStatusName() == SUCCESSFULLY_APPLIED ? new SuccessEvent() : new UpdateErrorEvent(updateStatus.getMessages()));
+        onEvent(new WrapperEvent(updateStatus.getStatusName() == SUCCESSFULLY_APPLIED ?
+                new SuccessEvent() :
+                new UpdateErrorEvent(updateStatus.getMessages()), state));
     }
 
     private void checkServiceRunning(){
@@ -157,14 +160,11 @@ public class  UFService {
     }
 
     private void setAuthorized(AuthorizationWaitingState state, boolean isAuthorized){
-        if(!state.equals(currentObservableState.get())){
-            return;
-        }
         checkServiceRunning();
         if(!currentObservableState.get().getStateName().equals(AbstractState.StateName.AUTHORIZATION_WAITING)){
             throw new IllegalStateException("current state must be UPDATE_STARTED to call this method");
         }
-        onEvent(isAuthorized ? new AuthorizationGrantedEvent() : new AuthorizationDeniedEvent());
+        onEvent(new WrapperEvent(isAuthorized ? new AuthorizationGrantedEvent() : new AuthorizationDeniedEvent(), state));
     }
 
     public void restartSuspendState(){
@@ -175,7 +175,7 @@ public class  UFService {
         timer.cancel();
         timer.purge();
         timer = new Timer();
-        onEvent(new ResumeEvent());
+        onEvent(new WrapperEvent(new ResumeEvent(), currentObservableState.get()));
     }
 
     private void execute(Call call, Callback callback, long delay){
@@ -194,11 +194,29 @@ public class  UFService {
         execute(call,callback,0);
     }
 
-    private void onEvent(AbstractEvent event){
-        final AbstractState currentState = currentObservableState.onEvent(event).get();
-        handlerState(currentState);
+    private void onEvent(WrapperEvent event){
+        try {
+            events.put(event);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
+    private void process(){
+        new Thread(() -> {
+            while(true) {
+                try {
+                    final WrapperEvent event = events.take();
+                    final boolean isProcess = currentObservableState.onEvent(event);
+                    if(isProcess){
+                        handlerState(currentObservableState.get());
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+    }
     private void handlerState(AbstractState currentState, long forceDelay){
         switch (currentState.getStateName()){
             case WAITING:
@@ -206,11 +224,11 @@ public class  UFService {
                 final Call controllerBaseCall =  client.getControllerBase(tenant, controllerId);
                 final WaitingState waitingState = ((WaitingState)currentState);
                 forceDelay = waitingState.innerStateIsCommunicationState() ? LAST_SLEEP_TIME_FOUND : forceDelay;
-                execute(controllerBaseCall, new PollingCallback(), forceDelay > 0 ? forceDelay : waitingState.getSleepTime());
+                execute(controllerBaseCall, new PollingCallback(currentState), forceDelay > 0 ? forceDelay : waitingState.getSleepTime());
                 break;
             case CONFIG_DATA:
                 final Call call = getConfigDataCall();
-                execute(call, new DefaultDdiCallback(), forceDelay);
+                execute(call, new DefaultDdiCallback(currentState), forceDelay);
                 break;
             case UPDATE_INITIALIZATION:
                 final UpdateInitialization updateInitializationState = (UpdateInitialization) currentState;
@@ -225,7 +243,7 @@ public class  UFService {
                         tenant,
                         controllerId,
                         updateInitializationState.getActionId()).enqueue(new LogCallBack<>());
-                execute(baseDeploymentAction, new ControllerBaseDeploymentAction(), forceDelay);
+                execute(baseDeploymentAction, new ControllerBaseDeploymentAction(currentState), forceDelay);
                 break;
             case UPDATE_DOWNLOAD:
                 final UpdateDownloadState updateDownloadState = (UpdateDownloadState) currentState;
@@ -235,37 +253,58 @@ public class  UFService {
                 }
 
                 if(systemOperation.checkSpace(spaceNeeded)){
-                    callToAbort = client.downloadArtifact(
+                    final Call callToAbort = client.downloadArtifact(
                             tenant,
                             controllerId,
                             updateDownloadState.getFileInfo().getLinkInfo().getSoftwareModules(),
                             updateDownloadState.getFileInfo().getLinkInfo().getFileName());
-                    execute(callToAbort, new DownloadArtifact(updateDownloadState), forceDelay);
+                    try {
+                        callsToAbort.put(callToAbort);
+                        execute(callToAbort, new DownloadArtifact(updateDownloadState), forceDelay);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                        onEvent(new WrapperEvent(new ErrorEvent(new String[]{"Interrupted Exception", e.getMessage()},1), currentState));
+                    }
                 } else {
-                    onEvent(new InsufficientSpaceEvent());
+                    onEvent(new WrapperEvent(new InsufficientSpaceEvent(), currentState));
                 }
 
                 break;
             case UPDATE_READY:
                 final Call checkCancellation = client.getControllerBase(tenant, controllerId);
-                execute(checkCancellation,new CheckCancellationCallback(), forceDelay);
+                execute(checkCancellation,new CheckCancellationCallback(currentState), forceDelay);
                 break;
             case CANCELLATION_CHECK:
                 final CancellationCheckState cancellationCheckState = (CancellationCheckState)currentState;
                 final Call controllerCancelAction = client.getControllerCancelAction(tenant,controllerId,cancellationCheckState.getActionId());
-                execute(controllerCancelAction, new CancelCallback(), forceDelay);
+                execute(controllerCancelAction, new CancelCallback(currentState), forceDelay);
                 break;
             case CANCELLATION:
                 abortRequest();
                 final CancellationState cancellationState = (CancellationState)currentState;
                 DdiActionFeedback actionFeedback = new FeedbackBuilder(cancellationState.getActionId(),CLOSED, SUCESS).build();
                 final Call postCancelActionFeedback = client.postCancelActionFeedback(actionFeedback, tenant,controllerId,cancellationState.getActionId());
-                execute(postCancelActionFeedback, new DefaultDdiCallback(), forceDelay);
+                execute(postCancelActionFeedback, new DefaultDdiCallback(currentState), forceDelay);
                 break;
             case SAVING_FILE:
                 final SavingFileState savingFileState = (SavingFileState) currentState;
                 if(savingFileState.isInputStreamAvailable()){
-                    new Thread(() -> systemOperation.savingFile(savingFileState.getInputStream(), savingFileState.getFileInfo())).start();
+                    new Thread(() -> {
+                        final CheckFilterInputStream streamWithChecker = CheckFilterInputStream.builder()
+                                .withStream(savingFileState.getInputStream())
+                                .withMd5Value(savingFileState.getFileInfo().getHash().getMd5())
+                                .withSha1Value(savingFileState.getFileInfo().getHash().getSha1())
+                                .withListener(new FileCheckerListenerImpl(savingFileState))
+                                .build();
+
+                        final String fileName = savingFileState.getFileInfo().getLinkInfo().getFileName();
+                        final NotifyStatusFilterInputStream stream = new NotifyStatusFilterInputStream(
+                                streamWithChecker,
+                                savingFileState.getFileInfo().getSize(),
+                                new ServerNotifier(client, 10, savingFileState.getActionId(), tenant, controllerId, fileName, savingFileState)
+                        );
+                        systemOperation.savingFile(stream, savingFileState.getFileInfo());
+                    }).start();
                 }
                 execute(client.getControllerBase(tenant, controllerId), new CheckCancelEventCallback(currentState, new DownloadPendingEvent()),30_000);
                 break;
@@ -275,7 +314,7 @@ public class  UFService {
                 if( updateStatus.getStatusName() == NOT_APPLIED){
                     systemOperation.executeUpdate(updateStartedState.getActionId());
                 }
-                setUpdateSucceffullyUpdate(systemOperation.updateStatus());
+                setUpdateSucceffullyUpdate(systemOperation.updateStatus(), currentState);
                 break;
             case AUTHORIZATION_WAITING:
                 final AuthorizationWaitingState authorizationWaitingState = (AuthorizationWaitingState) currentState;
@@ -316,7 +355,7 @@ public class  UFService {
                         controllerId,
                         updateEndedState.getActionId()
                 );
-                execute(lastFeedbackCall,new LastFeedbackCallback(), forceDelay);
+                execute(lastFeedbackCall,new LastFeedbackCallback(currentState), forceDelay);
                 break;
             case SERVER_FILE_CORRUPTED:
                 final ServerFileCorruptedState serverFileCorruptedState = (ServerFileCorruptedState)currentState;
@@ -333,7 +372,7 @@ public class  UFService {
                         serverFileCorruptedState.getActionId()
                 );
 
-                execute(serverErrorFeedbackCall,new DefaultDdiCallback(), forceDelay);
+                execute(serverErrorFeedbackCall,new DefaultDdiCallback(currentState), forceDelay);
                 break;
             case COMMUNICATION_ERROR:
             case COMMUNICATION_FAILURE:
@@ -344,10 +383,16 @@ public class  UFService {
     }
 
     private void abortRequest() {
-        if(callToAbort!=null){
-            callToAbort.cancel();
-            callToAbort = null;
+        System.out.println("start abort pending requests");
+        while(!callsToAbort.isEmpty()){
+            System.out.println("Execute abort");
+            try {
+                callsToAbort.take().cancel();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
+        System.out.println("finish abort pending requests");
     }
 
     private Call getConfigDataCall() {
@@ -419,6 +464,11 @@ public class  UFService {
     }
 
     private class LastFeedbackCallback<T> extends DefaultDdiCallback<T>{
+
+        public LastFeedbackCallback(AbstractState state) {
+            super(state);
+        }
+
         @Override
         public void onError(Error error) {
             if(error.getCode() == 410){
@@ -438,12 +488,19 @@ public class  UFService {
 
         private SharedEvent eventToNotify;
 
-        private ObservableState onEvent(AbstractEvent event){
+        private boolean onEvent(WrapperEvent wrappedEvent){
+            System.out.println(String.format("Event(%s) is related to state with id %s, current state id is %s",
+                    wrappedEvent.getEvent().getEventName(), wrappedEvent.getState(), state));
+            if(state != wrappedEvent.getState()){
+                System.out.println("Event is ignored because it is out of sync");
+                return false;
+            }
+            final AbstractEvent event = wrappedEvent.getEvent();
             final AbstractState oldState = state;
             state = state.onEvent(event);
             setChanged();
             eventToNotify = new SharedEvent(event, state, oldState);
-            return this;
+            return true;
 
         }
 
@@ -463,6 +520,16 @@ public class  UFService {
     }
 
     private class DefaultDdiCallback<T> extends LogCallBack<T> {
+        protected final AbstractState state;
+
+        public DefaultDdiCallback(AbstractState state) {
+            this.state = state;
+        }
+
+        protected void onEvent(AbstractEvent event){
+            UFService.this.onEvent(new WrapperEvent(event, state));
+        }
+
         @Override
         public void onError(Error error) {
             super.onError(error);
@@ -486,6 +553,10 @@ public class  UFService {
     public static long LAST_SLEEP_TIME_FOUND = 30_000;
 
     private class PollingCallback extends DefaultDdiCallback<DdiControllerBase>{
+
+        public PollingCallback(AbstractState state) {
+            super(state);
+        }
 
         @Override
         public void onSuccess(DdiControllerBase response) {
@@ -525,28 +596,14 @@ public class  UFService {
     private class CheckCancelEventCallback extends DefaultDdiCallback<DdiControllerBase>{
 
         private final AbstractEvent event;
-        private final AbstractState state;
 
         public CheckCancelEventCallback(AbstractState state, AbstractEvent event) {
+            super(state);
             this.event = event;
-            this.state = state;
-        }
-
-        @Override
-        public void onFailure(Call<DdiControllerBase> call, Throwable t) {
-            if(currentObservableState.get().getStateName() != state.getStateName()){
-                return;
-            }
-
-            super.onFailure(call, t);
         }
 
         @Override
         public void onError(Error error) {
-            if(currentObservableState.get().getStateName() != state.getStateName()){
-                return;
-            }
-
             if(error.getCode() == 410){
                 onEvent(new ForceCancelEvent());
             } else {
@@ -556,9 +613,6 @@ public class  UFService {
 
         @Override
         public void onSuccess(DdiControllerBase response) {
-            if(currentObservableState.get().getStateName() != state.getStateName()){
-                return;
-            }
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("hh:mm:ss");
             try {
                 simpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -591,6 +645,10 @@ public class  UFService {
     }
 
     private class CheckCancellationCallback extends DefaultDdiCallback<DdiControllerBase>{
+        public CheckCancellationCallback(AbstractState state) {
+            super(state);
+        }
+
         @Override
         public void onSuccess(DdiControllerBase response) {
             final LinkEntry cancelAction = response.getLink("cancelAction");
@@ -603,6 +661,10 @@ public class  UFService {
     }
 
     private class CancelCallback extends DefaultDdiCallback<DdiCancel>{
+        public CancelCallback(AbstractState state) {
+            super(state);
+        }
+
         @Override
         public void onSuccess(DdiCancel response) {
             onEvent(new SuccessEvent(Long.parseLong(response.getCancelAction().getStopId())));
@@ -610,6 +672,10 @@ public class  UFService {
     }
 
     private class ControllerBaseDeploymentAction extends DefaultDdiCallback<DdiDeploymentBase>{
+        public ControllerBaseDeploymentAction(AbstractState state) {
+            super(state);
+        }
+
         @Override
         public void onSuccess(DdiDeploymentBase response) {
             //super.onSuccess(response);
@@ -618,39 +684,25 @@ public class  UFService {
     }
 
     private class DownloadArtifact extends DefaultDdiCallback<ResponseBody>{
-        private final UpdateDownloadState state;
+        private final UpdateDownloadState downloadState;
 
         public DownloadArtifact(UpdateDownloadState state) {
-            this.state = state;
+            super(state);
+            this.downloadState = state;
         }
 
         @Override
         public void onSuccess(ResponseBody response) {
             new Thread(() -> {
                 client.postBasedeploymentActionFeedback(
-                        new FeedbackBuilder(state.getActionId(),PROCEEDING,NONE)
-                                .withProgess(state.getNextFileToDownload()+1,state.getSize()).build(),
+                        new FeedbackBuilder(downloadState.getActionId(),PROCEEDING,NONE)
+                                .withProgess(downloadState.getNextFileToDownload()+1,downloadState.getSize()).build(),
                         tenant,
                         controllerId,
-                        state.getActionId())
+                        downloadState.getActionId())
                         .enqueue(new LogCallBack<>());
-                final FileInfo fileInfo = state.getFileInfo();
-
-                final CheckFilterInputStream streamWithChecker = CheckFilterInputStream.builder()
-                        .withStream(response.byteStream())
-                        .withMd5Value(fileInfo.getHash().getMd5())
-                        .withSha1Value(fileInfo.getHash().getSha1())
-                        .withListener(fileCheckListener)
-                        .build();
-
-                final String fileName = fileInfo.getLinkInfo().getFileName();
-                final NotifyStatusFilterInputStream stream = new NotifyStatusFilterInputStream(
-                        streamWithChecker,
-                        fileInfo.getSize(),
-                        new ServerNotifier(client, 10, state.getActionId(), tenant, controllerId, fileName, state)
-                );
-
-                onEvent(new DownloadStartedEvent(stream,fileName));
+                final String fileName = downloadState.getFileInfo().getLinkInfo().getFileName();
+                onEvent(new DownloadStartedEvent(response.byteStream(),fileName));
             }).start();
 
         }
@@ -698,7 +750,7 @@ public class  UFService {
                                     return;
                                 }
                                 if(error.getCode() == 410 || error.getCode() == 404){
-                                    onEvent(new ForceCancelEvent());
+                                    onEvent(new WrapperEvent(new ForceCancelEvent(),state));
                                 } else {
                                     super.onError(error);
                                 }
@@ -708,23 +760,21 @@ public class  UFService {
         }
     }
 
-    private boolean downloadStopped(){
-        return callToAbort == null;
+    private class FileCheckerListenerImpl implements CheckFilterInputStream.FileCheckListener{
+        final AbstractState state;
+
+        public FileCheckerListenerImpl(AbstractState state) {
+            this.state = state;
+        }
+
+        @Override
+        public void onValidationResult(boolean isValid, Hash hash) {
+            onEvent(new WrapperEvent(isValid ? new SuccessEvent() : new FileCorruptedEvent(hash), state ));
+        }
     }
 
-    private final CheckFilterInputStream.FileCheckListener fileCheckListener = (isValid, hash) -> {
-        if(downloadStopped()){
-            return;
-        }
-        if(isValid){
-            onEvent(new SuccessEvent());
-        } else {
-            onEvent(new FileCorruptedEvent(hash));
-        }
-    };
-
     private ObservableState currentObservableState;
-    private Call callToAbort;
+    private BlockingQueue<Call> callsToAbort = new ArrayBlockingQueue<>(50);
     private TargetData targetData;
     private String controllerId;
     private String tenant;
@@ -733,4 +783,23 @@ public class  UFService {
     private long retryDelayOnCommunicationError;
     private final SystemOperation systemOperation;
     private final UserInteraction userInteraction;
+    private BlockingQueue<WrapperEvent> events = new ArrayBlockingQueue<>(5);
+
+    private static class WrapperEvent{
+        final AbstractEvent event;
+        final AbstractState state;
+
+        public WrapperEvent(AbstractEvent event, AbstractState state) {
+            this.event = event;
+            this.state = state;
+        }
+
+        public AbstractEvent getEvent() {
+            return event;
+        }
+
+        public Object getState() {
+            return state;
+        }
+    }
 }
