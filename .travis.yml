@@ -24,6 +24,11 @@ before_script:
   - chmod +x ./cc-test-reporter
   - ./cc-test-reporter before-build
 
+before_install:
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  - docker pull comkynetics/uf-update-server:0.3.1-SNAPSHOT
+  - docker pull mariadb:latest
+
 script:
   - "./gradlew clean build"
   - "./gradlew jacocoRootTestReport"
