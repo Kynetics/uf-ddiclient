@@ -29,6 +29,12 @@ data class ActionStatus(val content: Set<ContentEntry>, val total: Int = content
     }
 }
 
+data class Action(val status:Status){
+    enum class Status {
+        finished, pending
+    }
+}
+
 interface ManagementApi {
     companion object {
         const val BASE_V1_REQUEST_MAPPING = "/rest/v1"
@@ -40,6 +46,13 @@ interface ManagementApi {
         @Path("targetId") targetId: String,
         @Path("actionId") actionId: Int
     ): Deferred<ActionStatus>
+
+    @GET("$BASE_V1_REQUEST_MAPPING/targets/{targetId}/actions/{actionId}")
+    fun getActionAsync(
+        @Header("Authorization") auth: String,
+        @Path("targetId") targetId: String,
+        @Path("actionId") actionId: Int
+    ): Deferred<Action>
 
     @DELETE("$BASE_V1_REQUEST_MAPPING/targets/{targetId}/actions/{actionId}")
     fun deleteTargetActionAsync(
@@ -63,6 +76,10 @@ object ManagementClient {
 
             override fun getTargetActionStatusAsync(auth: String, targetId: String, actionId: Int): Deferred<ActionStatus> {
                 return delegate.getTargetActionStatusAsync(auth, targetId, actionId)
+            }
+
+            override fun getActionAsync(auth: String, targetId: String, actionId: Int): Deferred<Action> {
+                return delegate.getActionAsync(auth, targetId, actionId)
             }
 
             override fun deleteTargetActionAsync(auth: String, targetId: String, actionId: Int): Deferred<Unit> {

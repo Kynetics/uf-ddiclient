@@ -13,14 +13,14 @@ import com.kynetics.updatefactory.ddiclient.core.test.TestUtils.gatewayToken
 import com.kynetics.updatefactory.ddiclient.core.test.TestUtils.getDownloadDirectoryFromActionId
 import com.kynetics.updatefactory.ddiclient.core.test.TestUtils.tenantName
 import com.kynetics.updatefactory.ddiclient.core.test.TestUtils.ufUrl
-import java.io.File
-import java.util.LinkedList
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.joda.time.Duration
 import org.testng.Assert
+import java.io.File
+import java.util.LinkedList
 
 abstract class AbstractClientTest {
 
@@ -87,7 +87,10 @@ abstract class AbstractClientTest {
 
                 queue.add {
                     launch {
-                        delay(400)
+                        while(managementApi.getActionAsync(basic, deployment.targetId, deploymentInfo.actionId).await()
+                                .status != Action.Status.finished) {
+                            delay(100)
+                        }
                         actionStatus = managementApi.getTargetActionStatusAsync(basic, deployment.targetId, deploymentInfo.actionId).await()
 
                         Assert.assertEquals(actionStatus.content, deploymentInfo.actionStatusOnFinish.content)
