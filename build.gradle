@@ -11,6 +11,7 @@
 plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.3.21'
     id "io.gitlab.arturbosch.detekt" version "1.0.0-RC16"
+    id 'jacoco'
 }
 
 repositories {
@@ -22,10 +23,10 @@ final def deps = gradle.settings.app_dependencies
 final def tdeps = gradle.settings.test_dependencies
 final def app_version = '1.0.0-rc3'
 
-
 subprojects {
     apply plugin: 'org.jetbrains.kotlin.jvm'
     apply plugin: 'maven'
+    apply plugin: 'jacoco'
     apply from: "$rootDir/ktlint.gradle"
 
     repositories {
@@ -148,7 +149,7 @@ project(':core') {
 
     test.dependsOn waitingUFServer
     test.dependsOn cleanTest
-
+    test.finalizedBy jacocoTestReport
 }
 
 project(':core:core-api') {
@@ -204,4 +205,39 @@ detekt {
     toolVersion = "1.0.0-RC16"
     input = files("$projectDir")
     filters = ".*/resources/.*,.*/build/.*"
+}
+
+task jacocoRootTestReport(type: JacocoReport, group: 'verification') {
+    sourceDirectories = files()
+    classDirectories = files()
+    executionData = files()
+
+    reports {
+        html.enabled = true
+        xml.enabled = true
+        csv.enabled = false
+    }
+
+    // Work-around to allow us to build list of executionData files in doFirst
+    onlyIf = {
+        true
+    }
+
+    /*
+     * Builds list of source dirs, class dirs, and executionData files
+     * when task is run, not at script evaluation time
+     */
+    doFirst {
+        subprojects.each { subproject ->
+            additionalSourceDirs files((Set<File>) subproject.sourceSets.main.allJava.srcDirs)
+            additionalClassDirs ((FileCollection) subproject.sourceSets.main.output)
+            if (subproject.pluginManager.hasPlugin('jacoco')) {
+                executionData subproject.tasks.jacocoTestReport.executionData
+            }
+        }
+
+        executionData = files(executionData.findAll {
+            it.exists()
+        })
+    }
 }
