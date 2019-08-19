@@ -2,7 +2,9 @@
 
 UF-DDICLIENT is a java library that help the creation of a client to [UpdateFactory](https://www.kynetics.com/iot-platform-update-factory) or [Hawkbit](https://eclipse.org/hawkbit/) servers.
 
-build: ![build status status](https://travis-ci.org/Kynetics/uf-ddiclient.svg?branch=master)
+build: [![Build Status](https://travis-ci.org/Kynetics/uf-ddiclient.svg?branch=master)](https://travis-ci.org/Kynetics/uf-ddiclient)
+[![Maintainability](https://api.codeclimate.com/v1/badges/e545d9c1d9256241e7f8/maintainability)](https://codeclimate.com/github/Kynetics/uf-ddiclient/maintainability)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/e545d9c1d9256241e7f8/test_coverage)](https://codeclimate.com/github/Kynetics/uf-ddiclient/test_coverage)
 
 ## Install
 
