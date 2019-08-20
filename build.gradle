@@ -26,7 +26,6 @@ final def app_version = '1.0.0-rc3'
 subprojects {
     apply plugin: 'org.jetbrains.kotlin.jvm'
     apply plugin: 'maven'
-    apply plugin: 'jacoco'
     apply from: "$rootDir/ktlint.gradle"
 
     repositories {
@@ -99,6 +98,7 @@ project(':core') {
         testCompile deps.retrofit
         testCompile deps.retrofit_coroutines
         testCompile deps.retrofit_converter
+        implementation deps.retrofit_converter
 
     }
     
@@ -113,43 +113,6 @@ project(':core') {
             logger.quiet "Executing test ${desc.name} [${desc.className}] with result: ${result.resultType}"
         }
     }
-
-    task restartUfServer() {
-        group 'testing'
-        doLast {
-
-            exec {
-                workingDir '../docker/test/'
-                commandLine 'docker-compose', 'down'
-            }
-
-
-            "docker-compose up".execute(new String[0], new File(projectDir, "../docker/test") )
-
-        }
-
-    }
-
-    task waitingUFServer(){
-        group 'testing'
-
-        dependsOn 'restartUfServer'
-
-        doFirst {
-            def url = 'http://localhost:8081/health'
-            println "Waiting for ${url} ..."
-            while (!doHead(url)) {
-                sleep(5000)
-                println "Waiting for ${url} ..."
-            }
-            println "${url} is up!"
-        }
-
-    }
-
-    test.dependsOn waitingUFServer
-    test.dependsOn cleanTest
-    test.finalizedBy jacocoTestReport
 }
 
 project(':core:core-api') {
@@ -207,37 +170,72 @@ detekt {
     filters = ".*/resources/.*,.*/build/.*"
 }
 
-task jacocoRootTestReport(type: JacocoReport, group: 'verification') {
-    sourceDirectories = files()
-    classDirectories = files()
-    executionData = files()
+test {
+    useTestNG()
+}
+
+task codeCoverage(type: JacocoReport, group: 'verification') {
+    executionData fileTree(project.rootDir.absolutePath).include("**/build/jacoco/*.exec")
+
+    subprojects.each {
+        sourceSets it.sourceSets.main
+    }
 
     reports {
-        html.enabled = true
-        xml.enabled = true
-        csv.enabled = false
+        xml.enabled true
+        xml.destination "${buildDir}/reports/jacoco/report.xml"
+        html.enabled true
+        csv.enabled false
     }
+}
 
-    // Work-around to allow us to build list of executionData files in doFirst
-    onlyIf = {
-        true
-    }
+codeCoverage.dependsOn {
+    subprojects*.test
+}
 
-    /*
-     * Builds list of source dirs, class dirs, and executionData files
-     * when task is run, not at script evaluation time
-     */
-    doFirst {
-        subprojects.each { subproject ->
-            additionalSourceDirs files((Set<File>) subproject.sourceSets.main.allJava.srcDirs)
-            additionalClassDirs ((FileCollection) subproject.sourceSets.main.output)
-            if (subproject.pluginManager.hasPlugin('jacoco')) {
-                executionData subproject.tasks.jacocoTestReport.executionData
-            }
+task restartUfServer() {
+    group 'testing'
+    doLast {/**/
+        exec {
+            workingDir 'docker/test/'
+            commandLine 'docker-compose', 'down'
         }
-
-        executionData = files(executionData.findAll {
-            it.exists()
-        })
+        "docker-compose up".execute(new String[0], new File(projectDir, "docker/test") )
     }
+
+}
+
+task waitingUFServer(){
+    group 'testing'
+
+    dependsOn 'restartUfServer'
+
+    doFirst {
+        def url = 'http://localhost:8081/health'
+        println "Waiting for ${url} ..."
+        while (!doHead(url)) {
+            sleep(5000)
+            println "Waiting for ${url} ..."
+        }
+        println "${url} is up!"
+    }
+
+}
+
+test.dependsOn waitingUFServer
+test.dependsOn cleanTest
+
+dependencies{
+    testCompile tdeps.testng
+    testCompile deps.kotlin_stdlib
+    testCompile deps.kotlin_x
+    testCompile deps.joda
+    testCompile deps.okhttp
+    testCompile deps.retrofit
+    testCompile deps.retrofit_coroutines
+    testCompile deps.retrofit_converter
+    testCompile project(':core')
+    testCompile project(':core:core-api')
+    testCompile project(':ddiapi-client')
+    testCompile project(':ddiapi-client:ddiapi-client-api')
 }

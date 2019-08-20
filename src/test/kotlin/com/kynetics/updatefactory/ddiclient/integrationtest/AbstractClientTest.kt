@@ -1,4 +1,4 @@
-package com.kynetics.updatefactory.ddiclient.core.test
+package com.kynetics.updatefactory.ddiclient.integrationtest
 
 import com.kynetics.updatefactory.ddiclient.core.UpdateFactoryClientDefaultImpl
 import com.kynetics.updatefactory.ddiclient.core.api.ConfigDataProvider
@@ -8,11 +8,11 @@ import com.kynetics.updatefactory.ddiclient.core.api.MessageListener
 import com.kynetics.updatefactory.ddiclient.core.api.UpdateFactoryClient
 import com.kynetics.updatefactory.ddiclient.core.api.UpdateFactoryClientData
 import com.kynetics.updatefactory.ddiclient.core.api.Updater
-import com.kynetics.updatefactory.ddiclient.core.test.TestUtils.basic
-import com.kynetics.updatefactory.ddiclient.core.test.TestUtils.gatewayToken
-import com.kynetics.updatefactory.ddiclient.core.test.TestUtils.getDownloadDirectoryFromActionId
-import com.kynetics.updatefactory.ddiclient.core.test.TestUtils.tenantName
-import com.kynetics.updatefactory.ddiclient.core.test.TestUtils.ufUrl
+import com.kynetics.updatefactory.ddiclient.integrationtest.TestUtils.basic
+import com.kynetics.updatefactory.ddiclient.integrationtest.TestUtils.gatewayToken
+import com.kynetics.updatefactory.ddiclient.integrationtest.TestUtils.getDownloadDirectoryFromActionId
+import com.kynetics.updatefactory.ddiclient.integrationtest.TestUtils.tenantName
+import com.kynetics.updatefactory.ddiclient.integrationtest.TestUtils.ufUrl
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -88,7 +88,8 @@ abstract class AbstractClientTest {
                 queue.add {
                     launch {
                         while(managementApi.getActionAsync(basic, deployment.targetId, deploymentInfo.actionId).await()
-                                .status != Action.Status.finished) {
+                                .status != Action.Status.finished
+                        ) {
                             delay(100)
                         }
                         actionStatus = managementApi.getTargetActionStatusAsync(basic, deployment.targetId, deploymentInfo.actionId).await()
