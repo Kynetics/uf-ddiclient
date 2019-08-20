@@ -33,10 +33,10 @@ before_install:
 
 script:
   - "./gradlew clean build"
-  - "./gradlew jacocoRootTestReport"
+  - "./gradlew codeCoverage"
 
 after_script:
-  - cp ./build/reports/jacoco/jacocoRootTestReport/jacocoRootTestReport.xml jacoco.xml
+  - cp ./build/reports/jacoco/report.xml jacoco.xml
   - ./cc-test-reporter after-build  -d --exit-code $TRAVIS_TEST_RESULT --coverage-input-type jacoco
 
 deploy:
