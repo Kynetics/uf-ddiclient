@@ -102,7 +102,7 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
         when {
 
             msg is Message.DownloadFinished && (state.updateIs(Appl.forced) || !registry.currentUpdateIsCancellable()) -> {
-                become(updatingReceive(state))
+                become(updatingReceive())
                 child("updateManager")!!.send(DeploymentInfo(state.deplBaseResp!!))
             }
 
@@ -151,7 +151,7 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
                 val message = "Authorization granted for update"
                 LOG.info(message)
                 sendFeedback(message)
-                become(updatingReceive(state))
+                become(updatingReceive())
                 child("updateManager")!!.send(DeploymentInfo(state.deplBaseResp!!))
             }
 
@@ -167,7 +167,7 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
         }
     }
 
-    private fun updatingReceive(state: State): Receive = { msg ->
+    private fun updatingReceive(): Receive = { msg ->
         when (msg) {
 
             is Message.UpdateFailed -> {
