@@ -6,13 +6,15 @@ import com.kynetics.updatefactory.ddiclient.core.api.DirectoryForArtifactsProvid
 import com.kynetics.updatefactory.ddiclient.core.api.MessageListener
 import com.kynetics.updatefactory.ddiclient.core.api.UpdateFactoryClientData
 import com.kynetics.updatefactory.ddiclient.core.api.Updater
-import java.io.File
-import java.security.DigestInputStream
-import java.security.MessageDigest
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.joda.time.Duration
+import java.io.File
+import java.security.DigestInputStream
+import java.security.MessageDigest
 
 suspend fun delay(duration: Duration) = delay(duration.millis)
 
@@ -62,13 +64,13 @@ fun main() = runBlocking {
             object : DirectoryForArtifactsProvider { override fun directoryForArtifacts(): File = File(".") },
             object : ConfigDataProvider {},
             object : DeploymentPermitProvider {
-                override fun downloadAllowed(): Boolean {
+                override fun downloadAllowed(): Deferred<Boolean> {
                     test = !test
-                    return test
+                    return CompletableDeferred(test)
                 }
-                override fun updateAllowed(): Boolean {
+                override fun updateAllowed(): Deferred<Boolean> {
                     test = !test
-                    return test
+                    return CompletableDeferred(test)
                 }
             },
             listOf(object : MessageListener {

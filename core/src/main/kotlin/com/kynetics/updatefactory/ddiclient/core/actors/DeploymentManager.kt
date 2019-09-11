@@ -3,6 +3,7 @@ package com.kynetics.updatefactory.ddiclient.core.actors
 import com.kynetics.updatefactory.ddiapiclient.api.model.CnclFdbkReq
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplBaseResp
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplBaseResp.Depl.Appl
+import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq
 import com.kynetics.updatefactory.ddiclient.core.actors.ActionManager.Companion.Message.CancelForced
 import com.kynetics.updatefactory.ddiclient.core.actors.ActionManager.Companion.Message.UpdateStopped
 import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.Out.DeploymentCancelInfo
@@ -10,8 +11,9 @@ import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Compan
 import com.kynetics.updatefactory.ddiclient.core.api.DeploymentPermitProvider
 import com.kynetics.updatefactory.ddiclient.core.api.MessageListener
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.ObsoleteCoroutinesApi
-import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 
 @UseExperimental(ObsoleteCoroutinesApi::class)
 class DeploymentManager
@@ -21,16 +23,24 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
     private val authRequest: DeploymentPermitProvider = coroutineContext[UFClientContext]!!.deploymentPermitProvider
     private val connectionManager = coroutineContext[CMActor]!!.ref
     private val notificationManager = coroutineContext[NMActor]!!.ref
+    private var waitingAuthJob:Job? = null
     private fun beginningReceive(state: State): Receive = { msg ->
         // todo implement download skip option and move content of attempt function to 'msg is DeploymentInfo && msg.downloadIs(attempt)' when case
         suspend fun attempt(msg: DeploymentInfo) {
-            LOG.info("Waiting authorization to download")
+            val message = "Waiting authorization to download"
+            LOG.info(message)
+            sendFeedback(message)
             become(waitingDownloadAuthorization(state.copy(deplBaseResp = msg.info)))
             notificationManager.send(MessageListener.Message.State.WaitingDownloadAuthorization)
-            async(Dispatchers.IO) {
-                channel.send(
-                        if (authRequest.downloadAllowed()) Message.DownloadGranted else Message.DownloadDenied
-                )
+            waitingAuthJob?.cancel()
+            waitingAuthJob = launch {
+                val result = authRequest.downloadAllowed().await()
+                if(result){
+                    channel.send(Message.DownloadGranted)
+                } else {
+                    LOG.info("Authorization denied for download files")
+                }
+                waitingAuthJob = null
             }
         }
 
@@ -69,21 +79,18 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
             }
 
             is Message.DownloadGranted -> {
-                LOG.info("Authorization granted for downloading files")
+                val message = "Authorization granted for downloading files"
+                LOG.info(message)
+                sendFeedback(message)
                 become(downloadingReceive(state))
                 child("downloadManager")!!.send(DeploymentInfo(state.deplBaseResp!!))
-            }
-
-            is Message.DownloadDenied -> {
-                LOG.info("Authorization denied for download files")
-                become(beginningReceive(state))
             }
 
             is DeploymentCancelInfo -> {
                 stopUpdateAndNotify(msg)
             }
 
-            msg is CancelForced -> {
+            is CancelForced -> {
                 stopUpdate()
             }
 
@@ -100,13 +107,18 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
             }
 
             msg is Message.DownloadFinished && state.updateIs(Appl.attempt) -> {
-                LOG.info("Waiting authorization to update")
+                val message = "Waiting authorization to update"
+                LOG.info(message)
+                sendFeedback(message)
                 become(waitingUpdateAuthorization(state))
                 notificationManager.send(MessageListener.Message.State.WaitingUpdateAuthorization)
-                async(Dispatchers.IO) {
-                    channel.send(
-                            if (authRequest.updateAllowed()) Message.UpdateGranted else Message.UpdateDenied
-                    )
+                waitingAuthJob = launch (Dispatchers.IO) {
+                    if(authRequest.updateAllowed().await()){
+                        channel.send(Message.UpdateGranted)
+                    } else {
+                        LOG.info("Authorization denied for update")
+                    }
+                    waitingAuthJob = null
                 }
             }
 
@@ -135,12 +147,10 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
                 channel.send(Message.DownloadFinished)
             }
 
-            is Message.UpdateDenied -> {
-                LOG.info("Authorization denied for update")
-            }
-
             is Message.UpdateGranted -> {
-                LOG.info("Authorization granted for update")
+                val message = "Authorization granted for update"
+                LOG.info(message)
+                sendFeedback(message)
                 become(updatingReceive(state))
                 child("updateManager")!!.send(DeploymentInfo(state.deplBaseResp!!))
             }
@@ -173,10 +183,10 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
             is DeploymentCancelInfo -> {
                 LOG.info("can't stop update")
                 connectionManager.send(ConnectionManager.Companion.Message.In.CancelFeedback(
-                        CnclFdbkReq.newInstance(msg.info.cancelAction.stopId,
-                                CnclFdbkReq.Sts.Exc.rejected,
-                                CnclFdbkReq.Sts.Rslt.Fnsh.success,
-                                "Update already started. Can't be stopped.")))
+                    CnclFdbkReq.newInstance(msg.info.cancelAction.stopId,
+                        CnclFdbkReq.Sts.Exc.rejected,
+                        CnclFdbkReq.Sts.Rslt.Fnsh.success,
+                        "Update already started. Can't be stopped.")))
             }
 
             is CancelForced -> {
@@ -187,15 +197,15 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
 
     private suspend fun stopUpdateAndNotify(msg: DeploymentCancelInfo) {
         connectionManager.send(ConnectionManager.Companion.Message.In.CancelFeedback(
-                CnclFdbkReq.newInstance(msg.info.cancelAction.stopId,
-                        CnclFdbkReq.Sts.Exc.closed,
-                        CnclFdbkReq.Sts.Rslt.Fnsh.success)))
+            CnclFdbkReq.newInstance(msg.info.cancelAction.stopId,
+                CnclFdbkReq.Sts.Exc.closed,
+                CnclFdbkReq.Sts.Rslt.Fnsh.success)))
         stopUpdate()
     }
 
     private suspend fun stopUpdate() {
         LOG.info("Stopping update")
-        channel.close()
+        channel.cancel()
         notificationManager.send(MessageListener.Message.State.CancellingUpdate)
         parent!!.send(UpdateStopped)
     }
@@ -208,6 +218,23 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
         actorOf("downloadManager") { DownloadManager.of(it) }
         actorOf("updateManager") { UpdateManager.of(it) }
         become(beginningReceive(State()))
+        channel.invokeOnClose {
+            LOG.error("invokeOnClose ${waitingAuthJob == null}")
+            waitingAuthJob?.cancel()
+        }
+    }
+
+    private suspend fun sendFeedback(id:String, vararg messages:String){
+        connectionManager.send(
+            ConnectionManager.Companion.Message.In.DeploymentFeedback(
+                DeplFdbkReq.newInstance(id,
+                    DeplFdbkReq.Sts.Exc.proceeding,
+                    DeplFdbkReq.Sts.Rslt.Prgrs(0, 0),
+                    DeplFdbkReq.Sts.Rslt.Fnsh.none,
+                    *messages
+                )
+            )
+        )
     }
 
     companion object {
@@ -219,9 +246,7 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
 
         sealed class Message {
             object DownloadGranted : Message()
-            object DownloadDenied : Message()
             object UpdateGranted : Message()
-            object UpdateDenied : Message()
             object DownloadFinished : Message()
             data class DownloadFailed(val details: List<String>) : Message()
             object UpdateFailed : Message()
