@@ -10,12 +10,12 @@ import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Compan
 import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.Out
 import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.Out.Err.ErrMsg
 import com.kynetics.updatefactory.ddiclient.core.api.MessageListener
-import java.util.Timer
-import kotlin.concurrent.timer
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.launch
 import org.joda.time.Duration
 import org.joda.time.Instant
+import java.util.Timer
+import kotlin.concurrent.timer
 
 @UseExperimental(ObsoleteCoroutinesApi::class)
 class ConnectionManager
@@ -75,6 +75,7 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
                         var actionFound = false
                         var etag = state.deploymentEtag
                         if (res.requireDeployment()) {
+                            notificationManager.send(MessageListener.Message.Event.UpdateAvailable(res.deploymentActionId()))
                             client.onDeploymentActionDetailsChange(res.deploymentActionId(), 0, state.deploymentEtag) { deplBaseResp, newDeploymentEtag ->
                                 etag = newDeploymentEtag
                                 this.send(Out.DeploymentInfo(deplBaseResp), state)

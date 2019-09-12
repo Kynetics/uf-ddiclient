@@ -22,6 +22,7 @@ interface MessageListener {
 
         sealed class Event(description: String) : Message(description) {
             object Polling : Event("Client is contacting server to retrieve new action to execute")
+            data class UpdateAvailable(val id: String) : Event("An update is available on cloud")
             data class StartDownloadFile(val fileName: String) : Event("A file downloading is started")
             data class FileDownloaded(val fileDownloaded: String) : Event("A file is downloaded")
             data class DownloadProgress(val fileName: String, val percentage: Double = 0.0) : Event("Percent of file downloaded")
