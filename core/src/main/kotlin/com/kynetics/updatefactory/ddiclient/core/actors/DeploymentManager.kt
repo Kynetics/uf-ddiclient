@@ -46,7 +46,7 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
 
         when {
 
-            msg is DeploymentInfo && (msg.downloadIs(Appl.forced) || !registry.currentUpdateIsCancellable()) -> {
+            msg is DeploymentInfo && msg.downloadIs(Appl.forced) -> {
                 become(downloadingReceive(state.copy(deplBaseResp = msg.info)))
                 child("downloadManager")!!.send(msg)
             }
@@ -101,7 +101,7 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
     private fun downloadingReceive(state: State): Receive = { msg ->
         when {
 
-            msg is Message.DownloadFinished && (state.updateIs(Appl.forced) || !registry.currentUpdateIsCancellable()) -> {
+            msg is Message.DownloadFinished && state.updateIs(Appl.forced) -> {
                 become(updatingReceive())
                 child("updateManager")!!.send(DeploymentInfo(state.deplBaseResp!!))
             }
