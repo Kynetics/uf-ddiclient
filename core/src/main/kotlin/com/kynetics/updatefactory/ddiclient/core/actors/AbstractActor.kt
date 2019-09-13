@@ -6,9 +6,6 @@ import com.kynetics.updatefactory.ddiclient.core.UpdaterRegistry
 import com.kynetics.updatefactory.ddiclient.core.api.ConfigDataProvider
 import com.kynetics.updatefactory.ddiclient.core.api.DeploymentPermitProvider
 import com.kynetics.updatefactory.ddiclient.core.api.MessageListener
-import kotlin.coroutines.AbstractCoroutineContextElement
-import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CompletionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineStart
@@ -20,6 +17,9 @@ import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import kotlin.coroutines.AbstractCoroutineContextElement
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 
 typealias Receive = suspend (Any) -> Unit
 
@@ -99,6 +99,7 @@ abstract class AbstractActor protected constructor(private val actorScope: Actor
                     actor.LOG.info("Actor {} exiting.", actor.name)
                 } catch (t: Throwable) {
                     actor.LOG.error("Error processing message in actor {}. error: {} message: {}", actor.name, t.javaClass, t.message)
+                    actor.LOG.debug(t.message, t)
                     if (actor.parent != null) {
                         actor.parent.send(ActorException(actor.name, actor.channel, t))
                     } else {
