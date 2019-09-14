@@ -1,6 +1,7 @@
 package com.kynetics.updatefactory.ddiclient.core.actors
 
 import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq
+import com.kynetics.updatefactory.ddiclient.core.UpdaterRegistry
 import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.In.DeploymentFeedback
 import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.Out.DeploymentInfo
 import com.kynetics.updatefactory.ddiclient.core.api.MessageListener
@@ -25,27 +26,7 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
                 notificationManager.send(MessageListener.Message.State.Updating)
                 val updaters = registry.allUpdatersWithSwModulesOrderedForPriority(msg.info.deployment.chunks)
                 val details = mutableListOf("Details:")
-                val updaterError = updaters
-                        .mapIndexed { index, u -> index to u }
-                        .dropWhile { (index, it) ->
-                            val updateResult = it.updater.apply(it.softwareModules.map { swModule ->
-                                convert(swModule, pathResolver.fromArtifact(msg.info.id)) }.toSet(), object : Updater.Messenger {
-                                override fun sendMessageToServer(vararg msgStr: String) {
-                                    runBlocking {
-                                        sendFeedback(msg.info.id,
-                                                DeplFdbkReq.Sts.Exc.proceeding,
-                                                DeplFdbkReq.Sts.Rslt.Prgrs(updaters.size, index),
-                                                DeplFdbkReq.Sts.Rslt.Fnsh.none,
-                                                *msgStr)
-                                    }
-                                }
-                            })
-                            if (updateResult.details.isNotEmpty()) {
-                                details.add("Feedback updater named ${it.updater.javaClass.simpleName}")
-                                details.addAll(updateResult.details)
-                            }
-                            updateResult.success
-                        }
+                val updaterError = update(updaters, msg, details)
 
                 if (updaterError.isNotEmpty()) {
                     LOG.warn("update ${updaterError[0].first} failed!")
@@ -69,6 +50,34 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
 
             else -> unhandled(msg)
         }
+    }
+
+    private fun update(updaters: Set<UpdaterRegistry.UpdaterWithSwModule>,
+                       msg: DeploymentInfo,
+                       details: MutableList<String>):
+            List<Pair<Int, UpdaterRegistry.UpdaterWithSwModule>> {
+        return updaters
+                .mapIndexed { index, u -> index to u }
+                .dropWhile { (index, it) ->
+                    val updateResult = it.updater.apply(it.softwareModules.map { swModule ->
+                        convert(swModule, pathResolver.fromArtifact(msg.info.id))
+                    }.toSet(), object : Updater.Messenger {
+                        override fun sendMessageToServer(vararg msgStr: String) {
+                            runBlocking {
+                                sendFeedback(msg.info.id,
+                                        DeplFdbkReq.Sts.Exc.proceeding,
+                                        DeplFdbkReq.Sts.Rslt.Prgrs(updaters.size, index),
+                                        DeplFdbkReq.Sts.Rslt.Fnsh.none,
+                                        *msgStr)
+                            }
+                        }
+                    })
+                    if (updateResult.details.isNotEmpty()) {
+                        details.add("Feedback updater named ${it.updater.javaClass.simpleName}")
+                        details.addAll(updateResult.details)
+                    }
+                    updateResult.success
+                }
     }
 
     private suspend fun sendFeedback(
