@@ -5,13 +5,13 @@ import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq
 import com.kynetics.updatefactory.ddiclient.core.api.MessageListener
 import com.kynetics.updatefactory.ddiclient.core.inputstream.FilterInputStreamWithProgress
 import com.kynetics.updatefactory.ddiclient.core.md5
+import kotlinx.coroutines.ObsoleteCoroutinesApi
+import kotlinx.coroutines.launch
 import java.io.File
 import java.text.NumberFormat
+import java.util.*
 import java.util.concurrent.ArrayBlockingQueue
 import kotlin.concurrent.fixedRateTimer
-import kotlinx.coroutines.ObsoleteCoroutinesApi
-import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
 
 @UseExperimental(ObsoleteCoroutinesApi::class)
 class FileDownloader
@@ -94,7 +94,7 @@ private constructor(
         }
     }
 
-    fun Double.toPercentage(minFractionDigits: Int = 0): String {
+    private fun Double.toPercentage(minFractionDigits: Int = 0): String {
         val format = NumberFormat.getPercentInstance()
         format.minimumFractionDigits = minFractionDigits
         return format.format(this)
@@ -110,22 +110,7 @@ private constructor(
 
         val queue = ArrayBlockingQueue<Double>(10, true, (1..9).map { it.toDouble() / 10 })
 
-        val timer = fixedRateTimer("Download Checker ${fileToDownload.fileName}", false, 60_000, 60_000) {
-            async {
-                val progress = inputStream.getProgress()
-                val limit = queue.peek() ?: 1.0
-                if (progress > limit) {
-                    feedback(actionId,
-                            DeplFdbkReq.Sts.Exc.proceeding,
-                            DeplFdbkReq.Sts.Rslt.Prgrs(0, 0),
-                            DeplFdbkReq.Sts.Rslt.Fnsh.none, "Downloading file named ${fileToDownload.fileName} - ${progress.toPercentage(2)}")
-                    while (progress > queue.peek() ?: 1.0 && queue.isNotEmpty()) {
-                        queue.poll()
-                    }
-                }
-                notificationManager.send(MessageListener.Message.Event.DownloadProgress(fileToDownload.fileName, progress))
-            }
-        }
+        val timer = checkDownloadProgress(inputStream, queue, actionId)
 
         file.outputStream().use {
             inputStream.copyTo(it)
@@ -133,6 +118,29 @@ private constructor(
 
         timer.purge()
         timer.cancel()
+    }
+
+    private fun checkDownloadProgress(inputStream: FilterInputStreamWithProgress,
+                                      queue: ArrayBlockingQueue<Double>,
+                                      actionId: String): Timer {
+        return fixedRateTimer("Download Checker ${fileToDownload.fileName}", false, 60_000, 60_000) {
+            launch {
+                val progress = inputStream.getProgress()
+                val limit = queue.peek() ?: 1.0
+                if (progress > limit) {
+                    feedback(actionId,
+                            DeplFdbkReq.Sts.Exc.proceeding,
+                            DeplFdbkReq.Sts.Rslt.Prgrs(0, 0),
+                            DeplFdbkReq.Sts.Rslt.Fnsh.none,
+                            "Downloading file named ${fileToDownload.fileName} " +
+                                    "- ${progress.toPercentage(2)}")
+                    while (progress > queue.peek() ?: 1.0 && queue.isNotEmpty()) {
+                        queue.poll()
+                    }
+                }
+                notificationManager.send(MessageListener.Message.Event.DownloadProgress(fileToDownload.fileName, progress))
+            }
+        }
     }
 
     private suspend fun feedback(id: String, execution: DeplFdbkReq.Sts.Exc, progress: DeplFdbkReq.Sts.Rslt.Prgrs, finished: DeplFdbkReq.Sts.Rslt.Fnsh, vararg messages: String) {
