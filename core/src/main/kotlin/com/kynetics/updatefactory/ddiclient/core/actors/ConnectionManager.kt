@@ -60,86 +60,88 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
                 channel.send(In.SetPing(null))
             }
 
-            is In.Ping -> {
-                LOG.info("Execute ping calls to the server...")
-                val s = state.copy(lastPing = Instant.now())
-                try {
-
-                    notificationManager.send(MessageListener.Message.Event.Polling)
-
-                    client.onControllerActionsChange(state.controllerBaseEtag) { res, newControllerBaseEtag ->
-                        if (res.requireConfigData() || configDataProvider.isUpdated()) {
-                            this.send(Out.ConfigDataRequired, state)
-                        }
-
-                        var actionFound = false
-                        var etag = state.deploymentEtag
-                        if (res.requireDeployment()) {
-                            notificationManager.send(MessageListener.Message.Event.UpdateAvailable(res.deploymentActionId()))
-                            client.onDeploymentActionDetailsChange(res.deploymentActionId(), 0, state.deploymentEtag) { deplBaseResp, newDeploymentEtag ->
-                                etag = newDeploymentEtag
-                                this.send(Out.DeploymentInfo(deplBaseResp), state)
-                            }
-                            actionFound = true
-                        }
-
-                        if (res.requireCancel()) {
-                            val res2 = client.getCancelActionDetails(res.cancelActionId())
-                            this.send(Out.DeploymentCancelInfo(res2), state)
-                            actionFound = true
-                        }
-
-                        if (!actionFound) {
-                            this.send(Out.NoAction, state)
-                        }
-
-                        val newState = s.copy(controllerBaseEtag = newControllerBaseEtag, deploymentEtag = etag)
-                                .withServerSleep(res.config.polling.sleep)
-                                .withoutBackoff()
-                        become(runningReceive(startPing(newState)))
-                    }
-                } catch (t: Throwable) {
-                    fun loopMsg(t: Throwable): String = t.message + if (t.cause != null) " ${loopMsg(t.cause!!)}" else ""
-                    val errorDetails = "exception: ${t.javaClass} message: ${loopMsg(t)}"
-                    this.send(ErrMsg(errorDetails), state)
-                    LOG.warn(t.message, t)
-                    become(runningReceive(startPing(s.nextBackoff())))
-                    notificationManager.send(MessageListener.Message.Event.Error(listOf(errorDetails)))
-                }
-            }
+            is In.Ping -> onPing(state)
 
             is In.DeploymentFeedback -> {
-                try {
+                exceptionHandler(state){
                     client.postDeploymentActionFeedback(msg.feedback.id, msg.feedback)
-                } catch (t: Throwable) {
-                    this.send(ErrMsg("exception: ${t.javaClass}" + if (t.message != null) " message: ${t.message}" else ""), state)
-                    LOG.warn(t.message, t)
                 }
             }
 
             is In.CancelFeedback -> {
-                try {
+                exceptionHandler(state){
                     client.postCancelActionFeedback(msg.feedback.id, msg.feedback)
-                } catch (t: Throwable) {
-                    this.send(ErrMsg("exception: ${t.javaClass}" + if (t.message != null) " message: ${t.message}" else ""), state)
-                    LOG.warn(t.message, t)
                 }
             }
 
             is In.ConfigDataFeedback -> {
-                try {
+                exceptionHandler(state){
                     client.putConfigData(msg.cfgDataReq) {
                         configDataProvider.onConfigDataUpdate()
                     }
-                } catch (t: Throwable) {
-                    this.send(ErrMsg("exception: ${t.javaClass}" + if (t.message != null) " message: ${t.message}" else ""), state)
-                    LOG.warn(t.message, t)
                 }
             }
 
             else -> {
                 unhandled(msg)
             }
+        }
+    }
+
+    private suspend fun onPing(state: State) {
+        LOG.info("Execute ping calls to the server...")
+        val s = state.copy(lastPing = Instant.now())
+        try {
+
+            notificationManager.send(MessageListener.Message.Event.Polling)
+
+            client.onControllerActionsChange(state.controllerBaseEtag) { res, newControllerBaseEtag ->
+                if (res.requireConfigData() || configDataProvider.isUpdated()) {
+                    this.send(Out.ConfigDataRequired, state)
+                }
+
+                var actionFound = false
+                var etag = state.deploymentEtag
+                if (res.requireDeployment()) {
+                    notificationManager.send(MessageListener.Message.Event.UpdateAvailable(res.deploymentActionId()))
+                    client.onDeploymentActionDetailsChange(res.deploymentActionId(), 0, state.deploymentEtag) { deplBaseResp, newDeploymentEtag ->
+                        etag = newDeploymentEtag
+                        this.send(Out.DeploymentInfo(deplBaseResp), state)
+                    }
+                    actionFound = true
+                }
+
+                if (res.requireCancel()) {
+                    val res2 = client.getCancelActionDetails(res.cancelActionId())
+                    this.send(Out.DeploymentCancelInfo(res2), state)
+                    actionFound = true
+                }
+
+                if (!actionFound) {
+                    this.send(Out.NoAction, state)
+                }
+
+                val newState = s.copy(controllerBaseEtag = newControllerBaseEtag, deploymentEtag = etag)
+                        .withServerSleep(res.config.polling.sleep)
+                        .withoutBackoff()
+                become(runningReceive(startPing(newState)))
+            }
+        } catch (t: Throwable) {
+            fun loopMsg(t: Throwable): String = t.message + if (t.cause != null) " ${loopMsg(t.cause!!)}" else ""
+            val errorDetails = "exception: ${t.javaClass} message: ${loopMsg(t)}"
+            this.send(ErrMsg(errorDetails), state)
+            LOG.warn(t.message, t)
+            become(runningReceive(startPing(s.nextBackoff())))
+            notificationManager.send(MessageListener.Message.Event.Error(listOf(errorDetails)))
+        }
+    }
+
+    private suspend fun exceptionHandler(state:State, function: suspend () -> Unit){
+        try {
+            function.invoke()
+        } catch (t: Throwable) {
+            this.send(ErrMsg("exception: ${t.javaClass}" + if (t.message != null) " message: ${t.message}" else ""), state)
+            LOG.warn(t.message, t)
         }
     }
 
