@@ -33,7 +33,7 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
                 }
             }
 
-            msg is Out.DeploymentInfo -> onDeployment(msg,state)
+            msg is Out.DeploymentInfo -> onDeployment(msg, state)
 
             msg is DeploymentManager.Companion.Message.DownloadFailed -> {
                 become(defaultReceive(state.copy(deployment = null)))
@@ -73,8 +73,8 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
         }
     }
 
-    private suspend fun onDeployment(msg: Out.DeploymentInfo, state:State){
-        when{
+    private suspend fun onDeployment(msg: Out.DeploymentInfo, state: State) {
+        when {
             state.inDeployment(msg.info.id) -> child("deploymentManager")!!.send(msg)
 
             state.inDeployment -> child("deploymentManager")!!.send(Companion.Message.CancelForced)
@@ -89,8 +89,8 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
         }
     }
 
-    private suspend fun onCancelInfo(msg: Out.DeploymentCancelInfo, state:State){
-        when{
+    private suspend fun onCancelInfo(msg: Out.DeploymentCancelInfo, state: State) {
+        when {
             !state.inDeployment && registry.currentUpdateIsCancellable() -> {
                 connectionManager.send(In.CancelFeedback(
                         CnclFdbkReq.newInstance(msg.info.cancelAction.stopId,
@@ -117,8 +117,8 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
         }
     }
 
-    private suspend fun onNoAction(msg:Out.NoAction, state:State){
-        when{
+    private suspend fun onNoAction(msg: Out.NoAction, state: State) {
+        when {
             state.inDeployment -> {
                 LOG.warn("CancelForced/RemoveTarget.")
                 child("deploymentManager")!!.send(Companion.Message.CancelForced)

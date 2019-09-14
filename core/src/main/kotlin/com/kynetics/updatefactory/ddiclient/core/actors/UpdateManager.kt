@@ -52,9 +52,11 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
         }
     }
 
-    private fun update(updaters: Set<UpdaterRegistry.UpdaterWithSwModule>,
-                       msg: DeploymentInfo,
-                       details: MutableList<String>):
+    private fun update(
+        updaters: Set<UpdaterRegistry.UpdaterWithSwModule>,
+        msg: DeploymentInfo,
+        details: MutableList<String>
+    ):
             List<Pair<Int, UpdaterRegistry.UpdaterWithSwModule>> {
         return updaters
                 .mapIndexed { index, u -> index to u }

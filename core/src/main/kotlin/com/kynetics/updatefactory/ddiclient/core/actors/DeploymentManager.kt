@@ -23,7 +23,7 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
     private val authRequest: DeploymentPermitProvider = coroutineContext[UFClientContext]!!.deploymentPermitProvider
     private val connectionManager = coroutineContext[CMActor]!!.ref
     private val notificationManager = coroutineContext[NMActor]!!.ref
-    private var waitingAuthJob:Job? = null
+    private var waitingAuthJob: Job? = null
     private fun beginningReceive(state: State): Receive = { msg ->
         // todo implement download skip option and move content of attempt function to 'msg is DeploymentInfo && msg.downloadIs(attempt)' when case
         suspend fun attempt(msg: DeploymentInfo) {
@@ -35,7 +35,7 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
             waitingAuthJob?.cancel()
             waitingAuthJob = launch {
                 val result = authRequest.downloadAllowed().await()
-                if(result){
+                if (result) {
                     channel.send(Message.DownloadGranted)
                 } else {
                     LOG.info("Authorization denied for download files")
@@ -112,8 +112,8 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
                 sendFeedback(message)
                 become(waitingUpdateAuthorization(state))
                 notificationManager.send(MessageListener.Message.State.WaitingUpdateAuthorization)
-                waitingAuthJob = launch (Dispatchers.IO) {
-                    if(authRequest.updateAllowed().await()){
+                waitingAuthJob = launch(Dispatchers.IO) {
+                    if (authRequest.updateAllowed().await()) {
                         channel.send(Message.UpdateGranted)
                     } else {
                         LOG.info("Authorization denied for update")
@@ -224,7 +224,7 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
         }
     }
 
-    private suspend fun sendFeedback(id:String, vararg messages:String){
+    private suspend fun sendFeedback(id: String, vararg messages: String) {
         connectionManager.send(
             ConnectionManager.Companion.Message.In.DeploymentFeedback(
                 DeplFdbkReq.newInstance(id,

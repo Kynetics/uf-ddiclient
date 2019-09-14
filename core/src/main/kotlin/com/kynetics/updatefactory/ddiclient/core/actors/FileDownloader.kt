@@ -5,13 +5,13 @@ import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq
 import com.kynetics.updatefactory.ddiclient.core.api.MessageListener
 import com.kynetics.updatefactory.ddiclient.core.inputstream.FilterInputStreamWithProgress
 import com.kynetics.updatefactory.ddiclient.core.md5
-import kotlinx.coroutines.ObsoleteCoroutinesApi
-import kotlinx.coroutines.launch
 import java.io.File
 import java.text.NumberFormat
-import java.util.*
+import java.util.Timer
 import java.util.concurrent.ArrayBlockingQueue
 import kotlin.concurrent.fixedRateTimer
+import kotlinx.coroutines.ObsoleteCoroutinesApi
+import kotlinx.coroutines.launch
 
 @UseExperimental(ObsoleteCoroutinesApi::class)
 class FileDownloader
@@ -120,9 +120,11 @@ private constructor(
         timer.cancel()
     }
 
-    private fun checkDownloadProgress(inputStream: FilterInputStreamWithProgress,
-                                      queue: ArrayBlockingQueue<Double>,
-                                      actionId: String): Timer {
+    private fun checkDownloadProgress(
+        inputStream: FilterInputStreamWithProgress,
+        queue: ArrayBlockingQueue<Double>,
+        actionId: String
+    ): Timer {
         return fixedRateTimer("Download Checker ${fileToDownload.fileName}", false, 60_000, 60_000) {
             launch {
                 val progress = inputStream.getProgress()

@@ -1,17 +1,22 @@
 package com.kynetics.updatefactory.ddiclient.core.actors
 
 import com.kynetics.updatefactory.ddiapiclient.api.DdiClient
-import com.kynetics.updatefactory.ddiapiclient.api.model.*
+import com.kynetics.updatefactory.ddiapiclient.api.model.CfgDataReq
+import com.kynetics.updatefactory.ddiapiclient.api.model.CnclActResp
+import com.kynetics.updatefactory.ddiapiclient.api.model.CnclFdbkReq
+import com.kynetics.updatefactory.ddiapiclient.api.model.CtrlBaseResp
+import com.kynetics.updatefactory.ddiapiclient.api.model.DeplBaseResp
+import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq
 import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.In
 import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.Out
 import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.Out.Err.ErrMsg
 import com.kynetics.updatefactory.ddiclient.core.api.MessageListener
+import java.util.Timer
+import kotlin.concurrent.timer
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.launch
 import org.joda.time.Duration
 import org.joda.time.Instant
-import java.util.Timer
-import kotlin.concurrent.timer
 
 @UseExperimental(ObsoleteCoroutinesApi::class)
 class ConnectionManager
@@ -59,19 +64,19 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
             is In.Ping -> onPing(state)
 
             is In.DeploymentFeedback -> {
-                exceptionHandler(state){
+                exceptionHandler(state) {
                     client.postDeploymentActionFeedback(msg.feedback.id, msg.feedback)
                 }
             }
 
             is In.CancelFeedback -> {
-                exceptionHandler(state){
+                exceptionHandler(state) {
                     client.postCancelActionFeedback(msg.feedback.id, msg.feedback)
                 }
             }
 
             is In.ConfigDataFeedback -> {
-                exceptionHandler(state){
+                exceptionHandler(state) {
                     client.putConfigData(msg.cfgDataReq) {
                         configDataProvider.onConfigDataUpdate()
                     }
@@ -84,7 +89,7 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
         }
     }
 
-    private suspend fun onControllerBaseChange(state:State, s:State, res:CtrlBaseResp, newControllerBaseEtag:String){
+    private suspend fun onControllerBaseChange(state: State, s: State, res: CtrlBaseResp, newControllerBaseEtag: String) {
         if (res.requireConfigData() || configDataProvider.isUpdated()) {
             this.send(Out.ConfigDataRequired, state)
         }
@@ -123,7 +128,7 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
 
             notificationManager.send(MessageListener.Message.Event.Polling)
 
-            client.onControllerActionsChange(state.controllerBaseEtag){ res , newEtag ->
+            client.onControllerActionsChange(state.controllerBaseEtag) { res, newEtag ->
                 onControllerBaseChange(state, s, res, newEtag)
             }
         } catch (t: Throwable) {
@@ -136,7 +141,7 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
         }
     }
 
-    private suspend fun exceptionHandler(state:State, function: suspend () -> Unit){
+    private suspend fun exceptionHandler(state: State, function: suspend () -> Unit) {
         try {
             function.invoke()
         } catch (t: Throwable) {
@@ -177,14 +182,14 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
         fun of(scope: ActorScope) = ConnectionManager(scope)
 
         private data class State(
-                val serverPingInterval: Duration = Duration.standardSeconds(0),
-                val clientPingInterval: Duration? = null,
-                val backoffPingInterval: Duration? = null,
-                val lastPing: Instant? = Instant.EPOCH,
-                val deploymentEtag: String = "",
-                val controllerBaseEtag: String = "",
-                val timer: Timer? = null,
-                val receivers: Set<ActorRef> = emptySet()
+            val serverPingInterval: Duration = Duration.standardSeconds(0),
+            val clientPingInterval: Duration? = null,
+            val backoffPingInterval: Duration? = null,
+            val lastPing: Instant? = Instant.EPOCH,
+            val deploymentEtag: String = "",
+            val controllerBaseEtag: String = "",
+            val timer: Timer? = null,
+            val receivers: Set<ActorRef> = emptySet()
         ) {
             val pingInterval = when {
                 backoffPingInterval != null -> backoffPingInterval

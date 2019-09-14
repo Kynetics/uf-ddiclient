@@ -40,7 +40,7 @@ class UpdateFactoryClientDefaultImpl : UpdateFactoryClient {
     override fun startAsync() = runBlocking { rootActor!!.send(ConnectionManager.Companion.Message.In.Start) }
 
     override fun stop() = runBlocking {
-        if(!rootActor!!.isClosedForSend) {
+        if (!rootActor!!.isClosedForSend) {
             rootActor!!.send(ConnectionManager.Companion.Message.In.Stop)
         }
     }
