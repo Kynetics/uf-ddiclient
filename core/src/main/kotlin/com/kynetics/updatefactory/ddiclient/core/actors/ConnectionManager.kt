@@ -1,11 +1,7 @@
 package com.kynetics.updatefactory.ddiclient.core.actors
 
 import com.kynetics.updatefactory.ddiapiclient.api.DdiClient
-import com.kynetics.updatefactory.ddiapiclient.api.model.CfgDataReq
-import com.kynetics.updatefactory.ddiapiclient.api.model.CnclActResp
-import com.kynetics.updatefactory.ddiapiclient.api.model.CnclFdbkReq
-import com.kynetics.updatefactory.ddiapiclient.api.model.DeplBaseResp
-import com.kynetics.updatefactory.ddiapiclient.api.model.DeplFdbkReq
+import com.kynetics.updatefactory.ddiapiclient.api.model.*
 import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.In
 import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.Out
 import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.Out.Err.ErrMsg
@@ -88,6 +84,38 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
         }
     }
 
+    private suspend fun onControllerBaseChange(state:State, s:State, res:CtrlBaseResp, newControllerBaseEtag:String){
+        if (res.requireConfigData() || configDataProvider.isUpdated()) {
+            this.send(Out.ConfigDataRequired, state)
+        }
+
+        var actionFound = false
+        var etag = state.deploymentEtag
+        if (res.requireDeployment()) {
+            notificationManager.send(MessageListener.Message.Event.UpdateAvailable(res.deploymentActionId()))
+            client.onDeploymentActionDetailsChange(res.deploymentActionId(), 0, state.deploymentEtag) { deplBaseResp, newDeploymentEtag ->
+                etag = newDeploymentEtag
+                this.send(Out.DeploymentInfo(deplBaseResp), state)
+            }
+            actionFound = true
+        }
+
+        if (res.requireCancel()) {
+            val res2 = client.getCancelActionDetails(res.cancelActionId())
+            this.send(Out.DeploymentCancelInfo(res2), state)
+            actionFound = true
+        }
+
+        if (!actionFound) {
+            this.send(Out.NoAction, state)
+        }
+
+        val newState = s.copy(controllerBaseEtag = newControllerBaseEtag, deploymentEtag = etag)
+                .withServerSleep(res.config.polling.sleep)
+                .withoutBackoff()
+        become(runningReceive(startPing(newState)))
+    }
+
     private suspend fun onPing(state: State) {
         LOG.info("Execute ping calls to the server...")
         val s = state.copy(lastPing = Instant.now())
@@ -95,36 +123,8 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
 
             notificationManager.send(MessageListener.Message.Event.Polling)
 
-            client.onControllerActionsChange(state.controllerBaseEtag) { res, newControllerBaseEtag ->
-                if (res.requireConfigData() || configDataProvider.isUpdated()) {
-                    this.send(Out.ConfigDataRequired, state)
-                }
-
-                var actionFound = false
-                var etag = state.deploymentEtag
-                if (res.requireDeployment()) {
-                    notificationManager.send(MessageListener.Message.Event.UpdateAvailable(res.deploymentActionId()))
-                    client.onDeploymentActionDetailsChange(res.deploymentActionId(), 0, state.deploymentEtag) { deplBaseResp, newDeploymentEtag ->
-                        etag = newDeploymentEtag
-                        this.send(Out.DeploymentInfo(deplBaseResp), state)
-                    }
-                    actionFound = true
-                }
-
-                if (res.requireCancel()) {
-                    val res2 = client.getCancelActionDetails(res.cancelActionId())
-                    this.send(Out.DeploymentCancelInfo(res2), state)
-                    actionFound = true
-                }
-
-                if (!actionFound) {
-                    this.send(Out.NoAction, state)
-                }
-
-                val newState = s.copy(controllerBaseEtag = newControllerBaseEtag, deploymentEtag = etag)
-                        .withServerSleep(res.config.polling.sleep)
-                        .withoutBackoff()
-                become(runningReceive(startPing(newState)))
+            client.onControllerActionsChange(state.controllerBaseEtag){ res , newEtag ->
+                onControllerBaseChange(state, s, res, newEtag)
             }
         } catch (t: Throwable) {
             fun loopMsg(t: Throwable): String = t.message + if (t.cause != null) " ${loopMsg(t.cause!!)}" else ""
@@ -177,14 +177,14 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
         fun of(scope: ActorScope) = ConnectionManager(scope)
 
         private data class State(
-            val serverPingInterval: Duration = Duration.standardSeconds(0),
-            val clientPingInterval: Duration? = null,
-            val backoffPingInterval: Duration? = null,
-            val lastPing: Instant? = Instant.EPOCH,
-            val deploymentEtag: String = "",
-            val controllerBaseEtag: String = "",
-            val timer: Timer? = null,
-            val receivers: Set<ActorRef> = emptySet()
+                val serverPingInterval: Duration = Duration.standardSeconds(0),
+                val clientPingInterval: Duration? = null,
+                val backoffPingInterval: Duration? = null,
+                val lastPing: Instant? = Instant.EPOCH,
+                val deploymentEtag: String = "",
+                val controllerBaseEtag: String = "",
+                val timer: Timer? = null,
+                val receivers: Set<ActorRef> = emptySet()
         ) {
             val pingInterval = when {
                 backoffPingInterval != null -> backoffPingInterval
