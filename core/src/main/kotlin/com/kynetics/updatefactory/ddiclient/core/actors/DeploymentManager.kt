@@ -171,7 +171,7 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
         when (msg) {
 
             is Message.UpdateFailed -> {
-                LOG.error("update failed")
+                LOG.info("update failed")
                 parent!!.send(msg)
             }
 
@@ -219,7 +219,6 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
         actorOf("updateManager") { UpdateManager.of(it) }
         become(beginningReceive(State()))
         channel.invokeOnClose {
-            LOG.error("invokeOnClose ${waitingAuthJob == null}")
             waitingAuthJob?.cancel()
         }
     }
