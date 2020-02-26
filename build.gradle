@@ -12,6 +12,8 @@ plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.3.21'
     id "io.gitlab.arturbosch.detekt" version "1.0.0-RC16"
     id 'jacoco'
+    id 'java'
+    id 'application'
 }
 
 repositories {
@@ -27,6 +29,7 @@ subprojects {
     apply plugin: 'org.jetbrains.kotlin.jvm'
     apply plugin: 'maven'
     apply from: "$rootDir/ktlint.gradle"
+    apply plugin: 'java'
 
     repositories {
         mavenCentral()
@@ -82,6 +85,7 @@ project(':ddiapi-client:ddiapi-client-api') {
 project(':core') {
     group 'com.kynetics.updatefactory.uf-ddiclient'
     version app_version
+    apply plugin: 'application'
 
     dependencies {
         implementation project(':core:core-api')
@@ -113,6 +117,8 @@ project(':core') {
             logger.quiet "Executing test ${desc.name} [${desc.className}] with result: ${result.resultType}"
         }
     }
+    mainClassName = 'com.kynetics.updatefactory.ddiclient.core.MainKt'
+
 }
 
 project(':core:core-api') {
@@ -191,6 +197,40 @@ task codeCoverage(type: JacocoReport, group: 'verification') {
 
 codeCoverage.dependsOn {
     subprojects*.test
+}
+
+def dockerClientDir = new File(project.buildDir, "docker-client")
+task makeDockerContex(type: Copy) {
+    group "Docker"
+    dependsOn ":core:installDist"
+
+    from new File(project.projectDir, "core/build/install").getAbsolutePath()
+    from new File(project.projectDir, "docker/cl ient").getAbsolutePath()
+
+    into dockerClientDir.getAbsolutePath()
+
+}
+
+task buildImage(){
+    group "Docker"
+    dependsOn makeDockerContex
+    doLast{
+        exec {
+            workingDir dockerClientDir
+            commandLine "docker", "build", ".", "--tag", "comkynetics/uf-ddiclient:$app_version"
+        }
+    }
+}
+
+task pushImage(){
+    group "Docker"
+    dependsOn buildImage
+    doLast{
+        exec {
+            workingDir dockerClientDir
+            commandLine "docker", "push", "comkynetics/uf-ddiclient:$app_version"
+        }
+    }
 }
 
 task restartUfServer() {
