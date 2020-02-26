@@ -205,7 +205,7 @@ task makeDockerContex(type: Copy) {
     dependsOn ":core:installDist"
 
     from new File(project.projectDir, "core/build/install").getAbsolutePath()
-    from new File(project.projectDir, "docker/cl ient").getAbsolutePath()
+    from new File(project.projectDir, "docker/client").getAbsolutePath()
 
     into dockerClientDir.getAbsolutePath()
 
