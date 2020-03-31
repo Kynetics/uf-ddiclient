@@ -13,7 +13,6 @@ plugins {
     id "io.gitlab.arturbosch.detekt" version "1.0.0-RC16"
     id 'jacoco'
     id 'java'
-    id 'application'
 }
 
 repositories {
