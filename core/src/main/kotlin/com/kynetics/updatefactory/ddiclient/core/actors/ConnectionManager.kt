@@ -11,12 +11,12 @@ import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Compan
 import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.Out
 import com.kynetics.updatefactory.ddiclient.core.actors.ConnectionManager.Companion.Message.Out.Err.ErrMsg
 import com.kynetics.updatefactory.ddiclient.core.api.MessageListener
-import java.util.Timer
-import kotlin.concurrent.timer
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.launch
 import org.joda.time.Duration
 import org.joda.time.Instant
+import java.util.Timer
+import kotlin.concurrent.timer
 
 @UseExperimental(ObsoleteCoroutinesApi::class)
 class ConnectionManager
@@ -90,7 +90,7 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
     }
 
     private suspend fun onControllerBaseChange(state: State, s: State, res: CtrlBaseResp, newControllerBaseEtag: String) {
-        if (res.requireConfigData() || configDataProvider.isUpdated()) {
+        if (res.requireConfigData() || !configDataProvider.isUpdated()) {
             this.send(Out.ConfigDataRequired, state)
         }
 
