@@ -55,7 +55,7 @@ fun main() = runBlocking {
         )
 
         GlobalScope.launch {
-            getClient(clientData).startAsync()
+            getClient(clientData, it).startAsync()
         }
     }
 
@@ -72,7 +72,7 @@ private enum class UpdateResultProvider{
     }
 }
 
-private fun getClient(clientData: UpdateFactoryClientData): UpdateFactoryClientDefaultImpl {
+private fun getClient(clientData: UpdateFactoryClientData, virtualDeviceId: Int): UpdateFactoryClientDefaultImpl {
     val client = UpdateFactoryClientDefaultImpl()
     client.init(
         clientData,
@@ -81,7 +81,13 @@ private fun getClient(clientData: UpdateFactoryClientData): UpdateFactoryClientD
         },
         object : ConfigDataProvider {
             override fun configData(): Map<String, String> {
-                return env("UF_TARGET_ATTRIBUTES","test,test").split("|").map { it.split(",").let { list -> list[0] to list[1] } }.toMap()
+                return env("UF_TARGET_ATTRIBUTES","test_key,test_value")
+                    .split("|")
+                    .map { it.split(",").let { list -> list[0] to list[1] } }
+                    .toMap()
+                    .toMutableMap().apply {
+                        this["virtual_device"] = "${env("UF_VIRTUAL_DEVICE_POOL_NAME", "VirtualDevice")}$virtualDeviceId"
+                    }
             }
         },
         object : DeploymentPermitProvider {
