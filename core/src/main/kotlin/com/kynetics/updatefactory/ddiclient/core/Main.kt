@@ -10,19 +10,13 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.ObsoleteCoroutinesApi
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.joda.time.Duration
 import java.io.File
 import java.security.DigestInputStream
 import java.security.MessageDigest
 import java.util.UUID
-
-
-
-
-suspend fun delay(duration: Duration) = delay(duration.millis)
+import kotlin.random.Random.Default.nextBoolean
 
 fun File.md5(): String {
     val md = MessageDigest.getInstance("MD5")
@@ -49,9 +43,9 @@ private fun env(envVariable:String, defaultValue:String):String{
 // TODO add exception handling ! --> A
 @ObsoleteCoroutinesApi
 fun main() = runBlocking {
-    System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "TRACE")
+    System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, env("UF_LOG_LEVEL","TRACE"))
 
-    (0 .. env("UF_CLIENT_POOL_SIZE", "1").toInt()).forEach {
+    repeat(env("UF_CLIENT_POOL_SIZE", "1").toInt()) {
         val clientData = UpdateFactoryClientData(
             env("UF_TENANT", "TEST"),
             env("UF_CONTROLLER_ID", UUID.randomUUID().toString()),
@@ -68,24 +62,35 @@ fun main() = runBlocking {
     while (true) {}
 }
 
+private enum class UpdateResultProvider{
+    OK, KO, RANDOM;
+
+    fun isSuccess():Boolean = when(this){
+        OK -> true
+        KO -> false
+        RANDOM -> nextBoolean()
+    }
+}
+
 private fun getClient(clientData: UpdateFactoryClientData): UpdateFactoryClientDefaultImpl {
-    var test1 = false
     val client = UpdateFactoryClientDefaultImpl()
     client.init(
         clientData,
         object : DirectoryForArtifactsProvider {
-            override fun directoryForArtifacts(): File = File(".${clientData.controllerId}")
+            override fun directoryForArtifacts(): File = File("${env("UF_STORAGE_PATH","/client")}/${clientData.controllerId}")
         },
-        object : ConfigDataProvider {},
+        object : ConfigDataProvider {
+            override fun configData(): Map<String, String> {
+                return env("UF_TARGET_ATTRIBUTES","test,test").split("|").map { it.split(",").let { list -> list[0] to list[1] } }.toMap()
+            }
+        },
         object : DeploymentPermitProvider {
             override fun downloadAllowed(): Deferred<Boolean> {
-                test1 = !test1
-                return CompletableDeferred(test1)
+                return CompletableDeferred(true)
             }
 
             override fun updateAllowed(): Deferred<Boolean> {
-                test1 = !test1
-                return CompletableDeferred(test1)
+                return CompletableDeferred(true)
             }
         },
         listOf(object : MessageListener {
@@ -102,7 +107,7 @@ private fun getClient(clientData: UpdateFactoryClientData): UpdateFactoryClientD
                 messenger.sendMessageToServer("Applying the update...")
                 Thread.sleep(1000)
                 messenger.sendMessageToServer("Update applied")
-                return Updater.UpdateResult(true)
+                return Updater.UpdateResult(UpdateResultProvider.valueOf(env("UF_UPDATE_RESULT","OK").toUpperCase()).isSuccess())
             }
         }
     )
