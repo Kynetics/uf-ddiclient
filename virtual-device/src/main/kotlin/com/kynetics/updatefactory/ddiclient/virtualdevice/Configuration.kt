@@ -18,9 +18,42 @@ object Configuration {
 
     val storagePath = env("UF_STORAGE_PATH", "/client")
     val targetAttributes = env("UF_TARGET_ATTRIBUTES","client,kotlin virtual device")
-    val logMessage = env("UF_LOG_MESSAGE", "{4}")
+
+    /**
+     *
+     * Template substitutions:
+     * {0} is replaced with the virtual device id
+     * {1} is replaced with the tenant
+     * {2} is replaced with the controller id
+     * {3} is replaced with the gatewayToken
+     * {4} is replaced with the message
+     *
+     */
+    val logMessageTemplate = env("UF_LOG_MESSAGE", "{4}")
+
+    /**
+     *
+     * Template substitutions:
+     * {0} is replaced with the software module's name
+     * {1} is replaced with the virtual device's id
+     * {2} is replaced with the tenant
+     * {3} is replaced with the controller id
+     * {4} is replaced with the gatewayToken
+     *
+     */
 
     val srvMsgTemplateBeforeUpdate = env("UF_SRV_MSF_BEFORE_UPDATE", "Applying the sw {0} for target {1}")
+
+    /**
+     *
+     * Template substitutions:
+     * {0} is replaced with the software module's name
+     * {1} is replaced with the virtual device's id
+     * {2} is replaced with the tenant
+     * {3} is replaced with the controller id
+     * {4} is replaced with the gatewayToken
+     *
+     */
     val srvMsgTemplateAfterUpdate = env("UF_SRV_MSF_AFTER_UPDATE","Applied the sw {0} for target {1}")
 
     val grantDownload = env("UF_GRANT_DOWNLOAD", "true").toBoolean()

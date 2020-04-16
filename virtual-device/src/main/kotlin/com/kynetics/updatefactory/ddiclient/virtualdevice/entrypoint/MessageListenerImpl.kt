@@ -12,7 +12,7 @@ class MessageListenerImpl(
     override fun onMessage(message: MessageListener.Message) {
         println(
             MessageFormat.format(
-            Configuration.logMessage,
+            Configuration.logMessageTemplate,
             virtualDeviceId,
             clientData.tenant,
             clientData.controllerId,
