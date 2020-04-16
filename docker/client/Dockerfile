@@ -1,7 +1,7 @@
 FROM openjdk:8
 
-COPY ./core /client
+COPY ./virtual-device /client
 
 WORKDIR /client
 
-ENTRYPOINT ["/bin/bash", "-c", "./bin/core"]
+ENTRYPOINT ["/bin/bash", "-c", "./bin/virtual-device"]

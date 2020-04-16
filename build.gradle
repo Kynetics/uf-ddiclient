@@ -84,14 +84,12 @@ project(':ddiapi-client:ddiapi-client-api') {
 project(':core') {
     group 'com.kynetics.updatefactory.uf-ddiclient'
     version app_version
-    apply plugin: 'application'
 
     dependencies {
         implementation project(':core:core-api')
         implementation project(':ddiapi-client')
         implementation project(':ddiapi-client:ddiapi-client-api')
         implementation deps.slf4j_api
-        implementation deps.slf4j_simple
         implementation deps.joda
         //implementation deps.retrofit
 
@@ -116,7 +114,6 @@ project(':core') {
             logger.quiet "Executing test ${desc.name} [${desc.className}] with result: ${result.resultType}"
         }
     }
-    mainClassName = 'com.kynetics.updatefactory.ddiclient.core.MainKt'
 
 }
 
@@ -125,6 +122,24 @@ project(':core:core-api') {
     version app_version
 }
 
+project(':virtual-device'){
+    group 'com.kynetics.updatefactory.uf-virtual-device'
+    version app_version
+    apply plugin: 'application'
+
+    dependencies {
+        implementation project(':core')
+        implementation project(':core:core-api')
+        implementation project(':ddiapi-client')
+        implementation project(':ddiapi-client:ddiapi-client-api')
+        implementation deps.joda
+        implementation deps.slf4j_simple
+
+    }
+
+    mainClassName = 'com.kynetics.updatefactory.ddiclient.virtualdevice.MainKt'
+
+}
 
 boolean doHead(url) {
     def connection = new URL(url).openConnection()
@@ -201,9 +216,9 @@ codeCoverage.dependsOn {
 def dockerClientDir = new File(project.buildDir, "docker-client")
 task makeDockerContex(type: Copy) {
     group "Docker"
-    dependsOn ":core:installDist"
+    dependsOn ":virtual-device:installDist"
 
-    from new File(project.projectDir, "core/build/install").getAbsolutePath()
+    from new File(project.projectDir, "virtual-device/build/install").getAbsolutePath()
     from new File(project.projectDir, "docker/client").getAbsolutePath()
 
     into dockerClientDir.getAbsolutePath()
@@ -216,7 +231,7 @@ task buildImage(){
     doLast{
         exec {
             workingDir dockerClientDir
-            commandLine "docker", "build", ".", "--tag", "comkynetics/uf-ddiclient:$app_version"
+            commandLine "docker", "build", ".", "--tag", "comkynetics/uf-virtual-device:$app_version"
         }
     }
 }
@@ -227,7 +242,7 @@ task pushImage(){
     doLast{
         exec {
             workingDir dockerClientDir
-            commandLine "docker", "push", "comkynetics/uf-ddiclient:$app_version"
+            commandLine "docker", "push", "comkynetics/uf-virtual-device:$app_version"
         }
     }
 }
