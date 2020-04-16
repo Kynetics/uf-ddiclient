@@ -10,13 +10,14 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.ObsoleteCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.joda.time.Duration
 import java.io.File
 import java.security.DigestInputStream
 import java.security.MessageDigest
 import java.util.UUID
-import kotlin.random.Random.Default.nextBoolean
 
 fun File.md5(): String {
     val md = MessageDigest.getInstance("MD5")
@@ -44,7 +45,6 @@ private fun env(envVariable:String, defaultValue:String):String{
 @ObsoleteCoroutinesApi
 fun main() = runBlocking {
     System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, env("UF_LOG_LEVEL","TRACE"))
-
     repeat(env("UF_CLIENT_POOL_SIZE", "1").toInt()) {
         val clientData = UpdateFactoryClientData(
             env("UF_TENANT", "TEST"),
@@ -55,21 +55,12 @@ fun main() = runBlocking {
         )
 
         GlobalScope.launch {
+            delay(Duration.standardSeconds(env("UF_VIRTUAL_DEVICE_STARTING_DELAY", "1").toLong()).millis)
             getClient(clientData, it).startAsync()
         }
     }
 
     while (true) {}
-}
-
-private enum class UpdateResultProvider{
-    OK, KO, RANDOM;
-
-    fun isSuccess():Boolean = when(this){
-        OK -> true
-        KO -> false
-        RANDOM -> nextBoolean()
-    }
 }
 
 private fun getClient(clientData: UpdateFactoryClientData, virtualDeviceId: Int): UpdateFactoryClientDefaultImpl {
@@ -83,11 +74,8 @@ private fun getClient(clientData: UpdateFactoryClientData, virtualDeviceId: Int)
             override fun configData(): Map<String, String> {
                 return env("UF_TARGET_ATTRIBUTES","test_key,test_value")
                     .split("|")
-                    .map { it.split(",").let { list -> list[0] to list[1] } }
+                    .map { it.split(",").let { list -> list[0] to String.format(list[1], virtualDeviceId, clientData.tenant, clientData.controllerId, clientData.gatewayToken) } }
                     .toMap()
-                    .toMutableMap().apply {
-                        this["virtual_device"] = "${env("UF_VIRTUAL_DEVICE_POOL_NAME", "VirtualDevice")}$virtualDeviceId"
-                    }
             }
         },
         object : DeploymentPermitProvider {
@@ -101,7 +89,11 @@ private fun getClient(clientData: UpdateFactoryClientData, virtualDeviceId: Int)
         },
         listOf(object : MessageListener {
             override fun onMessage(message: MessageListener.Message) {
-                println(message)
+                println(String.format(env("UF_LOG_MESSAGE", "\${4}"),
+                    virtualDeviceId,
+                    clientData.tenant,
+                    clientData.controllerId,
+                    clientData.gatewayToken,message))
             }
         }),
         object : Updater {
@@ -110,10 +102,34 @@ private fun getClient(clientData: UpdateFactoryClientData, virtualDeviceId: Int)
                 messenger: Updater.Messenger
             ): Updater.UpdateResult {
                 println("APPLY UPDATE $modules")
-                messenger.sendMessageToServer("Applying the update...")
-                Thread.sleep(1000)
-                messenger.sendMessageToServer("Update applied")
-                return Updater.UpdateResult(UpdateResultProvider.valueOf(env("UF_UPDATE_RESULT","OK").toUpperCase()).isSuccess())
+                val regex = Regex("VIRTUAL_DEVICE_UPDATE_RESULT_(\\*|${clientData.controllerId})")
+                val result = modules.fold (Pair(true, listOf<String>())) { acc, module->
+
+                    val command = (module.metadata?.firstOrNull{md -> md.key.contains(regex)}?.value ?: "OK|1|").split("|")
+
+                    messenger.sendMessageToServer(
+                        String.format(env("UF_SRV_MSF_BEFORE_UPDATE", "Applying the sw {0} for target {1}"),
+                            module.name,
+                            virtualDeviceId,
+                            clientData.tenant,
+                            clientData.controllerId,
+                            clientData.gatewayToken)
+                    )
+                    Thread.sleep(command[1].toLong() * 1000)
+                    messenger.sendMessageToServer(
+                        String.format(env("UF_SRV_MSF_AFTER_UPDATE", "Applied the sw {0} for target {1}"),
+                            module.name,
+                            virtualDeviceId,
+                            clientData.tenant,
+                            clientData.controllerId,
+                            clientData.gatewayToken)
+                    )
+
+                    (acc.first && command[0] == "OK") to (acc.second + command.drop(2))
+                }
+
+
+                return Updater.UpdateResult(result.first, result.second)
             }
         }
     )
