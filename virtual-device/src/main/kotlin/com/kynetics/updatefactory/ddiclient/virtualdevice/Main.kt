@@ -12,6 +12,8 @@ import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlin.random.Random.Default.nextInt
+import kotlin.random.Random.Default.nextLong
 
 // TODO add exception handling ! --> A
 @ObsoleteCoroutinesApi
@@ -22,14 +24,16 @@ fun main() = runBlocking {
         repeat(poolSize) {
             val clientData = UpdateFactoryClientData(
                 tenant,
-                controllerId,
+                controllerIdGenerator.invoke(),
                 url,
                 UpdateFactoryClientData.ServerType.UPDATE_FACTORY,
                 gatewayToken
             )
 
             GlobalScope.launch {
-                delay(virtualDeviceStartingDelay)
+                val delay = nextLong(0,virtualDeviceStartingDelay)
+                println("Virtual Device $it starts in $delay milliseconds")
+                delay(delay)
                 getClient(clientData, it).startAsync()
             }
         }

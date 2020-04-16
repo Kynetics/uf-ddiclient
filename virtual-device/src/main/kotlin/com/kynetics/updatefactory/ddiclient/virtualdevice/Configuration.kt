@@ -6,17 +6,45 @@ import java.util.UUID
 object Configuration {
 
     val logelLevel = env("UF_LOG_LEVEL", "TRACE")
+
+    /**
+     * Number of virtual device generated
+     */
     val poolSize = env("UF_CLIENT_POOL_SIZE", "1").toInt()
+
     val tenant = env("UF_TENANT", "TEST")
-    val controllerId = env("UF_CONTROLLER_ID", UUID.randomUUID().toString())
+    val controllerIdGenerator = { env("UF_CONTROLLER_ID", UUID.randomUUID().toString()) }
     val url = env("UF_URL", "https://stage.updatefactory.io")
     val gatewayToken = env("UF_GATEWAY_TOKEN", "")
 
+    /**
+     * Each virtual device will be started with a random delay in [0, UF_VIRTUAL_DEVICE_STARTING_DELAY]
+     */
     val virtualDeviceStartingDelay = Duration.standardSeconds(
         env("UF_VIRTUAL_DEVICE_STARTING_DELAY", "1").toLong()
     ).millis
 
     val storagePath = env("UF_STORAGE_PATH", "/client")
+
+    /**
+     * A list of target attributes for each device.
+     *
+     * The string must have the form of: key1,value1|key2,value2|....|keyn,valuen
+     *
+     * The value supports the following template substitutions:
+     * {0} is replaced with the virtual device id
+     * {1} is replaced with the tenant
+     * {2} is replaced with the controller id
+     * {3} is replaced with the gatewayToken
+     *
+     * Example:
+     *  the string "virtual_device_id,{0}|virtual_device_controller_id,{1}|client:kotlin" represents
+     *  three target attributes:
+     *  1- virtual_device_id = 7
+     *  2- virtual_device_controller_id = a18b68b4-4c9b-4c8f-91af-a26d3a2d1008
+     *  3- client = kotlin
+     *
+     */
     val targetAttributes = env("UF_TARGET_ATTRIBUTES","client,kotlin virtual device")
 
     /**

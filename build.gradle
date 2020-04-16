@@ -124,7 +124,7 @@ project(':core:core-api') {
 
 project(':virtual-device'){
     group 'com.kynetics.updatefactory.uf-virtual-device'
-    version app_version
+    version "1.0.1"
     apply plugin: 'application'
 
     dependencies {
