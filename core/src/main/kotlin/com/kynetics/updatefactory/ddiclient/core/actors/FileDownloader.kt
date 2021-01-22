@@ -30,10 +30,10 @@ private constructor(
         when (msg) {
 
             is Message.Start -> {
+                become(downloading(state))
                 if (fileToDownload.destination.exists()) {
-                    parent!!.send(Message.AlreadyDownloaded(channel, fileToDownload.md5))
+                    channel.send(Message.FileDownloaded)
                 } else {
-                    become(downloading(state))
                     notificationManager.send(MessageListener.Message.Event.StartDownloadFile(fileToDownload.fileName))
                     tryDownload(state)
                 }
@@ -152,18 +152,31 @@ private constructor(
 
     private suspend fun checkMd5OfDownloadedFile() {
         launch {
-            val file = fileToDownload.tempFile
+            var fileAlreadyDownloaded = false
+            val file = if(fileToDownload.destination.exists()){
+                LOG.info("${fileToDownload.fileName} already downloaded. Checking md5...")
+                fileAlreadyDownloaded = true
+                fileToDownload.destination
+            } else {
+                fileToDownload.tempFile
+            }
+
             val md5 = file.md5()
+            val md5CheckResult = md5 == fileToDownload.md5
             when {
 
-                md5 == fileToDownload.md5 -> {
+                fileAlreadyDownloaded && md5CheckResult -> {
+                    parent!!.send(Message.AlreadyDownloaded(channel, fileToDownload.md5))
+                }
+
+                !fileAlreadyDownloaded && md5CheckResult -> {
                     fileToDownload.onFileSaved()
                     channel.send(Message.FileChecked)
                 }
 
                 file.delete() -> channel.send(Companion.Message.RetryDownload("Downloaded file (${fileToDownload.fileName}) has wrong md5 sum ($md5)"))
 
-                else -> throw IllegalStateException("UNABLE DELETE FILE $file")
+                else -> channel.send(Companion.Message.RetryDownload("Can't remove file named ${file.name}"))
             }
         }
     }
