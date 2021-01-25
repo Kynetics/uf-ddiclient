@@ -69,16 +69,16 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
     }
 
     private fun waitingDownloadAuthorization(state: State): Receive = { msg ->
-        when (msg) {
+        when {
 
             msg is DeploymentInfo && msg.downloadIs(Appl.attempt) -> {}
 
-            is DeploymentInfo -> {
+            msg is DeploymentInfo -> {
                 become(beginningReceive(state))
                 channel.send(msg)
             }
 
-            is Message.DownloadGranted -> {
+            msg is Message.DownloadGranted -> {
                 val message = "Authorization granted for downloading files"
                 LOG.info(message)
                 sendFeedback(message)
@@ -86,11 +86,11 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
                 child("downloadManager")!!.send(DeploymentInfo(state.deplBaseResp!!))
             }
 
-            is DeploymentCancelInfo -> {
+            msg is DeploymentCancelInfo -> {
                 stopUpdateAndNotify(msg)
             }
 
-            is CancelForced -> {
+            msg is CancelForced -> {
                 stopUpdate()
             }
 
