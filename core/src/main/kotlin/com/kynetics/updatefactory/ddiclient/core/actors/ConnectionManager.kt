@@ -109,7 +109,7 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
             notificationManager.send(MessageListener.Message.Event.UpdateAvailable(res.deploymentActionId()))
             client.onDeploymentActionDetailsChange(res.deploymentActionId(), 0, state.deploymentEtag) { deplBaseResp, newDeploymentEtag ->
                 etag = newDeploymentEtag
-                this.send(Out.DeploymentInfo(deplBaseResp), state)
+                this.send(Out.DeploymentInfo(deplBaseResp, state.deploymentEtag.isEmpty()), state)
             }
             actionFound = true
         }
@@ -244,7 +244,7 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
 
             open class Out : Message() {
                 object ConfigDataRequired : Out()
-                data class DeploymentInfo(val info: DeplBaseResp) : Out()
+                data class DeploymentInfo(val info: DeplBaseResp, val forceAuthRequest:Boolean  = false) : Out()
                 data class DeploymentCancelInfo(val info: CnclActResp) : Out()
 
                 object NoAction : Out()

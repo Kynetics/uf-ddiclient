@@ -55,7 +55,7 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
 
         when {
 
-            msg is DeploymentInfo && msg.downloadIs(Appl.forced) -> {
+            msg is DeploymentInfo && msg.downloadIs(Appl.forced)  -> {
                 become(downloadingReceive(state.copy(deplBaseResp = msg.info)))
                 child("downloadManager")!!.send(msg)
             }
@@ -80,7 +80,7 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
     private fun waitingDownloadAuthorization(state: State): Receive = { msg ->
         when {
 
-            msg is DeploymentInfo && msg.downloadIs(Appl.attempt) -> {}
+            msg is DeploymentInfo && msg.downloadIs(Appl.attempt) && !msg.forceAuthRequest -> {}
 
             msg is DeploymentInfo -> {
                 become(beginningReceive(state))
