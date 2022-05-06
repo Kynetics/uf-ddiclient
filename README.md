@@ -1,3 +1,5 @@
+*Development of this project has moved to the [Eclipse hara-ddiclient GitHub repository](https://github.com/eclipse/hara-ddiclient/) and this repository is now **read-only**.*
+
 <h1 align="center">UF ddi client</h1>
 <p align="center">
 <a href="https://travis-ci.org/Kynetics/uf-ddiclient"><img alt="Build Status" src="https://travis-ci.org/Kynetics/uf-ddiclient.svg?branch=master"></a>
@@ -7,6 +9,7 @@
 </p>
 
 UF-DDICLIENT is a java library that help the creation of a client to [UpdateFactory](https://www.kynetics.com/iot-platform-update-factory) or [Hawkbit](https://eclipse.org/hawkbit/) servers.
+
 ## Install
 
 To import this project use [jitpack](https://jitpack.io/) plugin.
