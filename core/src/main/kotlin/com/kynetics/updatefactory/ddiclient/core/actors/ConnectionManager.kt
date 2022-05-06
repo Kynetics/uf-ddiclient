@@ -145,7 +145,7 @@ private constructor(scope: ActorScope) : AbstractActor(scope) {
             val errorDetails = "exception: ${t.javaClass} message: ${loopMsg(t)}"
             this.send(ErrMsg(errorDetails), state)
             LOG.warn(t.message, t)
-            become(runningReceive(startPing(s.nextBackoff())))
+            become(runningReceive(startPing(s.copy(controllerBaseEtag = "", deploymentEtag = ""))))
             notificationManager.send(MessageListener.Message.Event.Error(listOf(errorDetails)))
         }
     }
